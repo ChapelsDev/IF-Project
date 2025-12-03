@@ -1,1 +1,7 @@
 # IF PROJECT - CLUSTER CREATION
+
+##  Usefull commands:
+- docker exec -it consul-serverX ps aux       <!-- see running processes inside the container>
+- docker exec consul-server2 sh -c 'kill -9 7' <!-- kill process with PID 7 inside the container>               
+- docker inspect consul-server2 --format 'Status={{ .State.Status }}ExitCode={{ .State.ExitCode }}, RestartCount={{ .RestartCount }}' <!-- inspect container status to see wheater the restart count is increasing or not>
+- docker ps -a <!-- see all containers running or stopped>

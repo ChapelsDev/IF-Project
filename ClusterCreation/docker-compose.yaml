@@ -1,0 +1,72 @@
+services:
+  consul-server1:
+    image: hashicorp/consul:1.22
+    container_name: consul-server1
+    command: [
+      "agent",
+      "-server",
+      "-bootstrap-expect=3",
+      "-node=server1",
+      "-datacenter=dc1",
+      "-bind=0.0.0.0",
+      "-client=0.0.0.0",
+      "-ui",
+      "-data-dir=/consul/data"
+    ]
+    ports:
+      - "8500:8500"       # HTTP / UI
+      - "8600:8600/udp"   # DNS
+    networks:
+      - consul-net
+    restart: unless-stopped
+    volumes:
+      - consul-server1-data:/consul/data
+ 
+  consul-server2:
+    image: hashicorp/consul:1.22
+    container_name: consul-server2
+    command: [
+      "agent",
+      "-server",
+      "-bootstrap-expect=3",
+      "-node=server2",
+      "-datacenter=dc1",
+      "-bind=0.0.0.0",
+      "-client=0.0.0.0",
+      "-retry-join=consul-server1",
+      "-data-dir=/consul/data"
+    ]
+    networks:
+      - consul-net
+    restart: unless-stopped
+    volumes:
+      - consul-server2-data:/consul/data
+ 
+  consul-server3:
+    image: hashicorp/consul:1.22
+    container_name: consul-server3
+    command: [
+      "agent",
+      "-server",
+      "-bootstrap-expect=3",
+      "-node=server3",
+      "-datacenter=dc1",
+      "-bind=0.0.0.0",
+      "-client=0.0.0.0",
+      "-retry-join=consul-server1",
+      "-data-dir=/consul/data"
+    ]
+    networks:
+      - consul-net
+    restart: unless-stopped
+    volumes:
+      - consul-server3-data:/consul/data
+ 
+networks:
+  consul-net:
+    driver: bridge
+
+volumes:
+  consul-server1-data:
+  consul-server2-data:
+  consul-server3-data:
