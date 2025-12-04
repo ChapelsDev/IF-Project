@@ -6,7 +6,22 @@ from typing import List, Tuple, Dict, Optional
 import requests
 
 # Default: Consul na máquina do cluster
-CONSUL_HTTP_ADDR = os.getenv("CONSUL_HTTP_ADDR", "http://10.16.148.252:8500")
+CONSUL_HTTP_ADDR = os.getenv("CONSUL_HTTP_ADDR", "http://172.20.10.10:8500")
+
+# Se a env var não estiver definida, usa os 3 servidores por defeito
+_env_servers = os.getenv("CONSUL_HTTP_SERVERS", "")
+if _env_servers:
+    CONSUL_HTTP_SERVERS = [
+        entry.strip() for entry in _env_servers.split(",") if entry.strip()
+    ]
+else:
+    CONSUL_HTTP_SERVERS = [
+        "http://172.20.10.10:8500",
+        "http://172.20.10.10:8501",
+        "http://172.20.10.10:8502",
+    ]
+
+print(f"Consul servers: {CONSUL_HTTP_SERVERS}")
 
 
 class ClusterError(Exception):
@@ -53,8 +68,7 @@ def register_service(
         },
     }
 
-    url = f"{CONSUL_HTTP_ADDR}/v1/agent/service/register"
-    resp = requests.put(url, json=payload, timeout=5)
+    resp = _consul_request("put", "/v1/agent/service/register", json=payload, timeout=5)
     if resp.status_code >= 300:
         raise ClusterError(
             f"Failed to register service {service_id}: "
@@ -66,8 +80,7 @@ def deregister_service(service_id: str) -> None:
     """
     Remove um serviço do Consul (chamar no shutdown limpo).
     """
-    url = f"{CONSUL_HTTP_ADDR}/v1/agent/service/deregister/{service_id}"
-    resp = requests.put(url, timeout=5)
+    resp = _consul_request("put", f"/v1/agent/service/deregister/{service_id}", timeout=5)
     if resp.status_code >= 300:
         raise ClusterError(
             f"Failed to deregister service {service_id}: "
@@ -79,8 +92,7 @@ def list_nodes() -> List[Dict]:
     """
     Lista todos os nós conhecidos pelo cluster Consul.
     """
-    url = f"{CONSUL_HTTP_ADDR}/v1/catalog/nodes"
-    resp = requests.get(url, timeout=5)
+    resp = _consul_request("get", "/v1/catalog/nodes", timeout=5)
     if resp.status_code >= 300:
         raise ClusterError(
             f"Failed to list nodes: {resp.status_code} {resp.text}"
@@ -92,8 +104,7 @@ def list_services() -> Dict[str, List[str]]:
     """
     Lista todos os serviços registados (nome -> tags).
     """
-    url = f"{CONSUL_HTTP_ADDR}/v1/catalog/services"
-    resp = requests.get(url, timeout=5)
+    resp = _consul_request("get", "/v1/catalog/services", timeout=5)
     if resp.status_code >= 300:
         raise ClusterError(
             f"Failed to list services: {resp.status_code} {resp.text}"
@@ -105,8 +116,7 @@ def get_leader() -> str:
     """
     Devolve o líder atual do cluster Consul (endereço Raft).
     """
-    url = f"{CONSUL_HTTP_ADDR}/v1/status/leader"
-    resp = requests.get(url, timeout=5)
+    resp = _consul_request("get", "/v1/status/leader", timeout=5)
     if resp.status_code >= 300:
         raise ClusterError(
             f"Failed to get leader: {resp.status_code} {resp.text}"
@@ -127,8 +137,7 @@ def discover_service(
     if passing_only:
         params["passing"] = "true"
 
-    url = f"{CONSUL_HTTP_ADDR}/v1/health/service/{name}"
-    resp = requests.get(url, params=params, timeout=5)
+    resp = _consul_request("get", f"/v1/health/service/{name}", params=params, timeout=5)
     if resp.status_code >= 300:
         raise ClusterError(
             f"Failed to discover service {name}: "
@@ -157,3 +166,28 @@ def pick_service_instance(
 
     svc = chosen["Service"]
     return svc["Address"], svc["Port"]
+
+
+def _consul_request(method: str, path: str, timeout: int = 5, **kwargs) -> requests.Response:
+    """Executa uma chamada ao Consul tentando múltiplos servidores."""
+
+    servers = CONSUL_HTTP_SERVERS or [CONSUL_HTTP_ADDR]
+    candidates = servers.copy()
+    random.shuffle(candidates)
+
+    errors = []
+
+    for base in candidates:
+        url = f"{base.rstrip('/')}{path}"
+        try:
+            response = requests.request(method, url, timeout=timeout, **kwargs)
+        except requests.RequestException as exc:
+            errors.append(f"{base}: {exc}")
+            continue
+
+        if response.status_code < 300:
+            return response
+
+        errors.append(f"{base}: {response.status_code} {response.text}")
+
+    raise ClusterError("; ".join(errors) or "No Consul servers configured")
