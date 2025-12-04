@@ -56,12 +56,15 @@ def main():
         address=HOST_IP,
         port=SERVICE_PORT,
         tags=["chat"],
+        health_path="/health",
+        interval="10s",
+        timeout="5s"
     )
 
     print(f"Current leader: {get_leader()}")
     print(f"Known nodes: {list_nodes()}")
     print(f"Registered services: {list_services()}")
-    print("Service discovery example:", discover_service(SERVICE_NAME))
+    print("Service discovery example:", discover_service("chat"))
 
     # 2. Garantir deregisto no shutdown
     def cleanup():
