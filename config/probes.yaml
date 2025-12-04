@@ -1,0 +1,12 @@
+scenarios:
+  default:
+    latency: true
+    http: true
+    throughput: false
+    chat: false
+    file_transfer: false
+
+http_targets:
+  - "http://grafana:3000/login"  # Grafana
+  - "http://prometheus:9090/-/healthy" # Prometheus
+  - "http://host.docker.internal:9100/metrics" # Node Exporter (Host)

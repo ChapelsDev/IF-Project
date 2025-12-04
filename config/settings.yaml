@@ -1,0 +1,4 @@
+logging:
+  level: "INFO"
+experiment_output_dir: "logs"
+prometheus_url: "http://prometheus:9090"

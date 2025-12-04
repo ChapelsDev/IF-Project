@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Chaos Experiment packet_loss-20251204-111937</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    h1 { color: #333; }
+  </style>
+</head>
+<body>
+  <h1>Chaos Experiment packet_loss-20251204-111937</h1>
+  <p>Scenario: <b>packet_loss</b></p>
+  <p>Score: <b>66.58</b> / 100</p>
+  <p>Start: 2025-12-04T11:19:37.653026Z<br>
+     End: 2025-12-04T11:22:55.960963Z</p>
+
+  <h2>Per-node results</h2>
+  <table border="1" cellpadding="4" cellspacing="0">
+    <tr>
+      <th>Node</th>
+      <th>Host</th>
+      <th>Latency before (ms)</th>
+      <th>Latency after (ms)</th>
+      <th>Loss before (%)</th>
+      <th>Loss after (%)</th>
+    </tr>
+    
+        <tr>
+          <td>worker-02</td>
+          <td>172.20.10.6</td>
+          <td>5.423</td>
+          <td>6.339</td>
+          <td>0.0</td>
+          <td>66.6667</td>
+        </tr>
+        
+  </table>
+
+  <h2>HTTP Availability Probes</h2>
+  <table>
+    <tr>
+      <th>Target</th>
+      <th>Status (Before)</th>
+      <th>Latency (Before)</th>
+      <th>Status (After)</th>
+      <th>Latency (After)</th>
+    </tr>
+    
+        <tr>
+          <td>http://grafana:3000/login</td>
+          <td>200</td>
+          <td>2.26 ms</td>
+          <td>200</td>
+          <td>2.5 ms</td>
+        </tr>
+        
+        <tr>
+          <td>http://prometheus:9090/-/healthy</td>
+          <td>200</td>
+          <td>1.08 ms</td>
+          <td>200</td>
+          <td>1.45 ms</td>
+        </tr>
+        
+        <tr>
+          <td>http://host.docker.internal:9100/metrics</td>
+          <td>200</td>
+          <td>104.56 ms</td>
+          <td>200</td>
+          <td>54.46 ms</td>
+        </tr>
+        
+  </table>
+</body>
+</html>
