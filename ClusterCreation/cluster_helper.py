@@ -1,6 +1,8 @@
 # cluster_helper.py
 import os
 import random
+import threading
+import time
 from typing import List, Tuple, Dict, Optional
 
 import requests
@@ -37,23 +39,28 @@ def register_service(
     health_path: str = "/health",
     interval: str = "10s",
     timeout: str = "2s",
+    deregister_after: str = "1m",  # <-- NEW: auto-remove after 1 minute critical
 ) -> None:
     """
     Regista um serviço no Consul.
-
-    :param name: Nome lógico do serviço (ex: "chat-service")
-    :param service_id: ID único da instância (ex: "chat-node1")
-    :param address: IP onde o serviço está a correr
-    :param port: Porta onde o serviço está a ouvir
-    :param tags: Lista de tags (ex: ["chat"])
-    :param health_path: Caminho HTTP para health check (ex: "/health")
-    :param interval: Intervalo entre health checks (ex: "10s")
-    :param timeout: Timeout do health check (ex: "2s")
+    ...
+    :param deregister_after: Quanto tempo em estado CRITICAL até o Consul apagar o serviço.
     """
+
     if tags is None:
         tags = []
 
     check_url = f"http://{address}:{port}{health_path}"
+
+    check = {
+        "HTTP": check_url,
+        "Interval": interval,
+        "Timeout": timeout,
+    }
+
+    # Só define se quiseres esse comportamento (podes passar None para desativar)
+    if deregister_after:
+        check["DeregisterCriticalServiceAfter"] = deregister_after
 
     payload = {
         "Name": name,
@@ -61,11 +68,7 @@ def register_service(
         "Address": address,
         "Port": port,
         "Tags": tags,
-        "Check": {
-            "HTTP": check_url,
-            "Interval": interval,
-            "Timeout": timeout,
-        },
+        "Check": check,
     }
 
     resp = _consul_request("put", "/v1/agent/service/register", json=payload, timeout=5)
@@ -74,6 +77,43 @@ def register_service(
             f"Failed to register service {service_id}: "
             f"{resp.status_code} {resp.text}"
         )
+
+
+def keep_service_registered(
+    name: str,
+    service_id: str,
+    address: str,
+    port: int,
+    tags: Optional[List[str]] = None,
+    health_path: str = "/health",
+    interval: str = "10s",
+    timeout: str = "2s",
+    resync_interval: int = 10,
+) -> None:
+    """
+    Mantém o serviço registado em background.
+    Se o agente onde foi registado morrer, esta função
+    eventualmente registará noutro agente.
+    """
+    def loop():
+        while True:
+            try:
+                register_service(
+                    name,
+                    service_id,
+                    address,
+                    port,
+                    tags,
+                    health_path,
+                    interval,
+                    timeout,
+                )
+            except Exception as e:
+                print(f"[KeepAlive] Error registering service: {e}")
+            time.sleep(resync_interval)
+
+    t = threading.Thread(target=loop, daemon=True)
+    t.start()
 
 
 def deregister_service(service_id: str) -> None:
