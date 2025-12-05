@@ -1,84 +1,92 @@
-# chat_example.py
+from dotenv import load_dotenv
+# Load env vars once at the top
+load_dotenv()
+
+from cluster_helper import keep_service_registered, deregister_service
+from flask import Flask
+import os
+import sys
+import signal
 import atexit
-import socket
-import time
-from flask import Flask, jsonify, request
-
-from cluster_helper import register_service, deregister_service, pick_service_instance, discover_service, get_leader, list_services, list_nodes
-
-# Configuração básica
-SERVICE_NAME = "chat-service"
-SERVICE_ID = "chat-node1"
-SERVICE_PORT = 9000
-
-# Descobrir IP local (podes também pôr estático)
-HOST_IP = socket.gethostbyname(socket.gethostname())
 
 app = Flask(__name__)
 
-start_time = time.time()
-connected_clients = 0
-messages_total = 0
+# ----- CONFIG -----
 
+# Name of the service as seen in Consul
+SERVICE_NAME = "status-service"
+
+# HTTP port where this service will listen on the node
+SERVICE_PORT = int(os.getenv("SERVICE_PORT", 9100))
+
+# IP address of THIS NODE (must be reachable by other nodes)
+NODE_IP = os.getenv("NODE_IP")
+if not NODE_IP:
+    # fallback: best-effort local IP
+    NODE_IP = "127.0.0.1"
+
+# Unique ID for this instance in Consul
+SERVICE_ID = f"{SERVICE_NAME}-{NODE_IP}-{SERVICE_PORT}"
+
+print(
+    f"[Status] Starting {SERVICE_NAME} on {NODE_IP}:{SERVICE_PORT} with ID {SERVICE_ID}")
+
+
+# ----- CLUSTER REGISTRATION -----
+
+def start_consul_registration():
+    """
+    Starts a background thread that keeps the service registered in Consul.
+    Uses the keep_service_registered helper from cluster_helper.py
+    """
+    keep_service_registered(
+        name=SERVICE_NAME,
+        service_id=SERVICE_ID,
+        address=NODE_IP,
+        port=SERVICE_PORT,
+        tags=["status"],    # Ensure this is a list
+        health_path="/health",
+        interval="10s",     # health check interval
+        timeout="2s",       # health check timeout
+        resync_interval=10,  # how often to re-register
+    )
+
+
+def leave_cluster(*_args):
+    """
+    Deregister from Consul cleanly on shutdown.
+    """
+    try:
+        deregister_service(SERVICE_ID)
+        print("[Cluster] Deregistered", SERVICE_ID)
+    except Exception as e:
+        print("[Cluster] Failed to deregister:", e)
+    finally:
+        sys.exit(0)
+
+
+atexit.register(leave_cluster)
+signal.signal(signal.SIGINT, leave_cluster)
+signal.signal(signal.SIGTERM, leave_cluster)
+
+
+# ----- HTTP ENDPOINTS -----
 
 @app.get("/health")
 def health():
-    return jsonify(status="ok"), 200
+    return "OK", 200
 
 
-@app.route("/metrics")
-def metrics():
-    uptime = int(time.time() - start_time)
-    return jsonify(
-        service_name=SERVICE_NAME,
-        instance_id=SERVICE_ID,
-        uptime_seconds=uptime,
-        connected_clients=connected_clients,
-        messages_total=messages_total,
-    ), 200
+@app.get("/")
+def index():
+    return f"Hello from {SERVICE_NAME} at {NODE_IP}:{SERVICE_PORT}\n", 200
 
 
-@app.route("/send_message", methods=["POST"])
-def send_message():
-    global messages_total
-    data = request.get_json(force=True, silent=True) or {}
-    messages_total += 1
-    # aqui seria onde tratavas a mensagem, broadcast, etc.
-    return jsonify(status="received", message=data), 200
-
-
-def main():
-    # 1. Registar no Consul
-    print(f"Registering {SERVICE_NAME} ({SERVICE_ID}) at {HOST_IP}:{SERVICE_PORT}...")
-    register_service(
-        name=SERVICE_NAME,
-        service_id=SERVICE_ID,
-        address=HOST_IP,
-        port=SERVICE_PORT,
-        tags=["chat"],
-        health_path="/health",
-        interval="10s",
-        timeout="5s"
-    )
-
-    print(f"Current leader: {get_leader()}")
-    print(f"Known nodes: {list_nodes()}")
-    print(f"Registered services: {list_services()}")
-    print("Service discovery example:", discover_service("chat"))
-
-    # 2. Garantir deregisto no shutdown
-    def cleanup():
-        print(f"Deregistering {SERVICE_ID}...")
-        try:
-            deregister_service(SERVICE_ID)
-        except Exception as e:
-            print("Error during deregistration:", e)
-
-    atexit.register(cleanup)
-
-    # 3. Arrancar servidor HTTP
-    app.run(host="0.0.0.0", port=SERVICE_PORT)
-
+# ----- MAIN -----
 
 if __name__ == "__main__":
-    main()
+    # Start registration loop BEFORE starting HTTP server
+    start_consul_registration()
+
+    # Start Flask app
+    app.run(host="0.0.0.0", port=SERVICE_PORT)

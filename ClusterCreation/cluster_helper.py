@@ -8,7 +8,8 @@ from typing import List, Tuple, Dict, Optional
 import requests
 
 # Default: Consul na máquina do cluster
-CONSUL_HTTP_ADDR = os.getenv("CONSUL_HTTP_ADDR", "http://172.20.10.10:8500")
+NODE_IP = "192.168.1.248"
+CONSUL_HTTP_ADDR = os.getenv("CONSUL_HTTP_ADDR", f"http://{NODE_IP}:8500")
 
 # Se a env var não estiver definida, usa os 3 servidores por defeito
 _env_servers = os.getenv("CONSUL_HTTP_SERVERS", "")
@@ -17,13 +18,9 @@ if _env_servers:
         entry.strip() for entry in _env_servers.split(",") if entry.strip()
     ]
 else:
-    CONSUL_HTTP_SERVERS = [
-        "http://172.20.10.10:8500",
-        "http://172.20.10.10:8501",
-        "http://172.20.10.10:8502",
-    ]
+    CONSUL_HTTP_SERVERS = []
 
-print(f"Consul servers: {CONSUL_HTTP_SERVERS}")
+print(f"Consul servers: {CONSUL_HTTP_SERVERS or [CONSUL_HTTP_ADDR]}")
 
 
 class ClusterError(Exception):
@@ -39,12 +36,12 @@ def register_service(
     health_path: str = "/health",
     interval: str = "10s",
     timeout: str = "2s",
-    deregister_after: str = "1m",  # <-- NEW: auto-remove after 1 minute critical
-) -> None:
+    deregister_after: str = "30s",
+    quiet: bool = False,
+    target_url: Optional[str] = None,  
+) -> Tuple[str, str]:
     """
     Regista um serviço no Consul.
-    ...
-    :param deregister_after: Quanto tempo em estado CRITICAL até o Consul apagar o serviço.
     """
 
     if tags is None:
@@ -71,12 +68,41 @@ def register_service(
         "Check": check,
     }
 
-    resp = _consul_request("put", "/v1/agent/service/register", json=payload, timeout=5)
+    if target_url:
+        # Direct registration to a specific server
+        server_url = target_url
+        try:
+            resp = requests.put(
+                f"{server_url.rstrip('/')}/v1/agent/service/register", 
+                json=payload, 
+                timeout=5
+            )
+        except requests.RequestException as e:
+            raise ClusterError(f"Connection failed to {server_url}: {e}")
+    else:
+        # Default behavior: pick a random/available server
+        resp, server_url = _consul_request(
+            "put", "/v1/agent/service/register", json=payload, timeout=5)
+    
     if resp.status_code >= 300:
         raise ClusterError(
             f"Failed to register service {service_id}: "
             f"{resp.status_code} {resp.text}"
         )
+    
+    # Try to get the node name from the server we just registered with
+    node_name = "unknown"
+    try:
+        agent_resp = requests.get(f"{server_url}/v1/agent/self", timeout=2)
+        if agent_resp.status_code == 200:
+            node_name = agent_resp.json().get("Config", {}).get("NodeName", "unknown")
+    except Exception:
+        pass
+
+    if not quiet:
+        print(f"[Cluster] Registered service {service_id} on node '{node_name}' ({server_url})")
+    
+    return node_name, server_url
 
 
 def keep_service_registered(
@@ -92,24 +118,48 @@ def keep_service_registered(
 ) -> None:
     """
     Mantém o serviço registado em background.
-    Se o agente onde foi registado morrer, esta função
-    eventualmente registará noutro agente.
+    Verifica todos os servidores configurados e regista onde estiver em falta.
     """
     def loop():
         while True:
-            try:
-                register_service(
-                    name,
-                    service_id,
-                    address,
-                    port,
-                    tags,
-                    health_path,
-                    interval,
-                    timeout,
-                )
-            except Exception as e:
-                print(f"[KeepAlive] Error registering service: {e}")
+            servers = CONSUL_HTTP_SERVERS or [CONSUL_HTTP_ADDR]
+            
+            for server in servers:
+                try:
+                    # 1. Check if service is already registered on this specific agent
+                    check_url = f"{server.rstrip('/')}/v1/agent/services"
+                    should_register = True
+                    
+                    try:
+                        r = requests.get(check_url, timeout=2)
+                        if r.status_code == 200:
+                            services = r.json()
+                            if service_id in services:
+                                should_register = False
+                    except requests.RequestException:
+                        # If check fails (e.g. timeout), we assume we might need to register
+                        # or the node is down. We proceed to try registering below.
+                        pass
+
+                    # 2. Register if missing
+                    if should_register:
+                        register_service(
+                            name,
+                            service_id,
+                            address,
+                            port,
+                            tags,
+                            health_path,
+                            interval,
+                            timeout,
+                            quiet=False, # We want to see when it registers
+                            target_url=server
+                        )
+                except Exception as e:
+                    # Suppress errors to avoid spamming if a node is down
+                    # print(f"[KeepAlive] Error on {server}: {e}")
+                    pass
+
             time.sleep(resync_interval)
 
     t = threading.Thread(target=loop, daemon=True)
@@ -118,21 +168,25 @@ def keep_service_registered(
 
 def deregister_service(service_id: str) -> None:
     """
-    Remove um serviço do Consul (chamar no shutdown limpo).
+    Remove um serviço de TODOS os servidores Consul configurados.
     """
-    resp = _consul_request("put", f"/v1/agent/service/deregister/{service_id}", timeout=5)
-    if resp.status_code >= 300:
-        raise ClusterError(
-            f"Failed to deregister service {service_id}: "
-            f"{resp.status_code} {resp.text}"
-        )
+    servers = CONSUL_HTTP_SERVERS or [CONSUL_HTTP_ADDR]
+    
+    for server in servers:
+        try:
+            url = f"{server.rstrip('/')}/v1/agent/service/deregister/{service_id}"
+            requests.put(url, timeout=2)
+        except Exception:
+            pass
+            
+    print(f"[Cluster] Deregistered {service_id} from cluster nodes.")
 
 
 def list_nodes() -> List[Dict]:
     """
     Lista todos os nós conhecidos pelo cluster Consul.
     """
-    resp = _consul_request("get", "/v1/catalog/nodes", timeout=5)
+    resp, _ = _consul_request("get", "/v1/catalog/nodes", timeout=5)
     if resp.status_code >= 300:
         raise ClusterError(
             f"Failed to list nodes: {resp.status_code} {resp.text}"
@@ -144,7 +198,7 @@ def list_services() -> Dict[str, List[str]]:
     """
     Lista todos os serviços registados (nome -> tags).
     """
-    resp = _consul_request("get", "/v1/catalog/services", timeout=5)
+    resp, _ = _consul_request("get", "/v1/catalog/services", timeout=5)
     if resp.status_code >= 300:
         raise ClusterError(
             f"Failed to list services: {resp.status_code} {resp.text}"
@@ -156,7 +210,7 @@ def get_leader() -> str:
     """
     Devolve o líder atual do cluster Consul (endereço Raft).
     """
-    resp = _consul_request("get", "/v1/status/leader", timeout=5)
+    resp, _ = _consul_request("get", "/v1/status/leader", timeout=5)
     if resp.status_code >= 300:
         raise ClusterError(
             f"Failed to get leader: {resp.status_code} {resp.text}"
@@ -177,7 +231,8 @@ def discover_service(
     if passing_only:
         params["passing"] = "true"
 
-    resp = _consul_request("get", f"/v1/health/service/{name}", params=params, timeout=5)
+    resp, _ = _consul_request(
+        "get", f"/v1/health/service/{name}", params=params, timeout=5)
     if resp.status_code >= 300:
         raise ClusterError(
             f"Failed to discover service {name}: "
@@ -208,7 +263,7 @@ def pick_service_instance(
     return svc["Address"], svc["Port"]
 
 
-def _consul_request(method: str, path: str, timeout: int = 5, **kwargs) -> requests.Response:
+def _consul_request(method: str, path: str, timeout: int = 5, **kwargs) -> Tuple[requests.Response, str]:
     """Executa uma chamada ao Consul tentando múltiplos servidores."""
 
     servers = CONSUL_HTTP_SERVERS or [CONSUL_HTTP_ADDR]
@@ -226,7 +281,7 @@ def _consul_request(method: str, path: str, timeout: int = 5, **kwargs) -> reque
             continue
 
         if response.status_code < 300:
-            return response
+            return response, base
 
         errors.append(f"{base}: {response.status_code} {response.text}")
 
