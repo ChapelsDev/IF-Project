@@ -1,10 +1,10 @@
 nodes:
   - id: "local-node"
-    host: "127.0.0.1"
+    host: "host.docker.internal"
     ssh_user: "guilherme"
     ssh_port: 22
-    net_if: "lo"
-    metrics_url: "http://localhost:9100/metrics"
+    net_if: "br-535006806f8b"
+    metrics_url: "http://host.docker.internal:9100/metrics"
     sudo_password: "acordeao2224"
 
   # - id: "worker-01"              
@@ -16,11 +16,11 @@ nodes:
   #   sudo_password: "osboxes.org"
   #   ssh_password: "osboxes.org"      
 
-  - id: "worker-02"              
-    host: "172.20.10.6"         
-    ssh_user: "guilherme"        
-    ssh_port: 22
-    net_if: "wlp2s0"               
-    metrics_url: "http://172.20.10.6:9100/metrics"
-    sudo_password: "13052003"
-    ssh_password: "13052003"      
+  # - id: "worker-02"              
+  #   host: "172.20.10.6"         
+  #   ssh_user: "guilherme"        
+  #   ssh_port: 22
+  #   net_if: "wlp2s0"               
+  #   metrics_url: "http://172.20.10.6:9100/metrics"
+  #   sudo_password: "13052003"
+  #   ssh_password: "13052003"      
