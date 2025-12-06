@@ -11,21 +11,20 @@ scrape_configs:
           instance: 'local-node'
           nodename: 'local-node'
 
-      # Consul Nodes
-      - targets: ['172.21.0.3:9100']
-        labels:
-          instance: 'server1'
-          nodename: 'server1'
-
-      - targets: ['172.21.0.4:9100']
-        labels:
-          instance: 'server2'
-          nodename: 'server2'
-
-      - targets: ['172.21.0.2:9100']
-        labels:
-          instance: 'server3'
-          nodename: 'server3'
+  # --- NOVO: Descoberta Automática de Serviços via Consul ---
+  - job_name: 'consul_services'
+    consul_sd_configs:
+      - server: 'consul-server1:8500' # Prometheus conecta ao Consul Server 1
+        services: [] # Descobre todos os serviços. Podes filtrar ex: ['api', 'web']
+    relabel_configs:
+      # Só faz scrape se o serviço tiver a tag "metrics" (Opcional, mas boa prática)
+      # - source_labels: [__meta_consul_tags]
+      #   regex: .*,metrics,.*
+      #   action: keep
+      
+      # Usa o nome do serviço como label 'job'
+      - source_labels: [__meta_consul_service]
+        target_label: job
 
   - job_name: 'prometheus'
     static_configs:

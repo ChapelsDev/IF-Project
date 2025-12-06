@@ -5,7 +5,9 @@ from pathlib import Path
 
 # URL do Consul
 CONSUL_ADDR = os.getenv("CONSUL_HTTP_ADDR", "http://host.docker.internal:8500")
-CONFIG_PATH = Path("config/nodes.yaml")
+# Define project root relative to this file
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+CONFIG_PATH = PROJECT_ROOT / "config/nodes.yaml"
 
 def load_existing_config():
     if not CONFIG_PATH.exists():
@@ -18,7 +20,7 @@ def save_config(data):
         yaml.dump(data, f, sort_keys=False)
     print(f"Arquivo {CONFIG_PATH} atualizado com sucesso!")
 
-def main():
+def sync_nodes():
     print(f"Conectando ao Consul em: {CONSUL_ADDR}")
     try:
         resp = requests.get(f"{CONSUL_ADDR}/v1/health/service/consul")
@@ -26,7 +28,7 @@ def main():
         consul_nodes = resp.json()
     except Exception as e:
         print(f"Erro ao conectar ao Consul: {e}")
-        return
+        return []
 
     current_config = load_existing_config()
     existing_nodes = {n["id"]: n for n in current_config.get("nodes", [])}
@@ -65,6 +67,11 @@ def main():
     current_config["nodes"] = list(existing_nodes.values())
     save_config(current_config)
     print(f"\nResumo: {new_count} novos, {updated_count} atualizados.")
+    
+    return list(existing_nodes.values())
+
+def main():
+    sync_nodes()
 
 if __name__ == "__main__":
     main()
