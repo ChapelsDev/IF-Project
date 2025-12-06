@@ -6,11 +6,13 @@ from datetime import datetime
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import yaml
 
 from .ssh_executor import SSHExecutor, NodeSSHConfig
 from .netem_profiles import apply_netem, clear_netem
+from .consul_observer import wait_for_node_removal, get_consul_nodes
 from probe.latency_probe import measure_latency
 from probe.http_probe import probe_http
 from collector.node_metrics_client import fetch_node_metrics
@@ -170,6 +172,23 @@ def run_scenario(scenario_name: str,
             scenario = load_scenario(scenario_name)
         
         nodes_cfg = load_nodes()
+
+        # Sincronizar IPs com Consul (Resolução Dinâmica)
+        consul_map = get_consul_nodes()
+        if consul_map:
+            updated_count = 0
+            for node in nodes_cfg:
+                node_id = node.get("id")
+                if node_id in consul_map:
+                    current_ip = node.get("host")
+                    new_ip = consul_map[node_id]
+                    if current_ip != new_ip:
+                        print(f"SYNC: Atualizando IP do nó '{node_id}': {current_ip} -> {new_ip}")
+                        node["host"] = new_ip
+                        updated_count += 1
+            if updated_count > 0:
+                loki.push_log(f"Sincronizados {updated_count} IPs com o Consul.", {"job": "chaos_manager"})
+
         probes_cfg = _load_yaml(CONFIG_DIR / "probes.yaml")
 
         experiment_id = datetime.utcnow().strftime(f"{scenario.name}-%Y%m%d-%H%M%S")
@@ -265,7 +284,32 @@ def run_scenario(scenario_name: str,
         # 3) espera
         with tracer.start_as_current_span("wait_duration"):
             loki.push_log(f"Caos aplicado. Aguardando {scenario.duration_sec}s...", {"job": "chaos_manager", "scenario": scenario_name})
-            time.sleep(scenario.duration_sec)
+            
+            loss_percent = int(scenario.netem.get("loss_percent", 0))
+            if loss_percent == 100:
+                loki.push_log("Perda de 100% detectada. Iniciando Watcher do Consul...", {"job": "chaos_manager"})
+                
+                def watch_node(node_info):
+                    # Assume service name is 'consul' (default for agents) or configured
+                    service_name = node_info.get("consul_service", "consul")
+                    node_id = node_info.get("id")
+                    return wait_for_node_removal(service_name, node_id, timeout=scenario.duration_sec)
+
+                with ThreadPoolExecutor(max_workers=len(executors)) as executor:
+                    future_to_node = {executor.submit(watch_node, n): n for n, _ in executors}
+                    
+                    for future in as_completed(future_to_node):
+                        node_ref = future_to_node[future]
+                        try:
+                            removed = future.result()
+                            if removed:
+                                loki.push_log(f"Watcher: Nó {node_ref['id']} removido do cluster.", {"job": "chaos_manager", "node": node_ref['id']})
+                            else:
+                                loki.push_log(f"Watcher: Timeout aguardando nó {node_ref['id']}.", {"job": "chaos_manager", "node": node_ref['id']})
+                        except Exception as exc:
+                            loki.push_log(f"Watcher: Erro ao monitorar {node_ref['id']}: {exc}", {"job": "chaos_manager", "node": node_ref['id']})
+            else:
+                time.sleep(scenario.duration_sec)
 
         # 4) medir depois + limpar
         with tracer.start_as_current_span("measure_after_and_cleanup"):

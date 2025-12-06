@@ -5,23 +5,27 @@ global:
 scrape_configs:
   - job_name: 'chaos_nodes'
     static_configs:
-      # Nó Local: Dentro do Docker, 'localhost' é o container. 
-      # Usamos 'host.docker.internal' para atingir o node-exporter que está na rede host.
+      # Nó Local
       - targets: ['host.docker.internal:9100']
         labels:
-          instance: 'localhost:9100' # Mantém o label original para compatibilidade com dashboard
+          instance: 'local-node'
           nodename: 'local-node'
 
-      # Nó Remoto
-      - targets: ['192.168.1.196:9100']
+      # Consul Nodes
+      - targets: ['172.21.0.3:9100']
         labels:
-          instance: '192.168.1.196:9100'
-          nodename: 'worker-01'
+          instance: 'server1'
+          nodename: 'server1'
 
-      - targets: ['172.20.10.6:9100']
+      - targets: ['172.21.0.4:9100']
         labels:
-          instance: '172.20.10.6:9100'
-          nodename: 'worker-02'
+          instance: 'server2'
+          nodename: 'server2'
+
+      - targets: ['172.21.0.2:9100']
+        labels:
+          instance: 'server3'
+          nodename: 'server3'
 
   - job_name: 'prometheus'
     static_configs:
