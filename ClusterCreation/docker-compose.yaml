@@ -5,7 +5,7 @@ services:
     command: [
       "agent",
       "-server",
-      "-bootstrap-expect=3",
+      "-bootstrap-expect=5",
       "-node=server1",
       "-datacenter=dc1",
       "-bind=0.0.0.0",
@@ -18,7 +18,7 @@ services:
       - "8600:8600/udp"   # DNS
     networks:
       - consul-net
-    restart: unless-stopped
+    restart: always
     volumes:
       - consul-server1-data:/consul/data
  
@@ -28,7 +28,7 @@ services:
     command: [
       "agent",
       "-server",
-      "-bootstrap-expect=3",
+      "-bootstrap-expect=5",
       "-node=server2",
       "-datacenter=dc1",
       "-bind=0.0.0.0",
@@ -42,7 +42,7 @@ services:
       - "8601:8600/udp"   # Optional DNS mirror
     networks:
       - consul-net
-    restart: unless-stopped
+    restart: always
     volumes:
       - consul-server2-data:/consul/data
  
@@ -52,7 +52,7 @@ services:
     command: [
       "agent",
       "-server",
-      "-bootstrap-expect=3",
+      "-bootstrap-expect=5",
       "-node=server3",
       "-datacenter=dc1",
       "-bind=0.0.0.0",
@@ -66,9 +66,57 @@ services:
       - "8602:8600/udp"
     networks:
       - consul-net
-    restart: unless-stopped
+    restart: always
     volumes:
       - consul-server3-data:/consul/data
+ 
+  consul-server4:
+    image: hashicorp/consul:1.22
+    container_name: consul-server4
+    command: [
+      "agent",
+      "-server",
+      "-bootstrap-expect=5",
+      "-node=server4",
+      "-datacenter=dc1",
+      "-bind=0.0.0.0",
+      "-client=0.0.0.0",
+      "-retry-join=consul-server1",
+      "-ui",
+      "-data-dir=/consul/data"
+    ]
+    ports:
+      - "8503:8500"
+      - "8603:8600/udp"
+    networks:
+      - consul-net
+    restart: always
+    volumes:
+      - consul-server4-data:/consul/data
+
+  consul-server5:
+    image: hashicorp/consul:1.22
+    container_name: consul-server5
+    command: [
+      "agent",
+      "-server",
+      "-bootstrap-expect=5",
+      "-node=server5",
+      "-datacenter=dc1",
+      "-bind=0.0.0.0",
+      "-client=0.0.0.0",
+      "-retry-join=consul-server1",
+      "-ui",
+      "-data-dir=/consul/data"
+    ]
+    ports:
+      - "8504:8500"
+      - "8604:8600/udp"
+    networks:
+      - consul-net
+    restart: always
+    volumes:
+      - consul-server5-data:/consul/data
  
 networks:
   consul-net:
@@ -78,3 +126,5 @@ volumes:
   consul-server1-data:
   consul-server2-data:
   consul-server3-data:
+  consul-server4-data:
+  consul-server5-data:
