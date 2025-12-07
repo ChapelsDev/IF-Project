@@ -25,6 +25,9 @@ python3 main.py run --scenario network_delay --ssh-key ~/.ssh/id_rsa
 Monitorização & Observabilidade
 Grafana: http://localhost:3000 (Dashboards e Visualização)
 Login: admin / admin (ou a senha que definiu)
+Chaos Control Plane (A peça que faltava)
+Chaos UI: http://localhost:8000/ui (Interface Web para lançar ataques)
+API Docs: http://localhost:8000/docs (Documentação Swagger da API)
 Prometheus: http://localhost:9090 (Coleta de Métricas e Alertas)
 Consul UI: http://localhost:8500 (Estado do Cluster e Serviços)
 🛠️ Infraestrutura (Nós do Cluster)
