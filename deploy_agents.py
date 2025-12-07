@@ -29,8 +29,8 @@ def deploy_to_node(node):
     )
     executor = SSHExecutor(cfg, key_path=ssh_key)
 
-    # 1. Verificar se já está a correr
-    code, out, _ = executor.run("pgrep -f node_exporter")
+    # 1. Verificar se já está a correr (com mais retries pois o nó pode estar a acordar)
+    code, out, _ = executor.run("pgrep -f node_exporter", retries=10)
     if code == 0:
         print(f"✅ Node Exporter já está a correr em {node['id']}.")
     else:
@@ -45,7 +45,7 @@ def deploy_to_node(node):
         ]
         
         full_cmd = " && ".join(cmds)
-        code, out, err = executor.run(full_cmd)
+        code, out, err = executor.run(full_cmd, retries=10)
         if code != 0:
             print(f"❌ Erro ao baixar/extrair: {err}")
             return
@@ -54,11 +54,11 @@ def deploy_to_node(node):
         print(f"▶️ A iniciar serviço...")
         # Usamos nohup para o processo não morrer quando o SSH fechar
         start_cmd = f"nohup {INSTALL_DIR}/node_exporter > {INSTALL_DIR}/node_exporter.log 2>&1 &"
-        executor.run(start_cmd)
+        executor.run(start_cmd, retries=10)
         
         # 4. Verificar
         time.sleep(2)
-        code, _, _ = executor.run("pgrep -f node_exporter")
+        code, _, _ = executor.run("pgrep -f node_exporter", retries=10)
         if code == 0:
             print(f"✅ Sucesso! Node Exporter a correr em {node['id']}.")
         else:
@@ -87,7 +87,7 @@ def deploy_to_node(node):
     register_payload = register_payload.replace("\\n", "").strip()
     
     reg_cmd = f"curl -X PUT --data '{register_payload}' http://127.0.0.1:8500/v1/agent/service/register"
-    code_reg, out_reg, err_reg = executor.run(reg_cmd)
+    code_reg, out_reg, err_reg = executor.run(reg_cmd, retries=10)
     
     if code_reg == 0:
             print(f"✅ Serviço node-exporter registado no Consul.")
