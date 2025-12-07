@@ -4,7 +4,7 @@ import yaml
 from pathlib import Path
 
 # URL do Consul
-CONSUL_ADDR = os.getenv("CONSUL_HTTP_ADDR", "http://host.docker.internal:8500")
+CONSUL_ADDR = os.getenv("CONSUL_HTTP_ADDR", "http://127.0.0.1:8500")
 # Define project root relative to this file
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = PROJECT_ROOT / "config/nodes.yaml"

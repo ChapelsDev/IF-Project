@@ -33,37 +33,66 @@ def deploy_to_node(node):
     code, out, _ = executor.run("pgrep -f node_exporter")
     if code == 0:
         print(f"✅ Node Exporter já está a correr em {node['id']}.")
-        return
-
-    # 2. Criar diretoria e baixar
-    print(f"📦 A baixar Node Exporter em {node['id']}...")
-    cmds = [
-        f"mkdir -p {INSTALL_DIR}",
-        f"cd {INSTALL_DIR} && wget -q {NODE_EXPORTER_URL} -O node_exporter.tar.gz",
-        f"cd {INSTALL_DIR} && tar xzf node_exporter.tar.gz",
-        f"cd {INSTALL_DIR} && mv node_exporter-*/node_exporter .",
-        f"chmod +x {INSTALL_DIR}/node_exporter"
-    ]
-    
-    full_cmd = " && ".join(cmds)
-    code, out, err = executor.run(full_cmd)
-    if code != 0:
-        print(f"❌ Erro ao baixar/extrair: {err}")
-        return
-
-    # 3. Iniciar em background (nohup)
-    print(f"▶️ A iniciar serviço...")
-    # Usamos nohup para o processo não morrer quando o SSH fechar
-    start_cmd = f"nohup {INSTALL_DIR}/node_exporter > {INSTALL_DIR}/node_exporter.log 2>&1 &"
-    executor.run(start_cmd)
-    
-    # 4. Verificar
-    time.sleep(2)
-    code, _, _ = executor.run("pgrep -f node_exporter")
-    if code == 0:
-        print(f"✅ Sucesso! Node Exporter a correr em {node['id']}.")
     else:
-        print(f"⚠️ Aviso: Não foi possível confirmar se o processo ficou a correr.")
+        # 2. Criar diretoria e baixar (se não estiver a correr)
+        print(f"📦 A baixar Node Exporter em {node['id']}...")
+        cmds = [
+            f"mkdir -p {INSTALL_DIR}",
+            f"cd {INSTALL_DIR} && wget -q {NODE_EXPORTER_URL} -O node_exporter.tar.gz",
+            f"cd {INSTALL_DIR} && tar xzf node_exporter.tar.gz",
+            f"cd {INSTALL_DIR} && mv node_exporter-*/node_exporter .",
+            f"chmod +x {INSTALL_DIR}/node_exporter"
+        ]
+        
+        full_cmd = " && ".join(cmds)
+        code, out, err = executor.run(full_cmd)
+        if code != 0:
+            print(f"❌ Erro ao baixar/extrair: {err}")
+            return
+
+        # 3. Iniciar em background (nohup)
+        print(f"▶️ A iniciar serviço...")
+        # Usamos nohup para o processo não morrer quando o SSH fechar
+        start_cmd = f"nohup {INSTALL_DIR}/node_exporter > {INSTALL_DIR}/node_exporter.log 2>&1 &"
+        executor.run(start_cmd)
+        
+        # 4. Verificar
+        time.sleep(2)
+        code, _, _ = executor.run("pgrep -f node_exporter")
+        if code == 0:
+            print(f"✅ Sucesso! Node Exporter a correr em {node['id']}.")
+        else:
+            print(f"⚠️ Aviso: Não foi possível confirmar se o processo ficou a correr.")
+            return
+
+    # 5. Registar no Consul (Local) - SEMPRE
+    # Como estamos num Consul Server, podemos registar via API local
+    print(f"📝 A registar node-exporter no Consul em {node['id']}...")
+    
+    # Payload JSON
+    register_payload = f'''
+    {{
+      "ID": "node-exporter-{node['host']}",
+      "Name": "node-exporter",
+      "Tags": ["metrics"],
+      "Address": "{node['host']}",
+      "Port": 9100,
+      "Check": {{
+        "HTTP": "http://{node['host']}:9100/metrics",
+        "Interval": "10s"
+      }}
+    }}
+    '''
+    # Remove newlines para o comando shell
+    register_payload = register_payload.replace("\\n", "").strip()
+    
+    reg_cmd = f"curl -X PUT --data '{register_payload}' http://127.0.0.1:8500/v1/agent/service/register"
+    code_reg, out_reg, err_reg = executor.run(reg_cmd)
+    
+    if code_reg == 0:
+            print(f"✅ Serviço node-exporter registado no Consul.")
+    else:
+            print(f"⚠️ Falha ao registar no Consul: {err_reg}")
 
 def main():
     nodes = load_nodes()

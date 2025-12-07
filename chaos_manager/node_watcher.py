@@ -2,6 +2,8 @@ import time
 import sys
 import os
 import requests
+import threading
+from typing import Optional
 from pathlib import Path
 
 # Adiciona o diretório pai ao path para importar deploy_agents
@@ -10,49 +12,55 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from chaos_manager.import_nodes import sync_nodes, CONSUL_ADDR
 from deploy_agents import deploy_to_node
 
-def watch_nodes_blocking():
-    print(f"👀 Iniciando Watcher de Nós (Modo Real-Time)...")
-    print(f"📡 Conectado ao Consul em: {CONSUL_ADDR}")
+def watch_service_changes(name: str, callback, passing_only: bool = True, stop_event: Optional[threading.Event] = None):
+    """
+    Monitoriza alterações num serviço usando Consul Blocking Queries.
+    Invoca `callback(instances)` sempre que a lista de serviços mudar.
     
+    :param name: Nome do serviço a monitorizar
+    :param callback: Função que recebe a lista de instâncias
+    :param passing_only: Se True, só notifica sobre nós saudáveis
+    :param stop_event: Evento para parar o watch (opcional)
+    """
+    print(f"👀 Iniciando Watcher para o serviço: '{name}'...")
     last_index = "0"
     
-    # Primeira sincronização imediata
-    run_sync_cycle()
-
     while True:
+        if stop_event and stop_event.is_set():
+            break
+            
+        params = {
+            "wait": "30s",  # Long polling
+            "index": last_index
+        }
+        if passing_only:
+            params["passing"] = "true"
+
         try:
-            # Blocking Query para o serviço "consul" (que representa os nós)
-            params = {
-                "index": last_index,
-                "wait": "30s",
-                "passing": "true"
-            }
-            
-            # Nota: Usamos o endpoint de health service para pegar mudanças de status também
-            url = f"{CONSUL_ADDR}/v1/health/service/consul"
-            
+            url = f"{CONSUL_ADDR}/v1/health/service/{name}"
             resp = requests.get(url, params=params, timeout=40)
             
             if resp.status_code == 200:
+                # Atualiza o index para a próxima chamada
                 new_index = resp.headers.get("X-Consul-Index", "0")
                 
-                # Se o index mudou, algo aconteceu no cluster
+                # Se o index mudou, houve alteração (ou timeout do wait)
                 if new_index != last_index:
-                    print(f"\n🔔 Mudança detectada no cluster (Index: {new_index})")
+                    print(f"\n🔔 Mudança detectada em '{name}' (Index: {new_index})")
                     last_index = new_index
-                    run_sync_cycle()
+                    instances = resp.json()
+                    callback(instances)
             else:
-                print(f"⚠️ Erro na query do Consul: {resp.status_code}")
+                print(f"⚠️ Erro na query do Consul ({name}): {resp.status_code}")
                 time.sleep(5)
 
         except requests.exceptions.Timeout:
-            # Timeout normal do long polling, apenas continua
             pass
         except Exception as e:
-            print(f"❌ Erro no loop do watcher: {e}")
+            print(f"❌ Erro no loop do watcher ({name}): {e}")
             time.sleep(5)
 
-def run_sync_cycle():
+def run_sync_cycle(instances=None):
     try:
         print("🔄 Sincronizando inventário...")
         nodes = sync_nodes()
@@ -72,4 +80,11 @@ def run_sync_cycle():
         print(f"❌ Falha na sincronização: {e}")
 
 if __name__ == "__main__":
-    watch_nodes_blocking()
+    print(f"📡 Conectado ao Consul em: {CONSUL_ADDR}")
+    
+    # Primeira sincronização imediata
+    run_sync_cycle()
+    
+    # Monitoriza o serviço "consul" (que contém o check "Serf Health Status" dos nós)
+    # Quando houver alterações, chama run_sync_cycle
+    watch_service_changes("consul", run_sync_cycle)

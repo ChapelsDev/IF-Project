@@ -26,6 +26,12 @@ scrape_configs:
       - source_labels: [__meta_consul_service]
         target_label: job
 
+      # Renomeia job='node-exporter' para 'node' (para compatibilidade com dashboards comuns)
+      - source_labels: [job]
+        regex: node-exporter
+        target_label: job
+        replacement: node
+
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']

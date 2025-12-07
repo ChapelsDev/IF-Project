@@ -734,7 +734,7 @@
         "name": "instance",
         "options": [],
         "query": {
-          "query": "label_values(up{job=\"chaos_nodes\"}, instance)",
+          "query": "label_values(node_uname_info, instance)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 1,
