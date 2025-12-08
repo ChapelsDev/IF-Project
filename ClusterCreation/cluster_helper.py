@@ -104,6 +104,47 @@ def register_service(
     
     return node_name, server_url
 
+def watch_service_changes(name: str, callback, passing_only: bool = True, stop_event: Optional[threading.Event] = None):
+    """
+    Monitoriza alterações num serviço usando Consul Blocking Queries.
+    Invoca `callback(instances)` sempre que a lista de serviços mudar.
+    
+    :param name: Nome do serviço a monitorizar
+    :param callback: Função que recebe a lista de instâncias (mesmo formato de discover_service)
+    :param passing_only: Se True, só notifica sobre nós saudáveis
+    :param stop_event: Evento para parar o watch (opcional)
+    """
+    last_index = "0"
+    
+    while True:
+        if stop_event and stop_event.is_set():
+            break
+            
+        params = {
+            "wait": "30s",  # Long polling
+            "index": last_index
+        }
+        if passing_only:
+            params["passing"] = "true"
+
+        try:
+            # Usamos _consul_request mas precisamos de acesso aos headers da resposta
+            # Como _consul_request retorna (response, url), funciona bem.
+            resp, _ = _consul_request("get", f"/v1/health/service/{name}", params=params, timeout=40)
+            
+            # Atualiza o index para a próxima chamada
+            new_index = resp.headers.get("X-Consul-Index", "0")
+            
+            # Se o index mudou, houve alteração (ou timeout do wait)
+            if new_index != last_index:
+                last_index = new_index
+                instances = resp.json()
+                callback(instances)
+                
+        except Exception as e:
+            print(f"[ClusterHelper] Watch error: {e}")
+            time.sleep(5) # Espera antes de tentar de novo em caso de erro
+
 
 def keep_service_registered(
     name: str,
@@ -262,6 +303,46 @@ def pick_service_instance(
     svc = chosen["Service"]
     return svc["Address"], svc["Port"]
 
+def watch_service_changes(name: str, callback, passing_only: bool = True, stop_event: Optional[threading.Event] = None):
+    """
+    Monitoriza alterações num serviço usando Consul Blocking Queries.
+    Invoca `callback(instances)` sempre que a lista de serviços mudar.
+    
+    :param name: Nome do serviço a monitorizar
+    :param callback: Função que recebe a lista de instâncias (mesmo formato de discover_service)
+    :param passing_only: Se True, só notifica sobre nós saudáveis
+    :param stop_event: Evento para parar o watch (opcional)
+    """
+    last_index = "0"
+    
+    while True:
+        if stop_event and stop_event.is_set():
+            break
+            
+        params = {
+            "wait": "30s",  # Long polling
+            "index": last_index
+        }
+        if passing_only:
+            params["passing"] = "true"
+
+        try:
+            # Usamos _consul_request mas precisamos de acesso aos headers da resposta
+            # Como _consul_request retorna (response, url), funciona bem.
+            resp, _ = _consul_request("get", f"/v1/health/service/{name}", params=params, timeout=40)
+            
+            # Atualiza o index para a próxima chamada
+            new_index = resp.headers.get("X-Consul-Index", "0")
+            
+            # Se o index mudou, houve alteração (ou timeout do wait)
+            if new_index != last_index:
+                last_index = new_index
+                instances = resp.json()
+                callback(instances)
+                
+        except Exception as e:
+            print(f"[ClusterHelper] Watch error: {e}")
+            time.sleep(5) # Espera antes de tentar de novo em caso de erro
 
 def _consul_request(method: str, path: str, timeout: int = 5, **kwargs) -> Tuple[requests.Response, str]:
     """Executa uma chamada ao Consul tentando múltiplos servidores."""

@@ -1,7 +1,9 @@
 services:
   consul-server1:
-    image: hashicorp/consul:1.22
+    build: .
     container_name: consul-server1
+    cap_add:
+      - NET_ADMIN
     command: [
       "agent",
       "-server",
@@ -16,6 +18,8 @@ services:
     ports:
       - "8500:8500"       # HTTP / UI
       - "8600:8600/udp"   # DNS
+      - "2021:22"
+      - "9100:9100"   # Node Exporter
     networks:
       - consul-net
     #restart: unless-stopped
@@ -23,8 +27,10 @@ services:
       - consul-server1-data:/consul/data
  
   consul-server2:
-    image: hashicorp/consul:1.22
+    build: .
     container_name: consul-server2
+    cap_add:
+      - NET_ADMIN
     command: [
       "agent",
       "-server",
@@ -40,6 +46,8 @@ services:
     ports:
       - "8501:8500"       # HTTP API for host clients
       - "8601:8600/udp"   # Optional DNS mirror
+      - "2022:22"
+      - "9101:9101"
     networks:
       - consul-net
     restart: unless-stopped
@@ -47,8 +55,10 @@ services:
       - consul-server2-data:/consul/data
  
   consul-server3:
-    image: hashicorp/consul:1.22
+    build: .
     container_name: consul-server3
+    cap_add:
+      - NET_ADMIN
     command: [
       "agent",
       "-server",
@@ -64,6 +74,8 @@ services:
     ports:
       - "8502:8500"
       - "8602:8600/udp"
+      - "2023:22"
+      - "9102:9102"
     networks:
       - consul-net
     restart: unless-stopped
