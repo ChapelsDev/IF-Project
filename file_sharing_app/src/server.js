@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 
+require("./fileMap"); // Ensures the map is initialized
 require("./api/upload")(app);
 require("./api/download")(app);
 
