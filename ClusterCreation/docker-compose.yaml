@@ -1,123 +1,99 @@
 services:
+  # --- SERVIDOR 1 ---
   consul-server1:
-    image: hashicorp/consul:1.22
+    build: .
     container_name: consul-server1
+    # bootstrap-expect=5: O cluster só elege líder quando os 5 estiverem online na primeira vez
     command: [
-      "agent",
-      "-server",
-      "-bootstrap-expect=5",
-      "-node=server1",
-      "-datacenter=dc1",
-      "-bind=0.0.0.0",
-      "-client=0.0.0.0",
-      "-ui",
-      "-data-dir=/consul/data"
+      "agent", 
+      "-server", 
+      "-bootstrap-expect=5", 
+      "-node=server1", 
+      "-retry-join=consul-cluster", 
+      "-client=0.0.0.0", 
+      "-ui", 
+      "-disable-host-node-id" # Impede crash loops se o container for recriado
     ]
     ports:
-      - "8500:8500"       # HTTP / UI
-      - "8600:8600/udp"   # DNS
+      - "8500:8500"       # UI Principal
+      - "8600:8600/udp"   # DNS Principal
+      - "2221:22"         # SSH (Acede via: ssh root@localhost -p 2221)
     networks:
-      - consul-net
+      consul-net:
+        aliases:
+          - consul-cluster # Permite que os outros nós o encontrem por este nome
     restart: always
     volumes:
       - consul-server1-data:/consul/data
- 
+
+  # --- SERVIDOR 2 ---
   consul-server2:
-    image: hashicorp/consul:1.22
+    build: .
     container_name: consul-server2
-    command: [
-      "agent",
-      "-server",
-      "-bootstrap-expect=5",
-      "-node=server2",
-      "-datacenter=dc1",
-      "-bind=0.0.0.0",
-      "-client=0.0.0.0",
-      "-retry-join=consul-server1",
-      "-ui",
-      "-data-dir=/consul/data"
-    ]
+    command: ["agent", "-server", "-bootstrap-expect=5", "-node=server2", "-retry-join=consul-cluster", "-client=0.0.0.0", "-ui", "-disable-host-node-id"]
     ports:
-      - "8501:8500"       # HTTP API for host clients
-      - "8601:8600/udp"   # Optional DNS mirror
+      - "8501:8500"       # UI Backup
+      - "8601:8600/udp"   # DNS Backup
+      - "2222:22"         # SSH (Acede via: ssh root@localhost -p 2222)
     networks:
-      - consul-net
+      consul-net:
+        aliases:
+          - consul-cluster
     restart: always
     volumes:
       - consul-server2-data:/consul/data
- 
+
+  # --- SERVIDOR 3 ---
   consul-server3:
-    image: hashicorp/consul:1.22
+    build: .
     container_name: consul-server3
-    command: [
-      "agent",
-      "-server",
-      "-bootstrap-expect=5",
-      "-node=server3",
-      "-datacenter=dc1",
-      "-bind=0.0.0.0",
-      "-client=0.0.0.0",
-      "-retry-join=consul-server1",
-      "-ui",
-      "-data-dir=/consul/data"
-    ]
+    command: ["agent", "-server", "-bootstrap-expect=5", "-node=server3", "-retry-join=consul-cluster", "-client=0.0.0.0", "-ui", "-disable-host-node-id"]
     ports:
       - "8502:8500"
       - "8602:8600/udp"
+      - "2223:22"         # SSH (Acede via: ssh root@localhost -p 2223)
     networks:
-      - consul-net
+      consul-net:
+        aliases:
+          - consul-cluster
     restart: always
     volumes:
       - consul-server3-data:/consul/data
- 
+
+  # --- SERVIDOR 4 ---
   consul-server4:
-    image: hashicorp/consul:1.22
+    build: .
     container_name: consul-server4
-    command: [
-      "agent",
-      "-server",
-      "-bootstrap-expect=5",
-      "-node=server4",
-      "-datacenter=dc1",
-      "-bind=0.0.0.0",
-      "-client=0.0.0.0",
-      "-retry-join=consul-server1",
-      "-ui",
-      "-data-dir=/consul/data"
-    ]
+    command: ["agent", "-server", "-bootstrap-expect=5", "-node=server4", "-retry-join=consul-cluster", "-client=0.0.0.0", "-ui", "-disable-host-node-id"]
     ports:
       - "8503:8500"
       - "8603:8600/udp"
+      - "2224:22"         # SSH (Acede via: ssh root@localhost -p 2224)
     networks:
-      - consul-net
+      consul-net:
+        aliases:
+          - consul-cluster
     restart: always
     volumes:
       - consul-server4-data:/consul/data
 
+  # --- SERVIDOR 5 ---
   consul-server5:
-    image: hashicorp/consul:1.22
+    build: .
     container_name: consul-server5
-    command: [
-      "agent",
-      "-server",
-      "-bootstrap-expect=5",
-      "-node=server5",
-      "-datacenter=dc1",
-      "-bind=0.0.0.0",
-      "-client=0.0.0.0",
-      "-retry-join=consul-server1",
-      "-ui",
-      "-data-dir=/consul/data"
-    ]
+    command: ["agent", "-server", "-bootstrap-expect=5", "-node=server5", "-retry-join=consul-cluster", "-client=0.0.0.0", "-ui", "-disable-host-node-id"]
     ports:
       - "8504:8500"
       - "8604:8600/udp"
+      - "2225:22"         # SSH (Acede via: ssh root@localhost -p 2225)
     networks:
-      - consul-net
+      consul-net:
+        aliases:
+          - consul-cluster
     restart: always
     volumes:
       - consul-server5-data:/consul/data
- 
+
 networks:
   consul-net:
     driver: bridge

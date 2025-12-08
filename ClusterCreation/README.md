@@ -154,59 +154,8 @@ if __name__ == "__main__":
     atexit.register(on_shutdown)
     app.run(host="0.0.0.0", port=PORT)
 
-------------------------------------------------------------
-10. Naming Conventions (Recommended)
-------------------------------------------------------------
-
-chat-service
-fs-service
-security-service
-chaos-service
-
-Example service IDs:
-chat-node1
-fs-node1
-security-nodeA
-chaos-node1
-
-------------------------------------------------------------
-11. Troubleshooting
-------------------------------------------------------------
-
-Problem: Service not showing in discovery
-Solution:
-- Is /health returning HTTP 200?
-- Is the IP reachable?
-- Is CONSUL_HTTP_ADDR correct?
-
-Problem: Service marked unhealthy
-Solution:
-curl http://address:port/health
-
-Problem: ClusterError
-- Consul may be down
-- Wrong IP
-- Service cannot reach Consul
-
-------------------------------------------------------------
-12. Summary
-------------------------------------------------------------
-
-All groups must:
-- Run their service
-- Expose /health
-- Register using register_service()
-- Use pick_service_instance() or discover_service()
-- Deregister on shutdown
-- Never hardcode IPs
-
-The Cluster Creation group provides:
-- Consul cluster
-- Naming and service registry
-- Service discovery
-- Membership tracking
-- Leader info
-- Helper library
-- Documentation
-
-# End of README.md
+ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p 2221 root@localhost 
+ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p 2222 root@localhost 
+ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p 2223 root@localhost 
+ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p 2224 root@localhost 
+ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p 2225 root@localhost 
