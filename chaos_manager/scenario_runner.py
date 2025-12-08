@@ -12,7 +12,7 @@ import yaml
 
 from .ssh_executor import SSHExecutor, NodeSSHConfig
 from .netem_profiles import apply_netem, clear_netem
-from .consul_observer import wait_for_node_removal, get_consul_nodes
+#from .consul_observer import wait_for_node_removal, get_consul_nodes
 from probe.latency_probe import measure_latency
 from probe.http_probe import probe_http
 from collector.node_metrics_client import fetch_node_metrics

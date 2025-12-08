@@ -10,6 +10,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from chaos_manager.import_nodes import sync_nodes, CONSUL_ADDR
+from deploy_agents import deploy_to_node, load_nodes
 from deploy_agents import deploy_to_node
 
 def watch_service_changes(name: str, callback, passing_only: bool = True, stop_event: Optional[threading.Event] = None):
@@ -60,31 +61,73 @@ def watch_service_changes(name: str, callback, passing_only: bool = True, stop_e
             print(f"❌ Erro no loop do watcher ({name}): {e}")
             time.sleep(5)
 
+
 def run_sync_cycle(instances=None):
     try:
         print("🔄 Sincronizando inventário...")
-        nodes = sync_nodes()
-        
-        if nodes:
-            for node in nodes:
-                # Ignora localhost
-                if node["host"] in ["127.0.0.1", "localhost", "host.docker.internal"]:
-                    continue
-                    
-                try:
-                    # deploy_agents verifica se já está rodando, então é seguro chamar sempre
-                    deploy_to_node(node)
-                except Exception as e:
-                    print(f"❌ Erro ao verificar nó {node['id']}: {e}")
+        # 1) Actualiza nodes.yaml a partir do Consul
+        sync_nodes()
+
+        # 2) Carrega nós do ficheiro
+        nodes = load_nodes()
+        if not nodes:
+            print("⚠️ Nenhum nó encontrado para deploy.")
+            return
+
+        # 3) Se vieram instâncias do watcher, filtrar só as que estão em falha
+        failing_ids = set()
+        if instances is not None:
+            for inst in instances:
+                svc = inst.get("Service", {})
+                checks = inst.get("Checks", [])
+                status = "passing"
+                for chk in checks:
+                    if chk.get("CheckID", "").startswith("service:") and chk.get("ServiceID") == svc.get("ID"):
+                        status = chk.get("Status", "unknown")
+                        break
+                if status != "passing":
+                    # ServiceID is like "node-exporter-server3" -> node id is after last "-"
+                    service_id = svc.get("ID", "")
+                    node_id = service_id.replace("node-exporter-", "")
+                    failing_ids.add(node_id)
+
+        if failing_ids:
+            print(f"❗ Serviços em falha: {sorted(failing_ids)}")
+        else:
+            print("✅ Nenhum node-exporter em falha; nada para redeploy.")
+            return
+
+         # 4) Redeploy só para os nós em falha
+        for node in nodes:
+            if node["id"] not in failing_ids:
+                continue
+            if node["host"] in ["127.0.0.1", "localhost", "host.docker.internal"]:
+                continue
+
+            try:
+                print(f"🚀 (re)deploy node_exporter em {node['id']} ({node['host']}:{node['ssh_port']})")
+                deploy_to_node(node)
+                # dá tempo ao Consul para voltar a fazer o health-check
+                time.sleep(12)
+            except Exception as e:
+                print(f"❌ Erro ao (re)deployar nó {node['id']}: {e}")
     except Exception as e:
         print(f"❌ Falha na sincronização: {e}")
 
 if __name__ == "__main__":
     print(f"📡 Conectado ao Consul em: {CONSUL_ADDR}")
-    
-    # Primeira sincronização imediata
-    run_sync_cycle()
-    
-    # Monitoriza o serviço "consul" (que contém o check "Serf Health Status" dos nós)
-    # Quando houver alterações, chama run_sync_cycle
-    watch_service_changes("consul", run_sync_cycle)
+
+    # 1) Deploy inicial a TODOS os nós (apenas uma vez)
+    try:
+        print("🚀 Deploy inicial de node_exporter em todos os nós...")
+        sync_nodes()
+        all_nodes = load_nodes()
+        for node in all_nodes:
+            if node["host"] in ["127.0.0.1", "localhost", "host.docker.internal"]:
+                continue
+            deploy_to_node(node)
+    except Exception as e:
+        print(f"❌ Erro no deploy inicial: {e}")
+
+    # 2) Depois disso, o watcher só trata FALHAS
+    watch_service_changes("node-exporter", run_sync_cycle, passing_only=False)

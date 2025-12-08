@@ -3,30 +3,26 @@ global:
   evaluation_interval: 5s
 
 scrape_configs:
+  # Scrape node_exporter instances directly on the host,
+  # where deploy_agents registered them on ports 9100/9101/9102
   - job_name: 'chaos_nodes'
     static_configs:
-      # Nó Local
-      - targets: ['host.docker.internal:9100']
+      - targets:
+          - '192.168.1.70:9100'
+          - '192.168.1.70:9101'
+          - '192.168.1.70:9102'
         labels:
-          instance: 'local-node'
-          nodename: 'local-node'
+          nodename: 'chaos-node'
 
-  # --- NOVO: Descoberta Automática de Serviços via Consul ---
+  # OPTIONAL: if you also want to use Consul SD later, keep this,
+  # but it isn't strictly needed if static targets work.
   - job_name: 'consul_services'
     consul_sd_configs:
-      - server: 'consul-server1:8500' # Prometheus conecta ao Consul Server 1
-        services: [] # Descobre todos os serviços. Podes filtrar ex: ['api', 'web']
+      - server: 'http://192.168.1.70:8500'   # Consul on host
+        services: []
     relabel_configs:
-      # Só faz scrape se o serviço tiver a tag "metrics" (Opcional, mas boa prática)
-      # - source_labels: [__meta_consul_tags]
-      #   regex: .*,metrics,.*
-      #   action: keep
-      
-      # Usa o nome do serviço como label 'job'
       - source_labels: [__meta_consul_service]
         target_label: job
-
-      # Renomeia job='node-exporter' para 'node' (para compatibilidade com dashboards comuns)
       - source_labels: [job]
         regex: node-exporter
         target_label: job

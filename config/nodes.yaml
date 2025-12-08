@@ -8,29 +8,29 @@ nodes:
   sudo_password: acordeao2224
   ssh_password: acordeao2224
 - id: server1
-  host: 172.21.0.2
+  host: 192.168.1.70
   ssh_user: root
-  ssh_port: 22
+  ssh_port: 2021
   net_if: eth0
-  metrics_url: http://172.21.0.3:9100/metrics
+  metrics_url: http://192.168.1.70:9100/metrics
   sudo_password: '123456'
   ssh_password: '123456'
-  notes: Importado do Consul
+  notes: Importado do Consul 0 - SSH via porta 2021
 - id: server2
-  host: 172.21.0.3
+  host: 192.168.1.70
   ssh_user: root
-  ssh_port: 22
+  ssh_port: 2022
   net_if: eth0
-  metrics_url: http://172.21.0.4:9100/metrics
+  metrics_url: http://192.168.1.70:9101/metrics
   sudo_password: '123456'
   ssh_password: '123456'
-  notes: Importado do Consul
+  notes: Importado do Consul 0 - SSH via porta 2021
 - id: server3
-  host: 172.21.0.4
+  host: 192.168.1.70
   ssh_user: root
-  ssh_port: 22
+  ssh_port: 2023
   net_if: eth0
-  metrics_url: http://172.21.0.2:9100/metrics
+  metrics_url: http://192.168.1.70:9102/metrics
   sudo_password: '123456'
   ssh_password: '123456'
-  notes: Importado do Consul
+  notes: Importado do Consul 0 - SSH via porta 2021
