@@ -1,0 +1,31 @@
+[Unit]
+Description=Distributed Chat Node
+After=network-online.target consul.service
+Wants=network-online.target
+Requires=consul.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/chat-system
+Environment="NODE_ID=%H"
+Environment="PORT=3001"
+Environment="REDIS_URL=redis://REDIS_HOST:6379"
+Environment="NATS_URL=nats://NATS_HOST:4222"
+Environment="CONSUL_URL=http://localhost:8500"
+
+ExecStartPre=/usr/bin/podman pull localhost/chat-node:latest
+ExecStart=/usr/bin/podman run --rm --name chat-node --network host \
+    -e NODE_ID=%H \
+    -e PORT=3001 \
+    -e REDIS_URL=${REDIS_URL} \
+    -e NATS_URL=${NATS_URL} \
+    -e CONSUL_URL=${CONSUL_URL} \
+    localhost/chat-node:latest
+
+ExecStop=/usr/bin/podman stop chat-node
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

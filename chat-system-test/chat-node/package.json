@@ -1,0 +1,24 @@
+{
+  "name": "chat-node",
+  "version": "1.0.0",
+  "description": "Distributed chat node service",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "socket.io": "^4.6.1",
+    "redis": "^4.6.5",
+    "nats": "^2.13.0",
+    "consul": "^1.1.0",
+    "axios": "^1.6.7",
+    "crypto": "^1.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2"
+  }
+}
