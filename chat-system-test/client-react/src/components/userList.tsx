@@ -1,18 +1,25 @@
 import { useEffect, useState } from "react";
+import { Socket } from 'socket.io-client';
+import { User } from '../types';
 
-export function UserList({ socket, roomId }) {
-  const [users, setUsers] = useState([]);
+interface UserListProps {
+  socket: Socket;
+  roomId: string;
+}
+
+export function UserList({ socket, roomId }: UserListProps) {
+  const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
     if (!socket) return;
 
-    const handleUserList = ({ roomId: listRoomId, users }) => {
+    const handleUserList = ({ roomId: listRoomId, users }: { roomId: string; users: User[] }) => {
       if (listRoomId === roomId) {
         setUsers(users);
       }
     };
 
-    const handleUserJoined = ({ roomId: joinRoomId, userId, username }) => {
+    const handleUserJoined = ({ roomId: joinRoomId, userId, username }: { roomId: string; userId: string; username: string }) => {
       if (joinRoomId === roomId) {
         setUsers((prev) => {
           // Avoid duplicates
@@ -22,7 +29,7 @@ export function UserList({ socket, roomId }) {
       }
     };
 
-    const handleUserLeft = ({ roomId: leaveRoomId, userId }) => {
+    const handleUserLeft = ({ roomId: leaveRoomId, userId }: { roomId: string; userId: string }) => {
       if (leaveRoomId === roomId) {
         setUsers((prev) => prev.filter(u => u.userId !== userId));
       }

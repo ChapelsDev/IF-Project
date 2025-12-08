@@ -1,4 +1,9 @@
-export function RoomList({ currentRoom, setRoom }) {
+interface RoomListProps {
+  currentRoom: string;
+  setRoom: (room: string) => void;
+}
+
+export function RoomList({ currentRoom, setRoom }: RoomListProps) {
   const rooms = ["general", "games", "projects"];
 
   return (

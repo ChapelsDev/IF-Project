@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
+import { Socket } from 'socket.io-client';
 
-export function TypingIndicator({ socket, roomId }) {
+interface TypingIndicatorProps {
+  socket: Socket;
+  roomId: string;
+}
+
+export function TypingIndicator({ socket, roomId }: TypingIndicatorProps) {
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -8,7 +14,7 @@ export function TypingIndicator({ socket, roomId }) {
 
     const typingTimeouts = new Map<string, NodeJS.Timeout>();
 
-    const handleUserTyping = ({ roomId: typingRoomId, userId, username, isTyping }) => {
+    const handleUserTyping = ({ roomId: typingRoomId, userId, username, isTyping }: { roomId: string; userId: string; username: string; isTyping: boolean }) => {
       if (typingRoomId !== roomId) return;
 
       // Clear existing timeout for this user

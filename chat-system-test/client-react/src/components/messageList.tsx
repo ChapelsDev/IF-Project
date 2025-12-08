@@ -1,8 +1,15 @@
 import { useEffect, useRef, useState } from "react";
+import { Socket } from 'socket.io-client';
+import { Message } from '../types';
 
-export function MessageList({ socket, roomId }) {
-  const [messages, setMessages] = useState([]);
-  const messagesEndRef = useRef(null);
+interface MessageListProps {
+  socket: Socket;
+  roomId: string;
+}
+
+export function MessageList({ socket, roomId }: MessageListProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -18,17 +25,17 @@ export function MessageList({ socket, roomId }) {
     socket.emit("join", roomId);
 
     // Listen for message history when joining a room
-    const handleHistory = ({ roomId: historyRoomId, messages }) => {
+    const handleHistory = ({ roomId: historyRoomId, messages }: { roomId: string; messages: Message[] }) => {
       if (historyRoomId === roomId) {
         console.log("Received history:", messages);
         setMessages(messages);
       }
     };
 
-    const handleMessage = (msg) => {
+    const handleMessage = (msg: Message) => {
       console.log("Received message:", msg);
       // Only add messages for the current room
-      if (msg.roomId === roomId) {
+      if (msg.id) {
         setMessages((prev) => [...prev, msg]);
       }
     };

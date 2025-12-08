@@ -12,28 +12,18 @@ export function ChatPage() {
   const [usernameSet, setUsernameSet] = useState(false);
   const [usernameError, setUsernameError] = useState("");
 
-  // Load saved username from localStorage on mount
-  useEffect(() => {
-    const savedUsername = localStorage.getItem("chatUsername");
-    if (savedUsername) {
-      setUsername(savedUsername);
-      setUsernameSet(true);
-    }
-  }, []);
-
   useEffect(() => {
     if (!socket) return;
 
-    const handleUsernameError = ({ error }) => {
+    const handleUsernameError = ({ error }: { error: string }) => {
       setUsernameError(error);
       setUsernameSet(false);
-      localStorage.removeItem("chatUsername");
     };
 
-    const handleUsernameAccepted = ({ username: acceptedUsername }) => {
+    const handleUsernameAccepted = ({ username: acceptedUsername }: { username: string }) => {
       setUsernameError("");
       setUsernameSet(true);
-      localStorage.setItem("chatUsername", acceptedUsername);
+      setUsername(acceptedUsername);
     };
 
     socket.on("usernameError", handleUsernameError);
@@ -45,22 +35,7 @@ export function ChatPage() {
     };
   }, [socket]);
 
-  // Auto-authenticate with saved username
-  useEffect(() => {
-    const savedUsername = localStorage.getItem("chatUsername");
-    if (socket && savedUsername && !usernameSet) {
-      socket.emit("setUsername", savedUsername);
-    }
-  }, [socket]);
-
-  useEffect(() => {
-    if (socket && username && !usernameSet && !localStorage.getItem("chatUsername")) {
-      socket.emit("setUsername", username);
-    }
-  }, [socket, username, usernameSet]);
-
   const handleLogout = () => {
-    localStorage.removeItem("chatUsername");
     setUsernameSet(false);
     setUsername("");
     if (socket) {

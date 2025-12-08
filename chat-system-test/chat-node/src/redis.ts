@@ -49,16 +49,32 @@ export async function getMessageHistory(roomId: string, count: number = 50) {
 }
 
 // Presence tracking
-export async function isUsernameAvailable(username: string): Promise<boolean> {
+export async function isUsernameAvailable(username: string, socketId?: string): Promise<boolean> {
   const normalizedUsername = username.toLowerCase();
-  const exists = await redis.exists(`username:${normalizedUsername}`);
-  return exists === 0;
+  const data = await redis.get(`username:${normalizedUsername}`);
+  
+  if (!data) {
+    return true; // Username is available
+  }
+  
+  // If socketId provided, allow re-registration by same socket or if TTL is close to expiring
+  if (socketId) {
+    const parsed = JSON.parse(data);
+    // Allow takeover if it's been more than 5 seconds (likely a reconnect)
+    const age = Date.now() - parsed.registeredAt;
+    if (age > 5000) {
+      return true;
+    }
+  }
+  
+  return false;
 }
 
 export async function registerUsername(username: string, userId: string) {
   const normalizedUsername = username.toLowerCase();
-  // Set with 1 hour expiry (auto-cleanup if user doesn't disconnect properly)
-  await redis.setEx(`username:${normalizedUsername}`, 3600, JSON.stringify({ originalUsername: username, userId, registeredAt: Date.now() }));
+  // Set with 30 second expiry (auto-cleanup if user doesn't disconnect properly)
+  // This allows quick reconnects while preventing long-term username squatting
+  await redis.setEx(`username:${normalizedUsername}`, 30, JSON.stringify({ originalUsername: username, userId, registeredAt: Date.now() }));
 }
 
 export async function unregisterUsername(username: string) {
@@ -67,25 +83,30 @@ export async function unregisterUsername(username: string) {
 }
 
 export async function addUserToRoom(roomId: string, userId: string, username: string) {
-  await redis.hSet(`room:${roomId}:users`, userId, JSON.stringify({ username, joinedAt: Date.now() }));
+  // Use username as key so same user reconnecting replaces old entry
+  await redis.hSet(`room:${roomId}:users`, username, JSON.stringify({ userId, username, joinedAt: Date.now() }));
 }
 
-export async function removeUserFromRoom(roomId: string, userId: string) {
-  await redis.hDel(`room:${roomId}:users`, userId);
+export async function removeUserFromRoom(roomId: string, username: string) {
+  await redis.hDel(`room:${roomId}:users`, username);
 }
 
 export async function getRoomUsers(roomId: string) {
   const users = await redis.hGetAll(`room:${roomId}:users`);
-  return Object.entries(users).map(([userId, data]) => ({
-    userId,
-    ...JSON.parse(data as string)
-  }));
+  return Object.entries(users).map(([username, data]) => {
+    const parsed = JSON.parse(data as string);
+    return {
+      userId: parsed.userId,
+      username: parsed.username,
+      joinedAt: parsed.joinedAt
+    };
+  });
 }
 
-export async function removeUserFromAllRooms(userId: string) {
+export async function removeUserFromAllRooms(username: string) {
   const rooms = ["general", "tech", "random", "games", "projects"];
   for (const room of rooms) {
-    await removeUserFromRoom(room, userId);
+    await removeUserFromRoom(room, username);
   }
 }
 

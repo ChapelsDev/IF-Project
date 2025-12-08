@@ -1,8 +1,14 @@
 import { useEffect, useRef, useState } from "react";
+import { Socket } from 'socket.io-client';
 
-export function MessageInput({ socket, roomId }) {
+interface MessageInputProps {
+  socket: Socket;
+  roomId: string;
+}
+
+export function MessageInput({ socket, roomId }: MessageInputProps) {
   const [text, setText] = useState("");
-  const typingTimeoutRef = useRef(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleTyping = () => {
     if (!socket) return;
@@ -18,7 +24,7 @@ export function MessageInput({ socket, roomId }) {
     // Set timeout to emit typing stop
     typingTimeoutRef.current = setTimeout(() => {
       socket.emit("typing", { roomId, isTyping: false });
-    }, 1000);
+    }, 1000) as NodeJS.Timeout;
   };
 
   const sendMessage = () => {

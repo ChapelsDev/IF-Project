@@ -1,8 +1,14 @@
+import { Socket } from 'socket.io-client';
 import { MessageInput } from "./messageInput";
 import { MessageList } from "./messageList";
 import { TypingIndicator } from "./typingIndicator";
 
-export function ChatWindow({ socket, roomId }) {
+interface ChatWindowProps {
+  socket: Socket;
+  roomId: string;
+}
+
+export function ChatWindow({ socket, roomId }: ChatWindowProps) {
   return (
     <div className="chat-window">
       <div className="room-header">#{roomId}</div>

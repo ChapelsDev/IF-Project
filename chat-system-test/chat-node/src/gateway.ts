@@ -36,8 +36,8 @@ export function startGateway() {
         return;
       }
       
-      // Check if username is already taken
-      const available = await isUsernameAvailable(sanitized);
+      // Check if username is already taken (allow reconnects)
+      const available = await isUsernameAvailable(sanitized, socket.id);
       if (!available) {
         socket.emit("usernameError", { error: "Username is already taken" });
         return;
@@ -57,12 +57,18 @@ export function startGateway() {
     });
 
     socket.on("join", async (roomId: any) => {
+      // Require username to be set before joining
+      if (!socket.username) {
+        socket.emit("error", { message: "Username must be set before joining a room" });
+        return;
+      }
+      
       console.log(`User ${socket.id} (${socket.username}) joining room: ${roomId}`);
       
       // Leave previous room if any
       if (currentRoom) {
         socket.leave(currentRoom);
-        await removeUserFromRoom(currentRoom, socket.id);
+        await removeUserFromRoom(currentRoom, socket.username);
         publishPresence("leave", { roomId: currentRoom, userId: socket.id, username: socket.username });
       }
       
@@ -70,7 +76,7 @@ export function startGateway() {
       socket.join(roomId);
       
       // Add user to room presence
-      await addUserToRoom(roomId, socket.id, socket.username || `User-${socket.id.substring(0, 6)}`);
+      await addUserToRoom(roomId, socket.id, socket.username);
       
       // Send message history when user joins a room
       const history = await getMessageHistory(roomId, 50);
@@ -82,7 +88,7 @@ export function startGateway() {
       socket.emit("userList", { roomId, users });
       
       // Notify others that user joined
-      publishPresence("join", { roomId, userId: socket.id, username: socket.username || `User-${socket.id.substring(0, 6)}` });
+      publishPresence("join", { roomId, userId: socket.id, username: socket.username });
       
       // Confirm the join
       socket.emit("joined", { roomId });
@@ -94,15 +100,15 @@ export function startGateway() {
     });
     
     socket.on("disconnect", async () => {
-      console.log("User disconnected:", socket.id);
+      console.log("User disconnected:", socket.id, socket.username);
       if (socket.username) {
-        await unregisterUsername(socket.username);
+        // Don't immediately unregister - let TTL handle it (allows reconnects)
+        // Only clean up room presence
+        await removeUserFromAllRooms(socket.username);
+        if (currentRoom) {
+          publishPresence("leave", { roomId: currentRoom, userId: socket.id, username: socket.username });
+        }
       }
-      if (currentRoom) {
-        await removeUserFromRoom(currentRoom, socket.id);
-        publishPresence("leave", { roomId: currentRoom, userId: socket.id, username: socket.username });
-      }
-      await removeUserFromAllRooms(socket.id);
     });
     
     socket.emit("node-info", { nodeId: process.env.NODE_ID });
