@@ -3,13 +3,17 @@ services:
   consul-server1:
     build: .
     container_name: consul-server1
+    cap_add:
+      - NET_ADMIN  # Necessário para o Consul gerir o DNS
     # bootstrap-expect=5: O cluster só elege líder quando os 5 estiverem online na primeira vez
     command: [
       "agent", 
       "-server", 
       "-bootstrap-expect=5", 
       "-node=server1", 
-      "-retry-join=consul-cluster", 
+      "-retry-join=consul-cluster",
+      "-datacenter=dc1", 
+      "-bind=0.0.0.0",
       "-client=0.0.0.0", 
       "-ui", 
       "-disable-host-node-id" # Impede crash loops se o container for recriado
@@ -17,11 +21,10 @@ services:
     ports:
       - "8500:8500"       # UI Principal
       - "8600:8600/udp"   # DNS Principal
-      - "2221:22"         # SSH (Acede via: ssh root@localhost -p 2221)
+      - "2021:22"         # SSH (Acede via: ssh root@localhost -p 2221)
+      - "9100:9100"   # Node Exporter
     networks:
-      consul-net:
-        aliases:
-          - consul-cluster # Permite que os outros nós o encontrem por este nome
+      - consul-net
     restart: always
     volumes:
       - consul-server1-data:/consul/data
@@ -30,11 +33,15 @@ services:
   consul-server2:
     build: .
     container_name: consul-server2
-    command: ["agent", "-server", "-bootstrap-expect=5", "-node=server2", "-retry-join=consul-cluster", "-client=0.0.0.0", "-ui", "-disable-host-node-id"]
+    cap_add:
+      - NET_ADMIN  # Necessário para o Consul gerir o DNS
+    command: ["agent", "-server", "-bootstrap-expect=5", "-node=server2", "-retry-join=consul-cluster","-datacenter=dc1","-bind=0.0.0.0", "-client=0.0.0.0", "-ui", "-disable-host-node-id"]
     ports:
       - "8501:8500"       # UI Backup
       - "8601:8600/udp"   # DNS Backup
-      - "2222:22"         # SSH (Acede via: ssh root@localhost -p 2222)
+      - "2022:22"         # SSH (Acede via: ssh root@localhost -p 2222)
+      - "9101:9101"   # Node Exporter
+      
     networks:
       consul-net:
         aliases:
@@ -47,11 +54,14 @@ services:
   consul-server3:
     build: .
     container_name: consul-server3
-    command: ["agent", "-server", "-bootstrap-expect=5", "-node=server3", "-retry-join=consul-cluster", "-client=0.0.0.0", "-ui", "-disable-host-node-id"]
+    cap_add:
+      - NET_ADMIN  # Necessário para o Consul gerir o DNS
+    command: ["agent", "-server", "-bootstrap-expect=5", "-node=server3", "-retry-join=consul-cluster","-datacenter=dc1","-bind=0.0.0.0", "-client=0.0.0.0", "-ui", "-disable-host-node-id"]
     ports:
       - "8502:8500"
       - "8602:8600/udp"
-      - "2223:22"         # SSH (Acede via: ssh root@localhost -p 2223)
+      - "2023:22"         # SSH (Acede via: ssh root@localhost -p 2223)
+      - "9102:9102"   # Node Exporter
     networks:
       consul-net:
         aliases:
@@ -64,11 +74,14 @@ services:
   consul-server4:
     build: .
     container_name: consul-server4
-    command: ["agent", "-server", "-bootstrap-expect=5", "-node=server4", "-retry-join=consul-cluster", "-client=0.0.0.0", "-ui", "-disable-host-node-id"]
+    cap_add:
+      - NET_ADMIN  # Necessário para o Consul gerir o DNS
+    command: ["agent", "-server", "-bootstrap-expect=5", "-node=server4", "-retry-join=consul-cluster","-datacenter=dc1","-bind=0.0.0.0", "-client=0.0.0.0", "-ui", "-disable-host-node-id"]
     ports:
       - "8503:8500"
       - "8603:8600/udp"
-      - "2224:22"         # SSH (Acede via: ssh root@localhost -p 2224)
+      - "2024:22"         # SSH (Acede via: ssh root@localhost -p 2224)
+      - "9103:9103"   # Node Exporter
     networks:
       consul-net:
         aliases:
@@ -81,11 +94,14 @@ services:
   consul-server5:
     build: .
     container_name: consul-server5
-    command: ["agent", "-server", "-bootstrap-expect=5", "-node=server5", "-retry-join=consul-cluster", "-client=0.0.0.0", "-ui", "-disable-host-node-id"]
+    cap_add:
+      - NET_ADMIN  # Necessário para o Consul gerir o DNS
+    command: ["agent", "-server", "-bootstrap-expect=5", "-node=server5", "-retry-join=consul-cluster","-datacenter=dc1","-bind=0.0.0.0", "-client=0.0.0.0", "-ui", "-disable-host-node-id"]
     ports:
       - "8504:8500"
       - "8604:8600/udp"
-      - "2225:22"         # SSH (Acede via: ssh root@localhost -p 2225)
+      - "2025:22"         # SSH (Acede via: ssh root@localhost -p 2225)
+      - "9104:9104"   # Node Exporter
     networks:
       consul-net:
         aliases:
