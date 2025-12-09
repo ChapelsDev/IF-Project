@@ -14,7 +14,7 @@ services:
       - '--web.console.templates=/usr/share/prometheus/consoles'
       - '--web.enable-lifecycle'
     ports:
-      - "9090:9090"
+      - "9091:9090"
     networks:
       - chaos-net
     extra_hosts:

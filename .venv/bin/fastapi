@@ -1,4 +1,4 @@
-#!/home/guilherme/Documentos/if/IF-Project/.venv/bin/python3
+#!/home/guilherme/Documentos/if/IF-Project/.venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys

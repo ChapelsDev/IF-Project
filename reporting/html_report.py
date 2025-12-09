@@ -16,6 +16,8 @@ def generate_html_report(experiment: dict[str, Any], out_path: Path) -> Path:
           <td>{node.get("host")}</td>
           <td>{node.get("latency_before_ms")}</td>
           <td>{node.get("latency_after_ms")}</td>
+          <td>{node.get("http_latency_before_ms", "N/A")}</td>
+          <td>{node.get("http_latency_after_ms", "N/A")}</td>
           <td>{node.get("loss_before_percent")}</td>
           <td>{node.get("loss_after_percent")}</td>
         </tr>
@@ -70,8 +72,10 @@ def generate_html_report(experiment: dict[str, Any], out_path: Path) -> Path:
     <tr>
       <th>Node</th>
       <th>Host</th>
-      <th>Latency before (ms)</th>
-      <th>Latency after (ms)</th>
+      <th>ICMP Latency before (ms)</th>
+      <th>ICMP Latency after (ms)</th>
+      <th>HTTP Latency before (ms)</th>
+      <th>HTTP Latency after (ms)</th>
       <th>Loss before (%)</th>
       <th>Loss after (%)</th>
     </tr>

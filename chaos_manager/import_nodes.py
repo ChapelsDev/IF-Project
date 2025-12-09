@@ -4,7 +4,7 @@ import yaml
 from pathlib import Path
 
 # URL do Consul
-CONSUL_ADDR = os.getenv("CONSUL_HTTP_ADDR", "http://192.168.1.70:8500")
+CONSUL_ADDR = os.getenv("CONSUL_HTTP_ADDR", "http://192.168.1.196:8500")
 # Define project root relative to this file
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = PROJECT_ROOT / "config/nodes.yaml"
@@ -15,10 +15,39 @@ def load_existing_config():
     with open(CONFIG_PATH, "r") as f:
         return yaml.safe_load(f) or {"nodes": []}
 
+import json
+
+def update_prometheus_targets(nodes):
+    """Gera o ficheiro JSON para o File Service Discovery do Prometheus."""
+    targets = []
+    for node in nodes:
+        # Extrai host e porta da metrics_url (ex: http://192.168.1.196:9100/metrics)
+        if "metrics_url" in node:
+            try:
+                # Remove http:// e /metrics
+                url = node["metrics_url"].replace("http://", "").replace("/metrics", "")
+                targets.append({
+                    "targets": [url],
+                    "labels": {
+                        "nodename": node["id"],
+                        "job": "chaos_nodes"
+                    }
+                })
+            except Exception:
+                pass
+    
+    target_path = PROJECT_ROOT / "config/prometheus_targets.json"
+    with open(target_path, "w") as f:
+        json.dump(targets, f, indent=2)
+    print(f"Arquivo Prometheus Targets atualizado: {target_path}")
+
 def save_config(data):
     with open(CONFIG_PATH, "w") as f:
         yaml.dump(data, f, sort_keys=False)
     print(f"Arquivo {CONFIG_PATH} atualizado com sucesso!")
+    
+    # Atualiza também o ficheiro do Prometheus
+    update_prometheus_targets(data.get("nodes", []))
 
 def sync_nodes():
     print(f"Conectando ao Consul em: {CONSUL_ADDR}")

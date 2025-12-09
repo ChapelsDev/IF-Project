@@ -6,19 +6,16 @@ scrape_configs:
   # Scrape node_exporter instances directly on the host,
   # where deploy_agents registered them on ports 9100/9101/9102
   - job_name: 'chaos_nodes'
-    static_configs:
-      - targets:
-          - '192.168.1.70:9100'
-          - '192.168.1.70:9101'
-          - '192.168.1.70:9102'
-        labels:
-          nodename: 'chaos-node'
+    file_sd_configs:
+      - files:
+        - '/etc/prometheus/prometheus_targets.json'
+
 
   # OPTIONAL: if you also want to use Consul SD later, keep this,
   # but it isn't strictly needed if static targets work.
   - job_name: 'consul_services'
     consul_sd_configs:
-      - server: 'http://192.168.1.70:8500'   # Consul on host
+      - server: 'http://192.168.1.196:8500'   # Consul on host
         services: []
     relabel_configs:
       - source_labels: [__meta_consul_service]

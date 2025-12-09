@@ -12,13 +12,14 @@ import yaml
 
 from .ssh_executor import SSHExecutor, NodeSSHConfig
 from .netem_profiles import apply_netem, clear_netem
-#from .consul_observer import wait_for_node_removal, get_consul_nodes
+from .consul_observer import wait_for_node_removal, get_consul_nodes
 from probe.latency_probe import measure_latency
 from probe.http_probe import probe_http
 from collector.node_metrics_client import fetch_node_metrics
 from collector.prometheus_client import PrometheusClient
 from collector.loki_client import LokiClient
 from collector.otel_collector import setup_telemetry
+import re
 
 # Configuração de Telemetria
 tracer = setup_telemetry("chaos-manager")
@@ -28,6 +29,39 @@ loki = LokiClient("http://loki:3100")
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 CONFIG_DIR = ROOT_DIR / "config"
+
+
+def measure_remote_latency(executor: SSHExecutor, target: str = "8.8.8.8", count: int = 4) -> tuple[float, float]:
+    """
+    Executa ping DENTRO do container para um alvo externo.
+    Retorna (latencia_media_ms, perda_pacotes_percent).
+    """
+    # Tenta ping padrão (iputils) ou busybox ping
+    cmd = f"ping -c {count} -W 2 {target}"
+    exit_code, out, err = executor.run(cmd)
+    
+    if exit_code != 0:
+        # Fallback para busybox ping
+        cmd = f"ping -c {count} {target}"
+        exit_code, out, err = executor.run(cmd)
+        if exit_code != 0:
+            print(f"DEBUG: Ping falhou no remote: {err}")
+            return 0.0, 100.0 # 100% de perda se falhar tudo
+
+    # Parse Latency
+    lat = 0.0
+    match = re.search(r"(?:rtt|round-trip) min/avg/max(?:/mdev)? = [\d\.]+/([\d\.]+)/", out)
+    if match:
+        lat = float(match.group(1))
+    
+    # Parse Loss
+    # "4 packets transmitted, 4 received, 0% packet loss"
+    loss = 0.0
+    loss_match = re.search(r"(\d+)% packet loss", out)
+    if loss_match:
+        loss = float(loss_match.group(1))
+
+    return lat, loss
 LOGS_DIR = ROOT_DIR / "logs"
 
 
@@ -174,7 +208,10 @@ def run_scenario(scenario_name: str,
         nodes_cfg = load_nodes()
 
         # Sincronizar IPs com Consul (Resolução Dinâmica)
-        consul_map = get_consul_nodes()
+        consul_nodes_list = get_consul_nodes()
+        # Converte lista para dicionário {NodeName: Address}
+        consul_map = {n["Node"]: n["Address"] for n in consul_nodes_list}
+        
         if consul_map:
             updated_count = 0
             for node in nodes_cfg:
@@ -182,7 +219,9 @@ def run_scenario(scenario_name: str,
                 if node_id in consul_map:
                     current_ip = node.get("host")
                     new_ip = consul_map[node_id]
-                    if current_ip != new_ip:
+                    # Só atualiza se o IP for diferente E não for um IP interno de container (172.x)
+                    # para não estragar a config de acesso remoto
+                    if current_ip != new_ip and not new_ip.startswith("172."):
                         print(f"SYNC: Atualizando IP do nó '{node_id}': {current_ip} -> {new_ip}")
                         node["host"] = new_ip
                         updated_count += 1
@@ -244,14 +283,30 @@ def run_scenario(scenario_name: str,
                     if node["id"] not in target_list and node["host"] not in target_list:
                         continue
 
-                lat_res = measure_latency(node["host"])
+                # 1) medir antes
+                # lat_res = measure_latency(node["host"])  <-- Medição antiga (Host)
+                
+                # Nova medição: Ping de dentro do container para fora
+                lat_avg, loss_avg = measure_remote_latency(ex, target="8.8.8.8")
+                if lat_avg == 0.0 and loss_avg == 100.0:
+                     # Tenta gateway/host se internet falhar
+                     lat_avg, loss_avg = measure_remote_latency(ex, target="192.168.1.196")
+
+                # Medir latência HTTP ao agente (reflete o delay dentro do container)
+                http_lat = 0.0
+                if "metrics_url" in node:
+                    res = probe_http(node["metrics_url"])
+                    if res.response_time_ms:
+                        http_lat = res.response_time_ms
+
                 metrics_raw = fetch_metrics_unified(node)
 
                 experiment["nodes"].append({
                     "node_id": node["id"],
                     "host": node["host"],
-                    "latency_before_ms": lat_res.avg_ms,
-                    "loss_before_percent": lat_res.loss_percent,
+                    "latency_before_ms": lat_avg,
+                    "http_latency_before_ms": http_lat,
+                    "loss_before_percent": loss_avg,
                     "metrics_before": metrics_raw,
                 })
 
@@ -280,6 +335,10 @@ def run_scenario(scenario_name: str,
                 if exit_code != 0:
                     print(f"ERRO ao aplicar netem no node {node['id']}: {err}")
                     print(f"Output: {out}")
+                else:
+                    # Debug: Verificar se a regra foi aplicada
+                    _, qdisc_out, _ = ex.run(f"tc qdisc show dev {node['net_if']}")
+                    print(f"DEBUG: Regras TC em {node['id']}:\n{qdisc_out}")
 
         # 3) espera
         with tracer.start_as_current_span("wait_duration"):
@@ -315,12 +374,29 @@ def run_scenario(scenario_name: str,
         with tracer.start_as_current_span("measure_after_and_cleanup"):
             for idx, (node, ex) in enumerate(executors):
                 try:
-                    lat_after = measure_latency(node["host"])
+                    # lat_after = measure_latency(node["host"]) <-- Antigo
+                    
+                    lat_after_avg, loss_after_avg = measure_remote_latency(ex, target="8.8.8.8")
+                    if lat_after_avg == 0.0 and loss_after_avg == 100.0:
+                        lat_after_avg, loss_after_avg = measure_remote_latency(ex, target="192.168.1.196")
+                    
+                    # Medir latência HTTP ao agente (reflete o delay dentro do container)
+                    http_lat_after = 0.0
+                    http_error_after = None
+                    if "metrics_url" in node:
+                        res = probe_http(node["metrics_url"])
+                        if res.response_time_ms:
+                            http_lat_after = res.response_time_ms
+                        if res.error:
+                            http_error_after = res.error
+
                     metrics_raw = fetch_metrics_unified(node)
 
                     experiment["nodes"][idx].update({
-                        "latency_after_ms": lat_after.avg_ms,
-                        "loss_after_percent": lat_after.loss_percent,
+                        "latency_after_ms": lat_after_avg,
+                        "http_latency_after_ms": http_lat_after,
+                        "http_error_after": http_error_after,
+                        "loss_after_percent": loss_after_avg,
                         "metrics_after": metrics_raw,
                     })
                 finally:

@@ -4,7 +4,7 @@ import os
 from typing import List, Optional
 
 # Mesma lógica de configuração usada em deploy_agents.py
-DEFAULT_SERVERS = "http://192.168.1.70:8500,http://192.168.1.70:8501,http://192.168.1.70:8502"
+DEFAULT_SERVERS = "http://192.168.1.196:8500,http://192.168.1.196:8501,http://192.168.1.196:8502,http://192.168.1.196:8503,http://192.168.1.196:8504"
 CONSUL_HTTP_SERVERS = os.getenv("CONSUL_HTTP_SERVERS", DEFAULT_SERVERS)
 CONSUL_ADDRESSES: List[str] = [addr.strip() for addr in CONSUL_HTTP_SERVERS.split(",")]
 

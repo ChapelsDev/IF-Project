@@ -7,7 +7,7 @@ from chaos_manager.ssh_executor import SSHExecutor, NodeSSHConfig
 NODE_EXPORTER_URL = "https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz"
 INSTALL_DIR = "/tmp/chaos_agent"
 
-DEFAULT_SERVERS = "http://192.168.1.70:8500,http://192.168.1.70:8501,http://192.168.1.70:8502"
+DEFAULT_SERVERS = "http://192.168.1.196:8500,http://192.168.1.196:8501,http://192.168.1.196:8502,http://192.168.1.196:8503,http://192.168.1.196:8504"
 CONSUL_HTTP_SERVERS = os.getenv("CONSUL_HTTP_SERVERS", DEFAULT_SERVERS)
 CONSUL_ADDRESSES = [addr.strip() for addr in CONSUL_HTTP_SERVERS.split(",")]
 
@@ -41,7 +41,8 @@ def deregister_from_all(node_id: str):
 def register_in_consul(node_id: str, node_host: str, metrics_port: int, ssh_port: int):
     base_port = 2021
     idx = ssh_port - base_port
-    consul_addr = CONSUL_ADDRESSES[idx] if 0 <= idx < len(CONSUL_ADDRESSES) else CONSUL_ADDRESSES[0]
+    # Usa módulo para distribuir ciclicamente entre os servidores disponíveis
+    consul_addr = CONSUL_ADDRESSES[idx % len(CONSUL_ADDRESSES)]
 
     payload = {
         "ID": f"node-exporter-{node_id}",
