@@ -27,7 +27,6 @@ def on_infra_change(node_name, status):
 # --- PROGRAM ---
 if __name__ == "__main__":
     print(f"🚀 Starting test application: {SERVICE_ID}")
-
     try:
         # 1. Registration (Uses TTL by default in adjusted library)
         cluster_helper.register_service(SERVICE_NAME, SERVICE_ID, "127.0.0.1", MY_PORT, tags=["v1"])

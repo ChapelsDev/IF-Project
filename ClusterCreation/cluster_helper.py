@@ -18,7 +18,7 @@ else:
 class ClusterError(Exception):
     pass
 
-def _consul_request(method: str, path: str, timeout: int = 5, **kwargs) -> Tuple[requests.Response, str]:
+def _consul_request(method: str, path: str, timeout: int = 10, **kwargs) -> Tuple[requests.Response, str]:
     servers = CONSUL_HTTP_SERVERS or [CONSUL_HTTP_ADDR]
     candidates = servers.copy()
     random.shuffle(candidates)
@@ -53,11 +53,11 @@ def register_service(name: str, service_id: str, address: str, port: int, tags: 
     if target_url:
         server_url = target_url
         try:
-            resp = requests.put(f"{server_url.rstrip('/')}/v1/agent/service/register", json=payload, timeout=5)
+            resp = requests.put(f"{server_url.rstrip('/')}/v1/agent/service/register", json=payload, timeout=10)
         except requests.RequestException as e:
             raise ClusterError(f"Connection failed: {e}")
     else:
-        resp, server_url = _consul_request("put", "/v1/agent/service/register", json=payload, timeout=5)
+        resp, server_url = _consul_request("put", "/v1/agent/service/register", json=payload, timeout=10)
     
     if resp.status_code >= 300:
         raise ClusterError(f"Failed to register: {resp.status_code} {resp.text}")

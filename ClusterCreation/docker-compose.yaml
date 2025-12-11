@@ -4,44 +4,39 @@ services:
     build: .
     container_name: consul-server1
     cap_add:
-      - NET_ADMIN  # Necessário para o Consul gerir o DNS
-    # bootstrap-expect=5: O cluster só elege líder quando os 5 estiverem online na primeira vez
-    command: [
-      "agent", 
-      "-server", 
-      "-bootstrap-expect=5", 
-      "-node=server1", 
-      "-retry-join=consul-cluster",
-      "-datacenter=dc1", 
-      "-bind=0.0.0.0",
-      "-client=0.0.0.0", 
-      "-ui", 
-      "-disable-host-node-id" # Impede crash loops se o container for recriado
-    ]
+      - NET_ADMIN
+    command: ["agent", "-server", "-bootstrap-expect=5", "-node=server1", "-retry-join=consul-cluster", "-datacenter=dc1", "-bind=0.0.0.0", "-client=0.0.0.0", "-ui", "-disable-host-node-id"]
     ports:
-      - "8500:8500"       # UI Principal
-      - "8600:8600/udp"   # DNS Principal
-      - "2021:22"         # SSH (Acede via: ssh root@localhost -p 2221)
-      - "9100:9100"   # Node Exporter
+      - "8500:8500"      # Consul UI
+      - "8600:8600/udp"  # DNS
+      - "2021:22"        # SSH
+      - "9100:9100"      # Node Exporter
+      # --- SEAWEEDFS PORTS ---
+      - "9333:9333"      # Master
+      - "8080:8080"      # Volume
+      - "8888:8888"      # Filer
     networks:
       - consul-net
     restart: always
     volumes:
       - consul-server1-data:/consul/data
-
+ 
   # --- SERVIDOR 2 ---
   consul-server2:
     build: .
     container_name: consul-server2
     cap_add:
-      - NET_ADMIN  # Necessário para o Consul gerir o DNS
-    command: ["agent", "-server", "-bootstrap-expect=5", "-node=server2", "-retry-join=consul-cluster","-datacenter=dc1","-bind=0.0.0.0", "-client=0.0.0.0", "-ui", "-disable-host-node-id"]
+      - NET_ADMIN
+    command: ["agent", "-server", "-bootstrap-expect=5", "-node=server2", "-retry-join=consul-cluster", "-datacenter=dc1", "-bind=0.0.0.0", "-client=0.0.0.0", "-ui", "-disable-host-node-id"]
     ports:
-      - "8501:8500"       # UI Backup
-      - "8601:8600/udp"   # DNS Backup
-      - "2022:22"         # SSH (Acede via: ssh root@localhost -p 2222)
-      - "9101:9101"   # Node Exporter
-      
+      - "8501:8500"
+      - "8601:8600/udp"
+      - "2022:22"
+      - "9101:9101"
+      # --- SEAWEEDFS PORTS (+1) ---
+      - "9334:9333"
+      - "8081:8080"
+      - "8889:8888"
     networks:
       consul-net:
         aliases:
@@ -49,19 +44,23 @@ services:
     restart: always
     volumes:
       - consul-server2-data:/consul/data
-
+ 
   # --- SERVIDOR 3 ---
   consul-server3:
     build: .
     container_name: consul-server3
     cap_add:
-      - NET_ADMIN  # Necessário para o Consul gerir o DNS
-    command: ["agent", "-server", "-bootstrap-expect=5", "-node=server3", "-retry-join=consul-cluster","-datacenter=dc1","-bind=0.0.0.0", "-client=0.0.0.0", "-ui", "-disable-host-node-id"]
+      - NET_ADMIN
+    command: ["agent", "-server", "-bootstrap-expect=5", "-node=server3", "-retry-join=consul-cluster", "-datacenter=dc1", "-bind=0.0.0.0", "-client=0.0.0.0", "-ui", "-disable-host-node-id"]
     ports:
       - "8502:8500"
       - "8602:8600/udp"
-      - "2023:22"         # SSH (Acede via: ssh root@localhost -p 2223)
-      - "9102:9102"   # Node Exporter
+      - "2023:22"
+      - "9102:9102"
+      # --- SEAWEEDFS PORTS (+2) ---
+      - "9335:9333"
+      - "8082:8080"
+      - "8890:8888"
     networks:
       consul-net:
         aliases:
@@ -69,19 +68,23 @@ services:
     restart: always
     volumes:
       - consul-server3-data:/consul/data
-
+ 
   # --- SERVIDOR 4 ---
   consul-server4:
     build: .
     container_name: consul-server4
     cap_add:
-      - NET_ADMIN  # Necessário para o Consul gerir o DNS
-    command: ["agent", "-server", "-bootstrap-expect=5", "-node=server4", "-retry-join=consul-cluster","-datacenter=dc1","-bind=0.0.0.0", "-client=0.0.0.0", "-ui", "-disable-host-node-id"]
+      - NET_ADMIN
+    command: ["agent", "-server", "-bootstrap-expect=5", "-node=server4", "-retry-join=consul-cluster", "-datacenter=dc1", "-bind=0.0.0.0", "-client=0.0.0.0", "-ui", "-disable-host-node-id"]
     ports:
       - "8503:8500"
       - "8603:8600/udp"
-      - "2024:22"         # SSH (Acede via: ssh root@localhost -p 2224)
-      - "9103:9103"   # Node Exporter
+      - "2024:22"
+      - "9103:9103"
+      # --- SEAWEEDFS PORTS (+3) ---
+      - "9336:9333"
+      - "8083:8080"
+      - "8891:8888"
     networks:
       consul-net:
         aliases:
@@ -89,19 +92,23 @@ services:
     restart: always
     volumes:
       - consul-server4-data:/consul/data
-
+ 
   # --- SERVIDOR 5 ---
   consul-server5:
     build: .
     container_name: consul-server5
     cap_add:
-      - NET_ADMIN  # Necessário para o Consul gerir o DNS
-    command: ["agent", "-server", "-bootstrap-expect=5", "-node=server5", "-retry-join=consul-cluster","-datacenter=dc1","-bind=0.0.0.0", "-client=0.0.0.0", "-ui", "-disable-host-node-id"]
+      - NET_ADMIN
+    command: ["agent", "-server", "-bootstrap-expect=5", "-node=server5", "-retry-join=consul-cluster", "-datacenter=dc1", "-bind=0.0.0.0", "-client=0.0.0.0", "-ui", "-disable-host-node-id"]
     ports:
       - "8504:8500"
       - "8604:8600/udp"
-      - "2025:22"         # SSH (Acede via: ssh root@localhost -p 2225)
-      - "9104:9104"   # Node Exporter
+      - "2025:22"
+      - "9104:9104"
+      # --- SEAWEEDFS PORTS (+4) ---
+      - "9337:9333"
+      - "8084:8080"
+      - "8892:8888"
     networks:
       consul-net:
         aliases:
@@ -109,14 +116,15 @@ services:
     restart: always
     volumes:
       - consul-server5-data:/consul/data
-
+ 
 networks:
   consul-net:
     driver: bridge
-
+ 
 volumes:
   consul-server1-data:
   consul-server2-data:
   consul-server3-data:
   consul-server4-data:
   consul-server5-data:
+ 
