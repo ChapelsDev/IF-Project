@@ -4,6 +4,7 @@ venv*/
 env/
 ENV/
 .venv/
+.env
 
 # Python
 __pycache__/
@@ -11,6 +12,7 @@ __pycache__/
 *$py.class
 *.so
 .Python
+status.py
 
 # Distribution / packaging
 dist/

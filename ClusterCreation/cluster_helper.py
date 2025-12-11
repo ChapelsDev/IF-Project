@@ -6,7 +6,7 @@ from typing import List, Tuple, Dict, Optional
 import requests
 
 # --- AJUSTE: Mudei para 127.0.0.1 para funcionar dentro do Docker ---
-NODE_IP = "127.0.0.1" 
+NODE_IP = "172.20.10.8" 
 CONSUL_HTTP_ADDR = os.getenv("CONSUL_HTTP_ADDR", f"http://{NODE_IP}:8500")
 
 _env_servers = os.getenv("CONSUL_HTTP_SERVERS", "")
