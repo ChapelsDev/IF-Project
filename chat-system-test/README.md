@@ -4,20 +4,55 @@ Real-time chat with distributed architecture: Node.js, Redis, NATS, Consul, Sock
 
 ## Features
 
-✅ Real-time messaging • Persistent sessions • Username uniqueness • Presence tracking • Message history • Horizontal scaling • Service discovery • Multi-room support
+✅ Real-time messaging • Persistent sessions • Username uniqueness • Presence tracking • Message history • Horizontal scaling • Service discovery • Multi-room support • Auto-discovery
 
 ## Quick Start
 
-### Single Machine
+### Prerequisites
+
+```bash
+# Install dependencies
+pip3 install requests
+chmod +x chat-system.sh setup-cluster.sh cluster_bridge.py
+```
+
+### Auto-Discovery (Recommended)
+
+```bash
+# Automatically discovers cluster and infrastructure
+./chat-system.sh start --auto
+
+# Start client
+cd client-react && npm install && npm run dev
+```
+
+Access: http://localhost:5173
+
+**What happens:**
+- Checks if main cluster Consul is available (172.20.10.10:8500)
+- Discovers existing Redis/NATS services
+- Starts missing services as needed
+- Registers with cluster for service discovery
+- Falls back to standalone if no cluster found
+
+### Single Machine Standalone
 
 ```bash
 ./chat-system.sh start
 cd client-react && npm install && npm run dev
 ```
 
-Access: http://localhost:5173
-
 ### Consul Cluster (Multi-Machine)
+
+**First node:**
+```bash
+./chat-system.sh start --cluster --mode infrastructure
+```
+
+**Additional nodes:**
+```bash
+./chat-system.sh start --auto
+```
 
 Each Consul server runs Redis + NATS + Chat Node. NATS auto-clusters via Consul.
 
@@ -195,36 +230,65 @@ podman exec chat-nats nats pub test "hello"
 podman exec chat-nats nats sub test
 ```
 
-## Management
+## Cluster Integration
 
-### Single Machine
+### How It Works
 
-```bash
-./chat-system.sh start|stop|restart|status|logs <service>
+1. **Auto-Discovery**: Checks for main cluster Consul at `http://172.20.10.10:8500`
+2. **Infrastructure Discovery**: Finds existing `redis-service` and `nats-service`
+3. **Self-Registration**: Registers as `chat-service` with unique ID
+4. **Peer Discovery**: Discovers other chat nodes automatically
+5. **Unified Service**: External services see one `chat-service`, cluster handles load balancing
+
+### Service Discovery (Other Services)
+
+```python
+from cluster_helper import pick_service_instance
+
+# Get a chat node
+address, port = pick_service_instance("chat-service")
+response = requests.post(f"http://{address}:{port}/api/notify", json={...})
 ```
 
-### Consul Cluster
+### Autonomous Deployment
+
+Each node autonomously:
+- Discovers cluster infrastructure
+- Starts missing services
+- Registers itself
+- Connects to peers
+- **No manual IP configuration needed**
+
+## Management
+
+### Commands
 
 ```bash
-# Service management
-systemctl status|start|stop|restart chat-redis chat-nats chat-node
+./chat-system.sh start [--auto]        # Start with auto-discovery
+./chat-system.sh start                 # Standalone mode
+./chat-system.sh stop                  # Stop all services
+./chat-system.sh restart               # Restart chat nodes
+./chat-system.sh status                # Show status
+./chat-system.sh logs <service>        # View logs
+./chat-system.sh build                 # Rebuild Docker image
+./chat-system.sh help                  # Show all options
+```
 
-# View logs
-journalctl -u chat-node -f
+### Options
 
-# Check cluster status
-curl http://localhost:8222/routez | jq
-curl http://localhost:8500/v1/catalog/services
+- `--auto` - Auto-discover cluster (recommended)
+- `--cluster` - Force cluster mode
+- `--cluster-consul <URL>` - Cluster Consul URL (default: http://172.20.10.10:8500)
+- `--mode <mode>` - `standalone` | `infrastructure` | `node-only` | `auto`
 
-# Add node: Run setup on new server
-sudo ./setup-consul-chat-node.sh --auto-cluster
+### Scaling
 
-# Remove node
-sudo systemctl stop chat-node chat-nats chat-redis
-sudo systemctl disable chat-node chat-nats chat-redis
-curl -X PUT http://localhost:8500/v1/agent/service/deregister/chat-node-$(hostname)
-curl -X PUT http://localhost:8500/v1/agent/service/deregister/chat-nats-$(hostname)
-curl -X PUT http://localhost:8500/v1/agent/service/deregister/chat-redis-$(hostname)
+```bash
+# Add a new node (automatically discovers and connects)
+./chat-system.sh start --auto
+
+# Remove a node (gracefully deregisters)
+./chat-system.sh stop
 ```
 
 ## Development
@@ -309,6 +373,45 @@ chat-system-test/
 │   └── Dockerfile
 └── client-react/                     # Frontend (React)
     └── src/{pages,components,hooks}/
+```
+
+## Troubleshooting
+
+**Nodes not discovering each other:**
+
+```bash
+# Test cluster connectivity
+curl http://172.20.10.10:8500/v1/agent/self
+
+# Check if services are registered
+curl http://172.20.10.10:8500/v1/catalog/service/chat-service
+
+# View logs
+./chat-system.sh logs chat-1
+```
+
+**Services not starting:**
+
+```bash
+# Rebuild image
+./chat-system.sh build
+
+# Check Python dependencies
+pip3 install requests
+
+# Verify cluster_bridge.py exists
+ls -la cluster_bridge.py
+```
+
+**Health checks failing:**
+
+```bash
+# Test health endpoint
+curl http://localhost:3001/health
+
+# Check connectivity to infrastructure
+redis-cli -h <redis-host> PING
+curl http://<nats-host>:4222
 ```
 
 ## Performance
