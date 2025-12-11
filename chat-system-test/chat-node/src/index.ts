@@ -1,6 +1,6 @@
-import { startGateway } from "./gateway";
 import { startChatCore } from "./chatcore";
 import { ClusterDiscovery } from "./cluster-discovery";
+import { startGateway } from "./gateway";
 
 const SERVICE_NAME = 'chat-service';
 const NODE_ID = process.env.NODE_ID || '1';

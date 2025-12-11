@@ -6,7 +6,9 @@ Usage:
   python3 cluster_bridge.py deregister <service_id> <consul_url>
 """
 import sys
+
 import requests
+
 
 def register_service(service_name, service_id, address, port, consul_url, tags=""):
     """Register a service with Consul"""
