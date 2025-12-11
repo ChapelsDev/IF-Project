@@ -1,0 +1,30 @@
+nohup: a ignorar a entrada
+Chaosd Server Version: version.Info{GitVersion:"v1.4.0", GitCommit:"19a157239ebc523c9c6e8e3656c4918a1bc83929", BuildDate:"2023-02-08T09:04:17Z", GoVersion:"go1.18.2", Compiler:"gc", Platform:"linux/amd64"}
+[2025/12/11 14:03:53.246 +00:00] [INFO] [cron.go:183] ["Starting Scheduler"]
+[2025/12/11 14:03:53.246 +00:00] [INFO] [server.go:71] ["starting HTTP server"] [address=0.0.0.0:31767]
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /api/system/health        --> github.com/chaos-mesh/chaosd/pkg/server/httpserver.(*HttpServer).healthcheck-fm (4 handlers)
+[GIN-debug] GET    /api/system/version       --> github.com/chaos-mesh/chaosd/pkg/server/httpserver.(*HttpServer).version-fm (4 handlers)
+[GIN-debug] GET    /api/swagger/*any         --> github.com/chaos-mesh/chaosd/pkg/swaggerserver.Handler.func1 (4 handlers)
+[GIN-debug] POST   /api/attack/process       --> github.com/chaos-mesh/chaosd/pkg/server/httpserver.(*HttpServer).createProcessAttack-fm (4 handlers)
+[GIN-debug] POST   /api/attack/stress        --> github.com/chaos-mesh/chaosd/pkg/server/httpserver.(*HttpServer).createStressAttack-fm (4 handlers)
+[GIN-debug] POST   /api/attack/network       --> github.com/chaos-mesh/chaosd/pkg/server/httpserver.(*HttpServer).createNetworkAttack-fm (4 handlers)
+[GIN-debug] POST   /api/attack/disk          --> github.com/chaos-mesh/chaosd/pkg/server/httpserver.(*HttpServer).createDiskAttack-fm (4 handlers)
+[GIN-debug] POST   /api/attack/clock         --> github.com/chaos-mesh/chaosd/pkg/server/httpserver.(*HttpServer).createClockAttack-fm (4 handlers)
+[GIN-debug] POST   /api/attack/jvm           --> github.com/chaos-mesh/chaosd/pkg/server/httpserver.(*HttpServer).createJVMAttack-fm (4 handlers)
+[GIN-debug] POST   /api/attack/kafka         --> github.com/chaos-mesh/chaosd/pkg/server/httpserver.(*HttpServer).createKafkaAttack-fm (4 handlers)
+[GIN-debug] POST   /api/attack/vm            --> github.com/chaos-mesh/chaosd/pkg/server/httpserver.(*HttpServer).createVMAttack-fm (4 handlers)
+[GIN-debug] POST   /api/attack/redis         --> github.com/chaos-mesh/chaosd/pkg/server/httpserver.(*HttpServer).createRedisAttack-fm (4 handlers)
+[GIN-debug] POST   /api/attack/user_defined  --> github.com/chaos-mesh/chaosd/pkg/server/httpserver.(*HttpServer).createUserDefinedAttack-fm (4 handlers)
+[GIN-debug] DELETE /api/attack/:uid          --> github.com/chaos-mesh/chaosd/pkg/server/httpserver.(*HttpServer).recoverAttack-fm (4 handlers)
+[GIN-debug] GET    /api/experiments/         --> github.com/chaos-mesh/chaosd/pkg/server/httpserver.(*HttpServer).listExperiments-fm (4 handlers)
+[GIN-debug] GET    /api/experiments/:uid/runs --> github.com/chaos-mesh/chaosd/pkg/server/httpserver.(*HttpServer).listExperimentRuns-fm (4 handlers)
+[2025/12/11 14:03:53.246 +00:00] [INFO] [cron.go:240] [start]
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on 0.0.0.0:31767

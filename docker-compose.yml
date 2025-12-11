@@ -7,6 +7,7 @@ services:
     container_name: prometheus
     volumes:
       - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./config/prometheus_targets.json:/etc/prometheus/prometheus_targets.json
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -49,6 +50,19 @@ services:
     command:
       - '--path.rootfs=/host'
 
+  # 3.5 Blackbox Exporter (Probes Ativos)
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.24.0
+    container_name: blackbox-exporter
+    ports:
+      - "9115:9115"
+    volumes:
+      - ./config/blackbox.yml:/etc/blackbox_exporter/config.yml
+    command:
+      - '--config.file=/etc/blackbox_exporter/config.yml'
+    networks:
+      - chaos-net
+
   # 4. Chaos API (Sua aplicação Python)
   chaos-api:
     build: .
@@ -61,10 +75,10 @@ services:
       - ~/.ssh:/root/.ssh:ro
     environment:
       - PROMETHEUS_URL=http://prometheus:9090
-      - NODE_IP=192.168.1.74
+      - NODE_IP=172.20.10.8
       - SERVICE_PORT=8000
       - CHAOS_SERVICE_NAME=chaos-manager
-      - CONSUL_HTTP_SERVERS=http://192.168.1.70:8500,http://192.168.1.70:8501,http://192.168.1.70:8502
+      - CONSUL_HTTP_SERVERS=http://172.20.10.8:8500,http://172.20.10.8:8501,http://172.20.10.8:8502, http://172.20.10.8:8503, http://172.20.10.8:8504
       - CHAOS_WATCH_SERVICES=status-service
     extra_hosts:
       - "host.docker.internal:host-gateway"

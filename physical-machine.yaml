@@ -1,0 +1,8 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PhysicalMachine
+metadata:
+  name: local-docker-host
+  namespace: chaos-mesh
+spec:
+  address: 172.20.10.2:31767
+  

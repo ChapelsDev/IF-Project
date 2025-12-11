@@ -8,7 +8,7 @@ nodes:
   sudo_password: acordeao2224
   ssh_password: acordeao2224
 - id: server1
-  host: 192.168.1.196
+  host: 172.19.0.3
   ssh_user: root
   ssh_port: 2021
   net_if: eth0
@@ -17,7 +17,7 @@ nodes:
   ssh_password: '123456'
   notes: Importado do Consul 0 - SSH via porta 2021
 - id: server2
-  host: 192.168.1.196
+  host: 172.19.0.5
   ssh_user: root
   ssh_port: 2022
   net_if: eth0
@@ -26,7 +26,7 @@ nodes:
   ssh_password: '123456'
   notes: Importado do Consul 0 - SSH via porta 2021
 - id: server3
-  host: 192.168.1.196
+  host: 172.19.0.4
   ssh_user: root
   ssh_port: 2023
   net_if: eth0
@@ -35,7 +35,7 @@ nodes:
   ssh_password: '123456'
   notes: Importado do Consul 0 - SSH via porta 2021
 - id: server4
-  host: 192.168.1.196
+  host: 172.19.0.2
   ssh_user: root
   ssh_port: 2024
   net_if: eth0
@@ -44,7 +44,7 @@ nodes:
   ssh_password: '123456'
   notes: Importado do Consul - SSH via porta 2024, metrics na porta 9103
 - id: server5
-  host: 192.168.1.196
+  host: 172.19.0.6
   ssh_user: root
   ssh_port: 2025
   net_if: eth0

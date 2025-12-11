@@ -1,0 +1,57 @@
+[
+  {
+    "targets": [
+      "host.docker.internal:9100"
+    ],
+    "labels": {
+      "nodename": "local-node",
+      "job": "chaos_nodes"
+    }
+  },
+  {
+    "targets": [
+      "192.168.1.196:9100"
+    ],
+    "labels": {
+      "nodename": "server1-host",
+      "job": "node_metrics"
+    }
+  },
+  {
+    "targets": [
+      "192.168.1.196:8500"
+    ],
+    "labels": {
+      "service": "consul",
+      "job": "app_metrics"
+    }
+  },
+  {
+    "targets": [
+      "192.168.1.196:5000"
+    ],
+    "labels": {
+      "service": "chat-app",
+      "job": "app_metrics"
+    }
+  }
+],
+  {
+    "targets": [
+      "192.168.1.196:9103"
+    ],
+    "labels": {
+      "nodename": "server4",
+      "job": "chaos_nodes"
+    }
+  },
+  {
+    "targets": [
+      "192.168.1.196:9104"
+    ],
+    "labels": {
+      "nodename": "server5",
+      "job": "chaos_nodes"
+    }
+  }
+]
