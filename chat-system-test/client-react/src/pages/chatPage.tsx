@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ChatWindow } from "../components/chatWindow";
+import { PrivateMessageWindow } from "../components/privateMessageWindow";
 import { RoomList } from "../components/roomList";
 import { StatusBar } from "../components/statusBar";
 import { UserList } from "../components/userList";
@@ -11,6 +12,7 @@ export function ChatPage() {
   const [username, setUsername] = useState("");
   const [usernameSet, setUsernameSet] = useState(false);
   const [usernameError, setUsernameError] = useState("");
+  const [privateChats, setPrivateChats] = useState<string[]>([]);
 
   useEffect(() => {
     if (!socket) return;
@@ -42,6 +44,16 @@ export function ChatPage() {
       socket.disconnect();
       window.location.reload();
     }
+  };
+
+  const handleUserClick = (otherUser: string) => {
+    if (!privateChats.includes(otherUser)) {
+      setPrivateChats([...privateChats, otherUser]);
+    }
+  };
+
+  const handleClosePM = (otherUser: string) => {
+    setPrivateChats(privateChats.filter(u => u !== otherUser));
   };
 
   if (!socket) return <div>Loading socket...</div>;
@@ -102,8 +114,32 @@ export function ChatPage() {
       <div className="layout">
         <RoomList currentRoom={room} setRoom={setRoom} />
         <ChatWindow socket={socket} roomId={room} />
-        <UserList socket={socket} roomId={room} />
+        <UserList 
+          socket={socket} 
+          roomId={room} 
+          currentUser={username}
+          onUserClick={handleUserClick}
+        />
       </div>
+      
+      {/* Private message windows */}
+      {privateChats.map((otherUser, index) => (
+        <div 
+          key={otherUser}
+          style={{
+            position: "fixed",
+            bottom: "20px",
+            right: `${20 + index * 420}px`
+          }}
+        >
+          <PrivateMessageWindow
+            socket={socket}
+            currentUser={username}
+            otherUser={otherUser}
+            onClose={() => handleClosePM(otherUser)}
+          />
+        </div>
+      ))}
     </div>
   );
 }

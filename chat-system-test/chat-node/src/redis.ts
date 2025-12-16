@@ -110,6 +110,72 @@ export async function removeUserFromAllRooms(username: string) {
   }
 }
 
+// Private messaging functions
+export async function sendPrivateMessage(from: string, to: string, text: string) {
+  const msg = { from, to, text, ts: Date.now().toString(), read: "false" };
+  console.log("[REDIS] Sending private message:", msg);
+  
+  // Store in both sender's and receiver's message streams
+  const conversationKey = getConversationKey(from, to);
+  const id = await redis.xAdd(
+    `pm:${conversationKey}`,
+    "*",
+    msg
+  );
+  
+  console.log(`[REDIS] Private message stored with ID: ${id}`);
+  return id;
+}
+
+export async function getPrivateMessageHistory(user1: string, user2: string, count: number = 50) {
+  try {
+    const conversationKey = getConversationKey(user1, user2);
+    const messages = await redis.xRange(`pm:${conversationKey}`, "-", "+", { COUNT: count });
+    return messages.map((msg: any) => ({
+      id: msg.id,
+      ...msg.message,
+      read: msg.message.read === "true"
+    }));
+  } catch (error) {
+    console.error("[REDIS] Error getting private message history:", error);
+    return [];
+  }
+}
+
+export async function markPrivateMessagesAsRead(from: string, to: string) {
+  // This is a simple implementation - for production, you'd want to update individual messages
+  console.log(`[REDIS] Marking messages from ${from} to ${to} as read`);
+  // Note: Redis Streams don't support in-place updates
+  // For production, consider using a separate hash to track read status
+}
+
+export async function getActivePrivateConversations(username: string) {
+  // Get all private message streams that involve this user
+  try {
+    const keys = await redis.keys(`pm:*${username}*`);
+    const conversations = new Set<string>();
+    
+    for (const key of keys) {
+      // Extract the other user from the conversation key
+      const conversationKey = key.replace("pm:", "");
+      const [user1, user2] = conversationKey.split(":");
+      const otherUser = user1 === username ? user2 : user1;
+      conversations.add(otherUser);
+    }
+    
+    return Array.from(conversations);
+  } catch (error) {
+    console.error("[REDIS] Error getting active conversations:", error);
+    return [];
+  }
+}
+
+// Helper function to create a consistent conversation key
+function getConversationKey(user1: string, user2: string): string {
+  // Sort usernames alphabetically to ensure consistent key
+  return [user1, user2].sort().join(":");
+}
+
 export async function readMessages(callback: (roomId: string, msg: any) => void) {
   const rooms = ["general", "tech", "random", "games", "projects"];
   const lastIds: { [key: string]: string } = {};

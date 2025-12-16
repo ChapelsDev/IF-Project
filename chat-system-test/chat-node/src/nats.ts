@@ -61,3 +61,26 @@ export async function subscribeToPresence(type: string, callback: (data: any) =>
     }
   })();
 }
+
+// Private messaging functions
+export async function publishPrivateMessage(to: string, msg: any) {
+  const nc = await initNats();
+  nc.publish(`chat.private.${to}`, JSON.stringify(msg));
+  console.log(`[NATS] Published private message to ${to}`);
+}
+
+export async function subscribeToPrivateMessages(username: string, callback: (msg: any) => void) {
+  const nc = await initNats();
+  // Use wildcard subscription to receive all private messages on this node
+  const subject = username === "*" ? "chat.private.*" : `chat.private.${username}`;
+  const sub = nc.subscribe(subject);
+  
+  console.log(`[NATS] Subscribed to private messages: ${subject}`);
+  
+  (async () => {
+    for await (const m of sub) {
+      const msg = JSON.parse(new TextDecoder().decode(m.data));
+      callback(msg);
+    }
+  })();
+}

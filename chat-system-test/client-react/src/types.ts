@@ -7,6 +7,15 @@ export interface Message {
   timestamp: number;
 }
 
+export interface PrivateMessage {
+  id: string;
+  from: string;
+  to: string;
+  text: string;
+  timestamp: number;
+  read?: boolean;
+}
+
 export interface User {
   userId: string;
   username: string;

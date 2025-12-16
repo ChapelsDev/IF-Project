@@ -233,9 +233,9 @@ start_system() {
             > /dev/null 2>&1
         print_success "NATS started on port ${NATS_PORT}"
         
-        # Consul (local)
+        # Consul (local) - bind to 127.0.0.1 to avoid multi-interface issues
         sudo podman run -d --name consul --network host \
-            docker.io/hashicorp/consul:1.16 agent -dev -ui -client=0.0.0.0 -bind=0.0.0.0 \
+            docker.io/hashicorp/consul:1.16 agent -dev -ui -client=0.0.0.0 -bind=127.0.0.1 \
             > /dev/null 2>&1
         print_success "Consul started on port ${CONSUL_PORT}"
         

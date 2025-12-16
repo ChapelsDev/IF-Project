@@ -1,9 +1,10 @@
 import { createServer } from "http";
 import { Server } from "socket.io";
-import { publishPresence, subscribeToMessages, subscribeToPresence } from "./nats";
-import { addUserToRoom, appendMessage, getMessageHistory, getRoomUsers, isUsernameAvailable, registerUsername, removeUserFromAllRooms, removeUserFromRoom, unregisterUsername } from "./redis";
+import { publishPresence, publishPrivateMessage, subscribeToMessages, subscribeToPresence, subscribeToPrivateMessages } from "./nats";
+import { addUserToRoom, appendMessage, getMessageHistory, getPrivateMessageHistory, getRoomUsers, isUsernameAvailable, registerUsername, removeUserFromAllRooms, removeUserFromRoom, sendPrivateMessage, unregisterUsername } from "./redis";
 
 let io: Server;
+const usernameToSocketId = new Map<string, string>();
 
 export function getIO() {
   return io;
@@ -46,6 +47,11 @@ export function startGateway() {
       // Register username globally
       await registerUsername(sanitized, socket.id);
       socket.username = sanitized;
+      
+      // Map username to socket ID for private message routing
+      usernameToSocketId.set(sanitized, socket.id);
+      console.log(`[GATEWAY] Mapped username ${sanitized} to socket ${socket.id}`);
+      
       socket.emit("usernameAccepted", { username: sanitized });
       console.log(`User ${socket.id} set username: ${socket.username}`);
     });
@@ -99,9 +105,58 @@ export function startGateway() {
       publishPresence("typing", { roomId, userId: socket.id, username: socket.username || socket.id, isTyping });
     });
     
+    // Private messaging handlers
+    socket.on("privateMessage", async ({ to, text }: any) => {
+      console.log(`[GATEWAY] privateMessage event received from socket ${socket.id}`);
+      console.log(`[GATEWAY] Socket username: ${socket.username}, to: ${to}, text: ${text}`);
+      
+      if (!socket.username) {
+        console.log(`[GATEWAY] ERROR: Username not set for socket ${socket.id}`);
+        socket.emit("error", { message: "Username must be set before sending private messages" });
+        return;
+      }
+      
+      console.log(`[GATEWAY] Private message from ${socket.username} to ${to}: ${text}`);
+      
+      // Store in Redis
+      const msgId = await sendPrivateMessage(socket.username, to, text);
+      console.log(`[GATEWAY] Message stored in Redis with ID: ${msgId}`);
+      
+      // Create message object
+      const msg = {
+        id: msgId,
+        from: socket.username,
+        to,
+        text,
+        ts: Date.now().toString()
+      };
+      
+      // Publish via NATS to reach the recipient on any node
+      console.log(`[GATEWAY] Publishing to NATS for user: ${to}`);
+      await publishPrivateMessage(to, msg);
+      
+      // Echo back to sender
+      console.log(`[GATEWAY] Echoing message back to sender`);
+      socket.emit("privateMessage", msg);
+    });
+    
+    socket.on("getPrivateMessages", async ({ otherUser }: any) => {
+      if (!socket.username) {
+        socket.emit("error", { message: "Username must be set" });
+        return;
+      }
+      
+      console.log(`[GATEWAY] Getting private messages between ${socket.username} and ${otherUser}`);
+      const history = await getPrivateMessageHistory(socket.username, otherUser, 50);
+      socket.emit("privateMessageHistory", { otherUser, messages: history });
+    });
+    
     socket.on("disconnect", async () => {
       console.log("User disconnected:", socket.id, socket.username);
       if (socket.username) {
+        // Remove username mapping
+        usernameToSocketId.delete(socket.username);
+        
         // Don't immediately unregister - let TTL handle it (allows reconnects)
         // Only clean up room presence
         await removeUserFromAllRooms(socket.username);
@@ -137,6 +192,21 @@ export function startGateway() {
   
   subscribeToPresence("typing", (data: any) => {
     io.to(data.roomId).emit("userTyping", data);
+  });
+
+  // Subscribe to private messages with wildcard to handle all users
+  // This allows any node to receive and route private messages
+  console.log("[GATEWAY] Setting up private message subscription...");
+  subscribeToPrivateMessages("*", (msg: any) => {
+    console.log(`[GATEWAY] Received private message via NATS:`, msg);
+    const targetSocketId = usernameToSocketId.get(msg.to);
+    
+    if (targetSocketId) {
+      console.log(`[GATEWAY] Routing private message to socket ${targetSocketId} (user: ${msg.to})`);
+      io.to(targetSocketId).emit("privateMessage", msg);
+    } else {
+      console.log(`[GATEWAY] User ${msg.to} not connected to this node`);
+    }
   });
 
   httpServer.listen(port);
