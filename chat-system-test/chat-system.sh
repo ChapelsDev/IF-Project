@@ -21,7 +21,7 @@ CHAT_IMAGE="localhost/chat-node:latest"
 
 # Cluster integration
 CLUSTER_MODE="false"
-CLUSTER_CONSUL_URL="http://172.20.10.10:8500"
+CLUSTER_CONSUL_URL="http://192.168.100.53:8500"
 USE_LOCAL_CONSUL="true"
 
 # Multi-machine support
@@ -131,6 +131,17 @@ parse_args() {
     done
 }
 
+# Check if cluster Consul is reachable
+check_cluster_connectivity() {
+    local consul_url="${1:-$CLUSTER_CONSUL_URL}"
+    
+    if curl -s --connect-timeout 3 "${consul_url}/v1/agent/self" > /dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 # Register infrastructure services with cluster
 register_infrastructure_services() {
     if [ "$CLUSTER_MODE" != "true" ]; then
@@ -142,17 +153,32 @@ register_infrastructure_services() {
     local host_ip=$(get_host_ip)
     local script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
     
-    # Check if cluster_bridge.py exists
-    if [ -f "${script_dir}/cluster_bridge.py" ]; then
-        # Register Redis
-        python3 "${script_dir}/cluster_bridge.py" register "redis-service" "redis-${HOSTNAME}" "${host_ip}" "${REDIS_PORT}" "${CLUSTER_CONSUL_URL}" "chat-infrastructure,redis" 2>/dev/null || print_error "Failed to register Redis"
+    # First check if cluster is reachable
+    if ! check_cluster_connectivity "${CLUSTER_CONSUL_URL}"; then
+        print_error "Cannot reach cluster Consul at ${CLUSTER_CONSUL_URL}"
+        print_info "Make sure the cluster is running and accessible"
+        print_info "You may need to set up an SSH tunnel:"
+        print_info "  ssh -L 8500:172.20.10.10:8500 -p 2221 root@<cluster-host>"
+        print_info "Then use: --cluster-consul http://localhost:8500"
+        return 1
+    fi
+    
+    # Check if cluster_helper.py exists (preferred) or fall back to cluster_bridge.py
+    if [ -f "${script_dir}/cluster_helper.py" ]; then
+        # Register Redis (uses TCP health check - Redis doesn't speak HTTP)
+        python3 "${script_dir}/cluster_helper.py" register "redis-service" "redis-${HOSTNAME}" "${host_ip}" "${REDIS_PORT}" "${CLUSTER_CONSUL_URL}" "chat-infrastructure,redis" "tcp" 2>&1 || print_error "Failed to register Redis"
         
-        # Register NATS
-        python3 "${script_dir}/cluster_bridge.py" register "nats-service" "nats-${HOSTNAME}" "${host_ip}" "${NATS_PORT}" "${CLUSTER_CONSUL_URL}" "chat-infrastructure,nats" 2>/dev/null || print_error "Failed to register NATS"
+        # Register NATS (uses TCP health check - NATS client port doesn't speak HTTP)
+        python3 "${script_dir}/cluster_helper.py" register "nats-service" "nats-${HOSTNAME}" "${host_ip}" "${NATS_PORT}" "${CLUSTER_CONSUL_URL}" "chat-infrastructure,nats" "tcp" 2>&1 || print_error "Failed to register NATS"
         
         print_success "Infrastructure services registered with cluster"
+    elif [ -f "${script_dir}/cluster_bridge.py" ]; then
+        # Fallback to old bridge
+        python3 "${script_dir}/cluster_bridge.py" register "redis-service" "redis-${HOSTNAME}" "${host_ip}" "${REDIS_PORT}" "${CLUSTER_CONSUL_URL}" "chat-infrastructure,redis" 2>/dev/null || print_error "Failed to register Redis"
+        python3 "${script_dir}/cluster_bridge.py" register "nats-service" "nats-${HOSTNAME}" "${host_ip}" "${NATS_PORT}" "${CLUSTER_CONSUL_URL}" "chat-infrastructure,nats" 2>/dev/null || print_error "Failed to register NATS"
+        print_success "Infrastructure services registered with cluster"
     else
-        print_error "cluster_bridge.py not found, skipping cluster registration"
+        print_error "cluster_helper.py not found, skipping cluster registration"
     fi
 }
 
@@ -180,6 +206,29 @@ start_system() {
             # No cluster found, go standalone
             print_info "Starting in standalone mode"
             DEPLOYMENT_MODE="standalone"
+        fi
+    fi
+    
+    # If cluster mode but no explicit mode set, check if we need local infrastructure
+    if [ "$CLUSTER_MODE" = "true" ] && [ "$DEPLOYMENT_MODE" = "standalone" ]; then
+        print_info "Cluster mode enabled, checking for infrastructure services..."
+        
+        # Try to discover existing infrastructure in the cluster
+        redis_info=$(curl -s "${CLUSTER_CONSUL_URL}/v1/health/service/redis-service?passing=true" 2>/dev/null)
+        nats_info=$(curl -s "${CLUSTER_CONSUL_URL}/v1/health/service/nats-service?passing=true" 2>/dev/null)
+        
+        if [ -n "$redis_info" ] && [ "$redis_info" != "[]" ] && [ -n "$nats_info" ] && [ "$nats_info" != "[]" ]; then
+            # Found existing infrastructure
+            REDIS_HOST=$(echo "$redis_info" | python3 -c "import json,sys; data=json.load(sys.stdin); print(data[0]['Service']['Address']) if data else ''" 2>/dev/null)
+            REDIS_PORT=$(echo "$redis_info" | python3 -c "import json,sys; data=json.load(sys.stdin); print(data[0]['Service']['Port']) if data else ''" 2>/dev/null)
+            NATS_HOST=$(echo "$nats_info" | python3 -c "import json,sys; data=json.load(sys.stdin); print(data[0]['Service']['Address']) if data else ''" 2>/dev/null)
+            NATS_PORT=$(echo "$nats_info" | python3 -c "import json,sys; data=json.load(sys.stdin); print(data[0]['Service']['Port']) if data else ''" 2>/dev/null)
+            print_success "Found infrastructure in cluster"
+            DEPLOYMENT_MODE="node-only"
+        else
+            # No infrastructure found, start local and register, then also start chat nodes
+            print_info "No infrastructure found, starting local services and chat nodes..."
+            DEPLOYMENT_MODE="full"  # Start both infrastructure AND chat nodes
         fi
     fi
     
@@ -241,7 +290,7 @@ start_system() {
         
         sleep 3
         
-    elif [ "$CLUSTER_MODE" = "true" ] && [ "$DEPLOYMENT_MODE" = "infrastructure" ]; then
+    elif [ "$CLUSTER_MODE" = "true" ] && ([ "$DEPLOYMENT_MODE" = "infrastructure" ] || [ "$DEPLOYMENT_MODE" = "full" ]); then
         print_info "Starting infrastructure for cluster..."
         
         # Start Redis and NATS for chat coordination
@@ -254,6 +303,10 @@ start_system() {
             docker.io/nats:2.10-alpine \
             > /dev/null 2>&1
         print_success "NATS started on port ${NATS_PORT}"
+        
+        # Set REDIS_HOST and NATS_HOST to local IP for chat nodes
+        REDIS_HOST=$(get_host_ip)
+        NATS_HOST=$(get_host_ip)
         
         sleep 2
         
@@ -273,6 +326,7 @@ start_system() {
         if [ "$CLUSTER_MODE" = "true" ]; then
             print_info "Infrastructure registered with cluster"
             print_info "Other nodes will auto-discover these services"
+            print_info "To also start chat nodes, use: ./chat-system.sh start --cluster --cluster-consul ${CLUSTER_CONSUL_URL}"
         else
             detected_ip=$(get_host_ip)
             print_info "Connect remote nodes with:"
@@ -282,7 +336,7 @@ start_system() {
         return
     fi
     
-    # Start chat nodes (skip if infrastructure-only mode)
+    # Start chat nodes (for standalone, node-only, or full modes)
     if [ "$DEPLOYMENT_MODE" != "infrastructure" ]; then
         print_info "Starting chat nodes..."
         
@@ -297,7 +351,7 @@ start_system() {
             # In node-only mode, start just 1 node
             node_count=1
         else
-            # In standalone mode, start 3 nodes
+            # In standalone or full mode, start 3 nodes
             node_count=3
         fi
         
@@ -310,15 +364,27 @@ start_system() {
         
         # Start chat nodes with auto-discovery
         local host_ip=$(get_host_ip)
+        
+        # Use 127.0.0.1 instead of localhost to avoid IPv6 issues
+        local redis_connect_host="${REDIS_HOST}"
+        local nats_connect_host="${NATS_HOST}"
+        if [ "$redis_connect_host" = "localhost" ]; then
+            redis_connect_host="127.0.0.1"
+        fi
+        if [ "$nats_connect_host" = "localhost" ]; then
+            nats_connect_host="127.0.0.1"
+        fi
+        
         for i in $(seq 1 $node_count); do
             port=${CHAT_NODE_PORTS[$((i-1))]}
             
             sudo podman run -d --name chat-node-${i} --network host \
+                --stop-timeout=10 \
                 -e NODE_ID="${i}" \
                 -e PORT="${port}" \
                 -e HOST_IP="${host_ip}" \
-                -e REDIS_URL="redis://${REDIS_HOST}:${REDIS_PORT}" \
-                -e NATS_URL="nats://${NATS_HOST}:${NATS_PORT}" \
+                -e REDIS_URL="redis://${redis_connect_host}:${REDIS_PORT}" \
+                -e NATS_URL="nats://${nats_connect_host}:${NATS_PORT}" \
                 -e CONSUL_URL="${CONSUL_ENV}" \
                 -e CLUSTER_MODE="${CLUSTER_MODE}" \
                 -e CLUSTER_CONSUL_URL="${CLUSTER_CONSUL_URL}" \
@@ -350,14 +416,22 @@ start_system() {
             echo "  ./chat-system.sh start --auto"
         fi
     elif [ "$CLUSTER_MODE" = "true" ]; then
-        echo "Mode: Cluster-Integrated"
+        echo "Mode: Cluster-Integrated (Full)"
+        echo ""
+        echo "Infrastructure (registered with cluster):"
+        echo "  - Redis: ${REDIS_HOST}:${REDIS_PORT}"
+        echo "  - NATS: ${NATS_HOST}:${NATS_PORT}"
+        echo ""
+        echo "Chat Nodes:"
+        echo "  - Chat Node 1:  http://localhost:${CHAT_NODE_PORTS[0]}"
+        echo "  - Chat Node 2:  http://localhost:${CHAT_NODE_PORTS[1]}"
+        echo "  - Chat Node 3:  http://localhost:${CHAT_NODE_PORTS[2]}"
         echo ""
         echo "Cluster URLs:"
         echo "  - Cluster Consul: ${CLUSTER_CONSUL_URL}"
-        echo "  - Local Chat Node: http://localhost:${CHAT_NODE_PORTS[0]}"
+        echo "  - Consul UI: ${CLUSTER_CONSUL_URL}/ui/dc1/services"
         echo ""
-        echo "Service registered as: chat-service"
-        echo "Check cluster: ${CLUSTER_CONSUL_URL}/ui/dc1/services/chat-service"
+        echo "Registered services: redis-service, nats-service, chat-service"
         echo ""
         echo "Start React client: cd client-react && npm run dev"
         echo "Check status:       ./chat-system.sh status"
@@ -377,9 +451,30 @@ start_system() {
 stop_system() {
     print_info "Stopping chat system..."
     
-    services=("redis" "nats" "consul" "chat-node-1" "chat-node-2" "chat-node-3")
+    local script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+    local host_ip=$(get_host_ip)
     
-    for service in "${services[@]}"; do
+    # Stop chat nodes first (they need to deregister from cluster)
+    for i in 1 2 3; do
+        service="chat-node-${i}"
+        if sudo podman ps -a --format "{{.Names}}" | grep -q "^${service}$"; then
+            print_info "Stopping ${service} (allowing graceful shutdown)..."
+            # Send SIGTERM and wait for graceful shutdown (up to 10 seconds)
+            sudo podman stop -t 10 ${service} > /dev/null 2>&1
+            sudo podman rm ${service} > /dev/null 2>&1
+            print_success "${service} stopped"
+        fi
+    done
+    
+    # Deregister infrastructure services from cluster if cluster mode was used
+    if [ -f "${script_dir}/cluster_helper.py" ]; then
+        print_info "Deregistering services from cluster..."
+        python3 "${script_dir}/cluster_helper.py" deregister "redis-${HOSTNAME}" "${CLUSTER_CONSUL_URL}" 2>/dev/null && print_success "Redis deregistered" || true
+        python3 "${script_dir}/cluster_helper.py" deregister "nats-${HOSTNAME}" "${CLUSTER_CONSUL_URL}" 2>/dev/null && print_success "NATS deregistered" || true
+    fi
+    
+    # Stop infrastructure services
+    for service in redis nats consul; do
         if sudo podman ps -a --format "{{.Names}}" | grep -q "^${service}$"; then
             sudo podman stop ${service} > /dev/null 2>&1
             sudo podman rm ${service} > /dev/null 2>&1
@@ -536,6 +631,107 @@ clear_usernames() {
     fi
 }
 
+# Command: deregister - manually deregister services from cluster
+deregister_services() {
+    local consul_url="${1:-$CLUSTER_CONSUL_URL}"
+    local script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+    
+    print_header "======================================"
+    print_header "Deregistering Services from Cluster"
+    print_header "======================================"
+    echo ""
+    
+    if ! check_cluster_connectivity "${consul_url}"; then
+        print_error "Cannot reach cluster at ${consul_url}"
+        exit 1
+    fi
+    
+    print_info "Current services registered:"
+    python3 "${script_dir}/cluster_helper.py" discover "chat-service" "${consul_url}" 2>/dev/null || echo "  No chat-service instances"
+    python3 "${script_dir}/cluster_helper.py" discover "redis-service" "${consul_url}" 2>/dev/null || echo "  No redis-service instances"
+    python3 "${script_dir}/cluster_helper.py" discover "nats-service" "${consul_url}" 2>/dev/null || echo "  No nats-service instances"
+    echo ""
+    
+    # Deregister this host's services
+    print_info "Deregistering services from this host (${HOSTNAME})..."
+    
+    # Deregister chat nodes
+    for i in 1 2 3; do
+        python3 "${script_dir}/cluster_helper.py" deregister "chat-node-${i}" "${consul_url}" 2>/dev/null && print_success "chat-node-${i} deregistered" || true
+    done
+    
+    # Deregister infrastructure
+    python3 "${script_dir}/cluster_helper.py" deregister "redis-${HOSTNAME}" "${consul_url}" 2>/dev/null && print_success "redis-${HOSTNAME} deregistered" || true
+    python3 "${script_dir}/cluster_helper.py" deregister "nats-${HOSTNAME}" "${consul_url}" 2>/dev/null && print_success "nats-${HOSTNAME} deregistered" || true
+    
+    echo ""
+    print_success "Deregistration complete"
+    echo ""
+    print_info "Remaining services:"
+    python3 "${script_dir}/cluster_helper.py" services "${consul_url}" 2>/dev/null || echo "  Could not list services"
+}
+
+# Command: cluster-test
+test_cluster() {
+    local consul_url="${1:-$CLUSTER_CONSUL_URL}"
+    
+    print_header "======================================"
+    print_header "Cluster Connectivity Test"
+    print_header "======================================"
+    echo ""
+    print_info "Testing cluster at: ${consul_url}"
+    echo ""
+    
+    # Test if Consul is reachable
+    if check_cluster_connectivity "${consul_url}"; then
+        print_success "Consul is reachable"
+        
+        # Get cluster info
+        local script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+        
+        echo ""
+        print_info "Cluster Leader:"
+        python3 "${script_dir}/cluster_helper.py" leader "${consul_url}" 2>&1 || echo "  Could not get leader"
+        
+        echo ""
+        print_info "Cluster Nodes:"
+        python3 "${script_dir}/cluster_helper.py" nodes "${consul_url}" 2>&1 || echo "  Could not list nodes"
+        
+        echo ""
+        print_info "Registered Services:"
+        python3 "${script_dir}/cluster_helper.py" services "${consul_url}" 2>&1 || echo "  Could not list services"
+        
+        echo ""
+        print_info "Chat Services (if registered):"
+        python3 "${script_dir}/cluster_helper.py" discover "chat-service" "${consul_url}" 2>&1 || echo "  No chat-service instances found"
+        
+        echo ""
+        print_success "Cluster is operational!"
+        echo ""
+        print_info "You can now start the chat system with:"
+        echo "  ./chat-system.sh start --cluster"
+    else
+        print_error "Cannot reach Consul at ${consul_url}"
+        echo ""
+        print_info "Troubleshooting steps:"
+        echo ""
+        echo "1. Check if the cluster is running on the network"
+        echo "   The cluster Consul is at 172.20.10.10:8500"
+        echo ""
+        echo "2. If the cluster is on a different network, set up SSH tunnel:"
+        echo "   ssh -L 8500:172.20.10.10:8500 -p 2221 root@<cluster-host>"
+        echo ""
+        echo "   Then use:"
+        echo "   ./chat-system.sh cluster-test http://localhost:8500"
+        echo "   ./chat-system.sh start --cluster --cluster-consul http://localhost:8500"
+        echo ""
+        echo "3. Or run in standalone mode (no cluster):"
+        echo "   ./chat-system.sh start"
+        echo ""
+        exit 1
+    fi
+}
+
 # Command: help
 show_help() {
     cat << EOF
@@ -545,13 +741,15 @@ Usage: ./chat-system.sh [command] [options]
 
 Commands:
     start [options]    Start services
-    stop               Stop all services
+    stop               Stop all services (deregisters from cluster)
     restart [options]  Restart chat nodes only
     status             Show system status
     logs <service>     Show logs for a service
                        Services: redis, nats, consul, chat-1, chat-2, chat-3
     build              Build chat node Docker image
     clear-usernames    Clear all registered usernames from Redis
+    cluster-test [url] Test connectivity to cluster Consul
+    deregister [url]   Manually deregister all services from cluster
     help               Show this help message
 
 Options:
@@ -679,6 +877,12 @@ case "$COMMAND" in
         ;;
     clear-usernames)
         clear_usernames
+        ;;
+    cluster-test)
+        test_cluster "$1"
+        ;;
+    deregister)
+        deregister_services "$1"
         ;;
     help|--help|-h)
         show_help

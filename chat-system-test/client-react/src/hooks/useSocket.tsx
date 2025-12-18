@@ -10,8 +10,8 @@ export function useSocket() {
     // Round-robin load balancing: randomly pick one of the 3 chat nodes
     const chatNodes = [
       'http://localhost:3001',
-      'http://localhost:3002',
-      'http://localhost:3003'
+      'http://localhost:3001',
+      'http://localhost:3001'
     ];
     const socketUrl = chatNodes[Math.floor(Math.random() * chatNodes.length)];
     console.log('Connecting to:', socketUrl);
