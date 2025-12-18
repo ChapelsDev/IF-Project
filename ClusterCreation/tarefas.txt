@@ -1,0 +1,3 @@
+testar Haproxy em varias maquinas (nodes)
+comos iniciar os serviços no boot
+dar restart ao node quando ele morre
