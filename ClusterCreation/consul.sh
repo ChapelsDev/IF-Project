@@ -3,10 +3,10 @@ set -euo pipefail
 
 # --- Configuration (EDIT THESE) ---
 CONSUL_VERSION="1.19.2"              # pick the version you want
-BIND_ADDR="172.20.10.8"              # this machine IP
-RETRY_JOIN_IP="172.20.10.2"          # peer to join
+BIND_ADDR="192.168.1.149"              # this machine IP
+RETRY_JOIN_IP="192.168.1.53"          # peer to join
 DATACENTER="dc1"
-BOOTSTRAP_EXPECT="2"
+BOOTSTRAP_EXPECT="3"
 
 # --- Paths ---
 CONSUL_BIN="/usr/local/bin/consul"
@@ -58,6 +58,11 @@ bind_addr = "${BIND_ADDR}"
 client_addr = "0.0.0.0"
 
 retry_join = ["${RETRY_JOIN_IP}"]
+
+telemetry {
+  prometheus_retention_time = "24h"
+  disable_hostname = true
+}
 
 # Optional but recommended:
 # log_level = "INFO"
