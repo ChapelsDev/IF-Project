@@ -2,9 +2,28 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import { publishPresence, publishPrivateMessage, subscribeToMessages, subscribeToPresence, subscribeToPrivateMessages } from "./nats";
 import { addUserToRoom, appendMessage, getMessageHistory, getPrivateMessageHistory, getRoomUsers, isUsernameAvailable, registerUsername, removeUserFromAllRooms, removeUserFromRoom, sendPrivateMessage, unregisterUsername } from "./redis";
+import { validateSocketAuth, generateToken, TokenPayload } from "./tokenValidation";
+import { messageLimiter, connectionLimiter, privateMessageLimiter } from "./rateLimit";
+import { sanitizeUsername, sanitizeText, validateMessagePayload, validatePrivateMessagePayload } from "./sanitizer";
+import { redisCircuitBreaker, natsCircuitBreaker } from "./circuitBreaker";
+
+// Extend Socket type to include custom properties
+interface ExtendedSocket {
+  id: string;
+  username?: string;
+  tokenData?: TokenPayload;
+  handshake: any;
+  emit: any;
+  on: any;
+  join: any;
+  leave: any;
+  disconnect: any;
+}
 
 let io: Server;
 const usernameToSocketId = new Map<string, string>();
+const activeConnections = new Map<string, { socket: any; username: string }>();
+let isShuttingDown = false;
 
 export function getIO() {
   return io;
@@ -15,51 +34,157 @@ export function startGateway() {
   
   const httpServer = createServer((req: any, res: any) => {
     if (req.url === "/health") {
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ status: "ok", nodeId: process.env.NODE_ID }));
+      const health = {
+        status: isShuttingDown ? "shutting_down" : "ok",
+        nodeId: process.env.NODE_ID,
+        connections: activeConnections.size,
+        redis: redisCircuitBreaker.getState(),
+        nats: natsCircuitBreaker.getState(),
+        timestamp: Date.now()
+      };
+      
+      // Return 503 if shutting down or dependencies are down
+      const statusCode = (isShuttingDown || 
+                         redisCircuitBreaker.getState() === 'OPEN' || 
+                         natsCircuitBreaker.getState() === 'OPEN') ? 503 : 200;
+      
+      res.writeHead(statusCode, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(health));
       return;
     }
+    
+    if (req.url === "/ready") {
+      // Readiness check - only ready if not shutting down
+      const ready = !isShuttingDown;
+      res.writeHead(ready ? 200 : 503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ ready, connections: activeConnections.size }));
+      return;
+    }
+    
     res.writeHead(404);
     res.end();
   });
 
-  io = new Server(httpServer, { cors: { origin: "*" } });
+  io = new Server(httpServer, { 
+    cors: { 
+      origin: process.env.ALLOWED_ORIGINS?.split(',') || "*",
+      credentials: true
+    },
+    maxHttpBufferSize: 1e6, // 1MB max message size
+    pingTimeout: 60000,
+    pingInterval: 25000
+  });
+
+  // Middleware for connection authentication (optional - can be disabled for development)
+  io.use((socket: any, next) => {
+    // Check if shutting down
+    if (isShuttingDown) {
+      return next(new Error('Server is shutting down'));
+    }
+    
+    // Rate limit connections by IP
+    const clientIp = socket.handshake.address;
+    if (!connectionLimiter.checkLimit(clientIp)) {
+      console.log(`[SECURITY] Connection rate limit exceeded for ${clientIp}`);
+      return next(new Error('Too many connection attempts'));
+    }
+    
+    // Optional: Token authentication (enable in production)
+    if (process.env.REQUIRE_AUTH === 'true') {
+      const tokenData = validateSocketAuth(socket);
+      if (!tokenData) {
+        return next(new Error('Authentication required'));
+      }
+      (socket as ExtendedSocket).tokenData = tokenData;
+    }
+    
+    next();
+  });
 
   io.on("connection", (socket: any) => {
-    console.log("User connected:", socket.id);
+    console.log(`[GATEWAY] User connected: ${socket.id} from ${socket.handshake.address}`);
     let currentRoom: string | null = null;
+    
+    // Track active connection
+    activeConnections.set(socket.id, { socket, username: '' });
 
     socket.on("setUsername", async (username: string) => {
-      const sanitized = (username || "").trim();
-      
-      if (!sanitized || sanitized.length < 2 || sanitized.length > 20) {
-        socket.emit("usernameError", { error: "Username must be between 2-20 characters" });
-        return;
+      try {
+        // Sanitize and validate username
+        const sanitized = sanitizeUsername(username);
+        
+        // Check if username is already taken (allow reconnects)
+        const available = await redisCircuitBreaker.executeWithFallback(
+          () => isUsernameAvailable(sanitized, socket.id),
+          () => true // Fallback: allow username if Redis is down
+        );
+        
+        if (!available) {
+          socket.emit("usernameError", { error: "Username is already taken" });
+          return;
+        }
+        
+        // Register username globally
+        await redisCircuitBreaker.executeWithFallback(
+          () => registerUsername(sanitized, socket.id),
+          () => Promise.resolve()
+        );
+        
+        socket.username = sanitized;
+        
+        // Map username to socket ID for private message routing
+        usernameToSocketId.set(sanitized, socket.id);
+        
+        // Update active connection tracking
+        const conn = activeConnections.get(socket.id);
+        if (conn) conn.username = sanitized;
+        
+        console.log(`[GATEWAY] User ${socket.id} set username: ${sanitized}`);
+        
+        // Generate JWT token for the user (optional, for future auth)
+        const token = generateToken(socket.id, sanitized);
+        socket.emit("usernameAccepted", { username: sanitized, token });
+        
+      } catch (error: any) {
+        console.error(`[GATEWAY] Username validation failed:`, error.message);
+        socket.emit("usernameError", { error: error.message || "Invalid username" });
       }
-      
-      // Check if username is already taken (allow reconnects)
-      const available = await isUsernameAvailable(sanitized, socket.id);
-      if (!available) {
-        socket.emit("usernameError", { error: "Username is already taken" });
-        return;
-      }
-      
-      // Register username globally
-      await registerUsername(sanitized, socket.id);
-      socket.username = sanitized;
-      
-      // Map username to socket ID for private message routing
-      usernameToSocketId.set(sanitized, socket.id);
-      console.log(`[GATEWAY] Mapped username ${sanitized} to socket ${socket.id}`);
-      
-      socket.emit("usernameAccepted", { username: sanitized });
-      console.log(`User ${socket.id} set username: ${socket.username}`);
     });
 
-    socket.on("message", async ({ roomId, text }: any) => {
-      console.log(`[GATEWAY] Received message from client:`, { roomId, user: socket.username || socket.id, text });
-      await appendMessage(roomId, socket.username || socket.id, text);
-      console.log(`[GATEWAY] Message appended to Redis`);
+    socket.on("message", async (payload: any) => {
+      try {
+        // Validate and sanitize input
+        const { roomId, text } = validateMessagePayload(payload);
+        
+        // Rate limiting check
+        if (!messageLimiter.checkLimit(socket.id)) {
+          socket.emit("error", { message: "Rate limit exceeded. Please slow down." });
+          console.log(`[SECURITY] Message rate limit exceeded for ${socket.username || socket.id}`);
+          return;
+        }
+        
+        // Empty message check
+        if (!text || text.length === 0) {
+          return;
+        }
+        
+        console.log(`[GATEWAY] Received message from ${socket.username || socket.id} to ${roomId}`);
+        
+        // Use circuit breaker for Redis operations
+        await redisCircuitBreaker.executeWithFallback(
+          () => appendMessage(roomId, socket.username || socket.id, text),
+          () => {
+            console.log(`[GATEWAY] Redis unavailable, message not persisted`);
+            return Promise.resolve('fallback-id');
+          }
+        );
+        
+        console.log(`[GATEWAY] Message processed successfully`);
+        
+      } catch (error: any) {
+        console.error(`[GATEWAY] Message handling error:`, error.message);
+        socket.emit("error", { message: "Failed to send message" });
+      }
     });
 
     socket.on("join", async (roomId: any) => {
@@ -106,38 +231,64 @@ export function startGateway() {
     });
     
     // Private messaging handlers
-    socket.on("privateMessage", async ({ to, text }: any) => {
-      console.log(`[GATEWAY] privateMessage event received from socket ${socket.id}`);
-      console.log(`[GATEWAY] Socket username: ${socket.username}, to: ${to}, text: ${text}`);
-      
-      if (!socket.username) {
-        console.log(`[GATEWAY] ERROR: Username not set for socket ${socket.id}`);
-        socket.emit("error", { message: "Username must be set before sending private messages" });
-        return;
+    socket.on("privateMessage", async (payload: any) => {
+      try {
+        if (!socket.username) {
+          socket.emit("error", { message: "Username must be set before sending private messages" });
+          return;
+        }
+        
+        // Validate and sanitize input
+        const { to, text } = validatePrivateMessagePayload(payload);
+        
+        // Rate limiting check
+        if (!privateMessageLimiter.checkLimit(socket.id)) {
+          socket.emit("error", { message: "Private message rate limit exceeded" });
+          console.log(`[SECURITY] Private message rate limit exceeded for ${socket.username}`);
+          return;
+        }
+        
+        // Empty message check
+        if (!text || text.length === 0) {
+          return;
+        }
+        
+        console.log(`[GATEWAY] Private message from ${socket.username} to ${to}`);
+        
+        // Store in Redis with circuit breaker
+        const msgId = await redisCircuitBreaker.executeWithFallback(
+          () => sendPrivateMessage(socket.username, to, text),
+          () => {
+            console.log(`[GATEWAY] Redis unavailable, private message not persisted`);
+            return Promise.resolve(`temp-${Date.now()}`);
+          }
+        );
+        
+        // Create message object
+        const msg = {
+          id: msgId,
+          from: socket.username,
+          to,
+          text,
+          ts: Date.now().toString()
+        };
+        
+        // Publish via NATS to reach the recipient on any node
+        await natsCircuitBreaker.executeWithFallback(
+          () => publishPrivateMessage(to, msg),
+          () => {
+            console.log(`[GATEWAY] NATS unavailable, message may not be delivered`);
+            return Promise.resolve();
+          }
+        );
+        
+        // Echo back to sender
+        socket.emit("privateMessage", msg);
+        
+      } catch (error: any) {
+        console.error(`[GATEWAY] Private message error:`, error.message);
+        socket.emit("error", { message: "Failed to send private message" });
       }
-      
-      console.log(`[GATEWAY] Private message from ${socket.username} to ${to}: ${text}`);
-      
-      // Store in Redis
-      const msgId = await sendPrivateMessage(socket.username, to, text);
-      console.log(`[GATEWAY] Message stored in Redis with ID: ${msgId}`);
-      
-      // Create message object
-      const msg = {
-        id: msgId,
-        from: socket.username,
-        to,
-        text,
-        ts: Date.now().toString()
-      };
-      
-      // Publish via NATS to reach the recipient on any node
-      console.log(`[GATEWAY] Publishing to NATS for user: ${to}`);
-      await publishPrivateMessage(to, msg);
-      
-      // Echo back to sender
-      console.log(`[GATEWAY] Echoing message back to sender`);
-      socket.emit("privateMessage", msg);
     });
     
     socket.on("getPrivateMessages", async ({ otherUser }: any) => {
@@ -152,18 +303,36 @@ export function startGateway() {
     });
     
     socket.on("disconnect", async () => {
-      console.log("User disconnected:", socket.id, socket.username);
+      console.log(`[GATEWAY] User disconnected: ${socket.id} (${socket.username || 'anonymous'})`);
+      
+      // Remove from active connections tracking
+      activeConnections.delete(socket.id);
+      
       if (socket.username) {
         // Remove username mapping
         usernameToSocketId.delete(socket.username);
         
-        // Don't immediately unregister - let TTL handle it (allows reconnects)
-        // Only clean up room presence
-        await removeUserFromAllRooms(socket.username);
+        // Clean up room presence with circuit breaker
+        await redisCircuitBreaker.executeWithFallback(
+          async () => {
+            await removeUserFromAllRooms(socket.username);
+          },
+          () => {
+            console.log(`[GATEWAY] Redis unavailable during disconnect cleanup`);
+            return Promise.resolve();
+          }
+        );
+        
+        // Notify others that user left
         if (currentRoom) {
-          publishPresence("leave", { roomId: currentRoom, userId: socket.id, username: socket.username });
+          await natsCircuitBreaker.executeWithFallback(
+            () => publishPresence("leave", { roomId: currentRoom, userId: socket.id, username: socket.username }),
+            () => Promise.resolve()
+          );
         }
       }
+      
+      console.log(`[GATEWAY] Cleanup complete. Active connections: ${activeConnections.size}`);
     });
     
     socket.emit("node-info", { nodeId: process.env.NODE_ID });
@@ -209,6 +378,72 @@ export function startGateway() {
     }
   });
 
-  httpServer.listen(port);
-  console.log(`Gateway listening on port ${port}`);
+  httpServer.listen(port, () => {
+    console.log(`[GATEWAY] ✓ Chat service listening on port ${port}`);
+    console.log(`[GATEWAY] Node ID: ${process.env.NODE_ID}`);
+    console.log(`[GATEWAY] Security features: Rate limiting, input sanitization, circuit breakers`);
+    console.log(`[GATEWAY] Health check: http://localhost:${port}/health`);
+    console.log(`[GATEWAY] Readiness check: http://localhost:${port}/ready`);
+  });
+
+  // Graceful shutdown handler
+  const gracefulShutdown = async (signal: string) => {
+    console.log(`[GATEWAY] ${signal} received, starting graceful shutdown...`);
+    isShuttingDown = true;
+
+    // Stop accepting new connections
+    httpServer.close(() => {
+      console.log('[GATEWAY] HTTP server closed');
+    });
+
+    // Notify all connected clients
+    const shutdownMessage = 'Server is shutting down. Please reconnect.';
+    activeConnections.forEach(({ socket, username }) => {
+      socket.emit('serverShutdown', { message: shutdownMessage });
+    });
+
+    // Wait a bit for clients to receive the notification
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Close all Socket.IO connections
+    const disconnectPromises: Promise<void>[] = [];
+    activeConnections.forEach(({ socket }) => {
+      disconnectPromises.push(
+        new Promise(resolve => {
+          socket.disconnect(true);
+          resolve();
+        })
+      );
+    });
+
+    await Promise.all(disconnectPromises);
+    console.log(`[GATEWAY] Disconnected ${disconnectPromises.length} clients`);
+
+    // Close Socket.IO server
+    await new Promise<void>(resolve => {
+      io.close(() => {
+        console.log('[GATEWAY] Socket.IO server closed');
+        resolve();
+      });
+    });
+
+    console.log('[GATEWAY] Graceful shutdown complete');
+    process.exit(0);
+  };
+
+  // Register shutdown handlers
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+  // Handle uncaught errors
+  process.on('uncaughtException', (error) => {
+    console.error('[GATEWAY] Uncaught exception:', error);
+    gracefulShutdown('UNCAUGHT_EXCEPTION');
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('[GATEWAY] Unhandled rejection at:', promise, 'reason:', reason);
+  });
+
+  return { httpServer, io, gracefulShutdown };
 }
