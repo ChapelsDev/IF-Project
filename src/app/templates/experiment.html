@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chaos Control - {{ experiment.title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        .glass {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        chaos: { 500: '#ef4444', 600: '#dc2626' },
+                        cyber: { 500: '#8b5cf6', 900: '#111827' }
+                    }
+                }
+            }
+        }
+        
+        function updateGraph(nodeIp) {
+            const iframe = document.getElementById('grafana-frame');
+            // URL do Grafana para o dashboard de Chaos Experiments
+            // var-node controla o filtro do nó
+            const baseUrl = "http://localhost:3000/d/chaos-experiments/chaos-experiments-dashboard";
+            const params = `?orgId=1&refresh=2s&var-node=${nodeIp}&kiosk=tv`;
+            iframe.src = baseUrl + params;
+        }
+    </script>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="glass sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <a href="/" class="flex items-center gap-3 hover:opacity-80 transition">
+                        <div class="w-8 h-8 bg-chaos-500 rounded flex items-center justify-center font-bold text-white">C</div>
+                        <span class="font-bold text-xl tracking-wider">CHAOS<span class="text-chaos-500">CONTROL</span></span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[calc(100vh-8rem)]">
+            
+            <!-- Painel de Controle (Esquerda) -->
+            <div class="lg:col-span-1 space-y-6">
+                <div class="glass rounded-xl p-6">
+                    <h1 class="text-2xl font-bold mb-2 text-white">Execução de Testes</h1>
+                    <p class="text-gray-400 text-sm mb-6">Selecione os nós e os testes que deseja executar.</p>
+
+                    <form hx-post="/experiments/run" hx-target="#execution-result" class="space-y-4">
+                        
+                        <!-- Seleção de Nó -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">Alvos (Target Nodes)</label>
+                            <div class="bg-gray-900 border border-gray-700 rounded-lg p-3 max-h-40 overflow-y-auto">
+                                <div class="flex items-center mb-2 pb-2 border-b border-gray-800">
+                                    <input type="checkbox" id="select-all-nodes" class="rounded bg-gray-800 border-gray-600 text-chaos-500 focus:ring-chaos-500" onclick="toggleAllNodes(this)">
+                                    <label for="select-all-nodes" class="ml-2 text-xs text-gray-400 uppercase font-bold cursor-pointer">Selecionar Todos</label>
+                                </div>
+                                {% for node in nodes %}
+                                <div class="flex items-center mb-2">
+                                    <input type="checkbox" name="node_id" value="{{ node.id }}" id="node_{{ node.id }}" data-ip="{{ node.host }}" 
+                                           class="node-checkbox rounded bg-gray-800 border-gray-600 text-chaos-500 focus:ring-chaos-500"
+                                           onchange="updateGraphSelection()">
+                                    <label for="node_{{ node.id }}" class="ml-2 text-sm text-gray-300 cursor-pointer">{{ node.id }} ({{ node.host }})</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Seleção de Experimentos -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">Testes de Rede (Experiments)</label>
+                            <div class="bg-gray-900 border border-gray-700 rounded-lg p-3 max-h-40 overflow-y-auto">
+                                {% for exp in all_experiments %}
+                                <div class="flex items-center mb-2">
+                                    <input type="checkbox" name="experiment_id" value="{{ exp.id }}" id="exp_{{ exp.id }}" 
+                                           class="rounded bg-gray-800 border-gray-600 text-cyber-500 focus:ring-cyber-500"
+                                           {% if exp.id == experiment.id %}checked{% endif %}>
+                                    <label for="exp_{{ exp.id }}" class="ml-2 text-sm text-gray-300 cursor-pointer">{{ exp.title }}</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <script>
+                            function toggleAllNodes(source) {
+                                const checkboxes = document.getElementsByName('node_id');
+                                for(let i=0; i<checkboxes.length; i++) {
+                                    checkboxes[i].checked = source.checked;
+                                }
+                                updateGraphSelection();
+                            }
+
+                            function updateGraphSelection() {
+                                const checkboxes = document.getElementsByName('node_id');
+                                const selectedIps = [];
+                                const selectedIds = [];
+                                
+                                for(let i=0; i<checkboxes.length; i++) {
+                                    if (checkboxes[i].checked) {
+                                        selectedIps.push(checkboxes[i].dataset.ip);
+                                        selectedIds.push(checkboxes[i].value);
+                                    }
+                                }
+                                updateGraphNodes(selectedIds, selectedIps);
+                            }
+                        </script>
+
+                        <!-- Parâmetros do Experimento -->
+                        <div class="space-y-3 border-t border-gray-800 pt-4 mt-4">
+                            <h3 class="text-sm font-semibold text-cyber-500 uppercase tracking-wider">Parâmetros</h3>
+                            
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Latência</label>
+                                <input type="text" name="latency" value="200ms" 
+                                       class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Duração (ex: 60s)</label>
+                                <input type="text" name="duration" value="30s" 
+                                       class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Interface de Rede (ex: eth0, ens18)</label>
+                                <input type="text" name="device" value="eth0" 
+                                       class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white">
+                            </div>
+                        </div>
+
+                        <!-- Credenciais SSH (Opcional) -->
+                        <div class="space-y-3 border-t border-gray-800 pt-4 mt-4">
+                            <h3 class="text-sm font-semibold text-cyber-500 uppercase tracking-wider flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11.536 9.636a1.003 1.003 0 00-.464.205l-.5.5a1 1 0 00-.293.707V12a1 1 0 001 1h2a1 1 0 001-1v-1a1 1 0 011-1h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                Credenciais SSH (Opcional)
+                            </h3>
+                            <p class="text-xs text-gray-500 mb-2">Preencha apenas se o nó exigir senha (não usar chaves).</p>
+                            
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs text-gray-400 mb-1">Usuário SSH</label>
+                                    <input type="text" name="ssh_user" placeholder="root" 
+                                           class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-400 mb-1">Senha SSH</label>
+                                    <input type="password" name="ssh_password" placeholder="••••••" 
+                                           class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-chaos-600 hover:bg-chaos-500 text-white font-bold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2 mt-6">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            INICIAR ATAQUE
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Log de Execução -->
+                <div id="execution-result" class="glass rounded-xl p-4 min-h-[100px]">
+                    <p class="text-gray-500 text-sm text-center italic">Aguardando execução...</p>
+                </div>
+            </div>
+
+            <!-- Gráfico em Tempo Real (Direita) -->
+            <div class="lg:col-span-2 h-full">
+                <div class="glass rounded-xl p-6 h-full flex flex-col relative overflow-hidden group">
+                    <!-- Efeito de brilho de fundo -->
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-chaos-500/10 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
+                    
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                Latência de Rede
+                            </h3>
+                            <p class="text-xs text-gray-400 mt-1">Monitoramento em tempo real (ICMP)</p>
+                        </div>
+                        <div class="flex items-center gap-2 bg-gray-900/50 px-3 py-1 rounded-lg border border-gray-800">
+                            <span class="text-xs text-gray-400">Atualização:</span>
+                            <span class="text-xs font-mono text-chaos-400">1s</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-900/80 rounded-xl flex-grow p-4 relative border border-gray-800 shadow-inner">
+                        <canvas id="latencyChart"></canvas>
+                        
+                        <!-- Overlay se nenhum nó selecionado -->
+                        <div id="graph-overlay" class="absolute inset-0 bg-gray-900/95 flex flex-col items-center justify-center transition-all duration-500 z-10 backdrop-blur-sm">
+                            <div class="w-16 h-16 mb-4 rounded-full bg-gray-800 flex items-center justify-center border border-gray-700">
+                                <svg class="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                            </div>
+                            <p class="text-gray-300 font-medium">Selecione um nó para iniciar o monitoramento</p>
+                            <p class="text-gray-500 text-sm mt-2">Os dados serão coletados via Blackbox Exporter</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let chart;
+        let selectedNodes = []; // Array of objects {id: 'node1', ip: '1.2.3.4'}
+        const maxDataPoints = 60; 
+        // Cores padrão (sem vermelho) para estado normal
+        const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
+
+        function initChart() {
+            const ctx = document.getElementById('latencyChart').getContext('2d');
+            
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 0 },
+                    interaction: { intersect: false, mode: 'index' },
+                    scales: {
+                        x: { display: false, grid: { display: false } },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.05)', borderDash: [5, 5] },
+                            ticks: {
+                                color: '#6b7280',
+                                font: { family: 'monospace' },
+                                callback: function(value) { return (value * 1000).toFixed(0) + 'ms'; }
+                            },
+                            border: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { 
+                            display: true,
+                            labels: { color: '#9ca3af', font: { size: 10 } }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                            titleColor: '#9ca3af',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + (context.raw * 1000).toFixed(1) + ' ms';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function updateChart() {
+            if (selectedNodes.length === 0) return;
+
+            const now = new Date().toLocaleTimeString();
+            
+            if (chart.data.labels.length > maxDataPoints) {
+                chart.data.labels.shift();
+            }
+            chart.data.labels.push(now);
+
+            for (let i = 0; i < selectedNodes.length; i++) {
+                const node = selectedNodes[i];
+                let dataset = chart.data.datasets.find(d => d.label === node.id);
+                const baseColor = colors[i % colors.length];
+                
+                if (!dataset) {
+                    dataset = {
+                        label: node.id,
+                        data: new Array(chart.data.labels.length - 1).fill(0),
+                        borderColor: baseColor,
+                        backgroundColor: baseColor + '20',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 4,
+                        segment: {
+                            borderColor: ctx => {
+                                // Se o ponto atual ou anterior for maior que 100ms, pinta o segmento de vermelho
+                                if (ctx.p0.parsed.y > 0.1 || ctx.p1.parsed.y > 0.1) {
+                                    return '#ef4444';
+                                }
+                                return undefined; // Usa a cor padrão do dataset
+                            }
+                        }
+                    };
+                    chart.data.datasets.push(dataset);
+                }
+
+                // Atualiza a cor base caso a ordem mude, mas respeita o segmento
+                dataset.borderColor = baseColor;
+                dataset.backgroundColor = baseColor + '20';
+
+                try {
+                    const response = await fetch(`/api/metrics/latency?node=${node.ip}`);
+                    const data = await response.json();
+                    
+                    if (dataset.data.length > maxDataPoints) {
+                        dataset.data.shift();
+                    }
+                    dataset.data.push(data.value);
+
+                } catch (error) {
+                    console.error(`Error fetching metrics for ${node.id}:`, error);
+                    dataset.data.push(0);
+                }
+            }
+
+            chart.data.datasets = chart.data.datasets.filter(d => selectedNodes.some(n => n.id === d.label));
+            chart.update('none');
+        }
+
+        function updateGraphNodes(ids, ips) {
+            selectedNodes = ids.map((id, index) => ({ id: id, ip: ips[index] }));
+            
+            const overlay = document.getElementById('graph-overlay');
+            if (selectedNodes.length > 0) {
+                if(overlay) overlay.classList.add('opacity-0', 'pointer-events-none');
+            } else {
+                if(overlay) overlay.classList.remove('opacity-0', 'pointer-events-none');
+                chart.data.labels = [];
+                chart.data.datasets = [];
+                chart.update();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initChart();
+            setInterval(updateChart, 1000);
+        });
+    </script>
+
+</body>
+</html>

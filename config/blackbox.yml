@@ -1,21 +1,6 @@
 modules:
-  http_2xx:
-    prober: http
-    timeout: 5s
-    http:
-      valid_status_codes: []  # Defaults to 2xx
-      method: GET
-  
-  http_post_2xx:
-    prober: http
-    timeout: 5s
-    http:
-      method: POST
-
-  tcp_connect:
-    prober: tcp
-    timeout: 5s
-
   icmp:
     prober: icmp
     timeout: 5s
+    icmp:
+      preferred_ip_protocol: "ip4"

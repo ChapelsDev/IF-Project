@@ -1,0 +1,10 @@
+nodes:
+  - id: local-pc
+    host: 192.168.1.68
+    ssh_user: guilherme
+    ssh_port: 22
+  
+  - id: remote-pc
+    host: 192.168.1.72
+    ssh_user: root
+    ssh_port: 22

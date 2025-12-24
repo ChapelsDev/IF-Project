@@ -1,54 +1,5 @@
-nodes:
-- id: local-node
-  host: host.docker.internal
-  ssh_user: guilherme
-  ssh_port: 22
-  net_if: br-535006806f8b
-  metrics_url: http://host.docker.internal:9100/metrics
-  sudo_password: acordeao2224
-  ssh_password: acordeao2224
-- id: server1
-  host: 172.19.0.3
-  ssh_user: root
-  ssh_port: 2021
-  net_if: eth0
-  metrics_url: http://192.168.1.196:9100/metrics
-  sudo_password: '123456'
-  ssh_password: '123456'
-  notes: Importado do Consul 0 - SSH via porta 2021
-- id: server2
-  host: 172.19.0.5
-  ssh_user: root
-  ssh_port: 2022
-  net_if: eth0
-  metrics_url: http://192.168.1.196:9101/metrics
-  sudo_password: '123456'
-  ssh_password: '123456'
-  notes: Importado do Consul 0 - SSH via porta 2021
-- id: server3
-  host: 172.19.0.4
-  ssh_user: root
-  ssh_port: 2023
-  net_if: eth0
-  metrics_url: http://192.168.1.196:9102/metrics
-  sudo_password: '123456'
-  ssh_password: '123456'
-  notes: Importado do Consul 0 - SSH via porta 2021
-- id: server4
-  host: 172.19.0.2
-  ssh_user: root
-  ssh_port: 2024
-  net_if: eth0
-  metrics_url: http://192.168.1.196:9103/metrics
-  sudo_password: '123456'
-  ssh_password: '123456'
-  notes: Importado do Consul - SSH via porta 2024, metrics na porta 9103
-- id: server5
-  host: 172.19.0.6
-  ssh_user: root
-  ssh_port: 2025
-  net_if: eth0
-  metrics_url: http://192.168.1.196:9104/metrics
-  sudo_password: '123456'
-  ssh_password: '123456'
-  notes: Importado do Consul - SSH via porta 2025, metrics na porta 9104
+- targets:
+  - '172.19.0.3:9100'
+  labels:
+    job: 'node'
+    hostname: 'server1'

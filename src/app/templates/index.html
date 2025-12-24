@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chaos Control Plane</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        
+        .glass {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        chaos: {
+                            500: '#ef4444', // Red for chaos
+                            600: '#dc2626',
+                        },
+                        cyber: {
+                            500: '#8b5cf6', // Purple
+                            900: '#111827',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="glass sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-chaos-500 rounded flex items-center justify-center font-bold text-white">C</div>
+                    <span class="font-bold text-xl tracking-wider">CHAOS<span class="text-chaos-500">CONTROL</span></span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2 text-sm text-gray-400">
+                        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                        System Online
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Left Column: Controls -->
+        <div class="lg:col-span-1 space-y-6">
+            
+            <!-- Target Selection -->
+            <div class="glass rounded-xl p-6 shadow-lg shadow-purple-900/10">
+                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-cyber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    Selecionar Alvo
+                </h2>
+                <form id="chaos-form" hx-post="/run" hx-target="#execution-status" hx-indicator="#loading">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1">Nó da Rede</label>
+                            <select name="node_id" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-cyber-500 focus:border-transparent outline-none transition">
+                                {% for node in nodes %}
+                                <option value="{{ node.id }}">{{ node.id }} ({{ node.host }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                
+                    <div class="mt-8">
+                        <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-chaos-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            Experimentos Disponíveis
+                        </h2>
+                        <div class="space-y-3">
+                            {% for exp in experiments %}
+                            <a href="/experiment/{{ exp.id }}" class="block p-4 rounded-lg border border-gray-700 bg-gray-800/50 cursor-pointer hover:border-chaos-500 hover:bg-chaos-500/10 transition group">
+                                <div class="font-medium text-gray-200 group-hover:text-white">{{ exp.title }}</div>
+                                <div class="text-xs text-gray-500 mt-1">{{ exp.description }}</div>
+                                <div class="mt-2 text-xs text-chaos-500 font-semibold group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                                    CONFIGURAR & EXECUTAR &rarr;
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                <!-- Form removed -->
+            </div>
+        </div>
+
+        <!-- Right Column: Status & Logs -->
+        <div class="lg:col-span-2 space-y-6">
+            
+            <!-- Intro Panel -->
+            <div class="glass rounded-xl p-8 flex flex-col items-center justify-center text-center h-full min-h-[400px]">
+                <div class="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mb-6">
+                    <svg class="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-2">Bem-vindo ao Chaos Control</h3>
+                <p class="text-gray-400 max-w-md">
+                    Selecione um experimento na lista à esquerda para configurar os parâmetros, visualizar métricas em tempo real e injetar falhas na sua infraestrutura.
+                </p>
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>

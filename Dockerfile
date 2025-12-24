@@ -1,24 +1,20 @@
 FROM python:3.10-slim
 
-# Instalar dependências do sistema (SSH client é fundamental para o chaos_manager)
+WORKDIR /app
+
+# Instalar dependências do sistema (incluindo cliente SSH)
 RUN apt-get update && apt-get install -y \
+    sshpass \
     openssh-client \
     iproute2 \
-    iputils-ping \
-    curl \
     && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
 
 # Copiar requirements e instalar
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar o código fonte
+# O código será montado via volume no docker-compose para desenvolvimento
+# Mas copiamos aqui para garantir que a imagem funcione standalone
 COPY . .
 
-# Expor a porta da API
-EXPOSE 8000
-
-# Comando de entrada (usando o loop asyncio para evitar aquele erro anterior)
-CMD ["uvicorn", "api.server:app", "--host", "0.0.0.0", "--port", "8000", "--loop", "asyncio"]
+CMD ["uvicorn", "src.app.main:app", "--host", "0.0.0.0", "--port", "8000"]

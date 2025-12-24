@@ -1,83 +1,93 @@
-IF Project
-# Chaos / Evaluation System
+# Chaos Engineering Platform
 
-MVP de um sistema de Chaos Engineering em Python.
+Plataforma completa para injeção de falhas e observabilidade em sistemas distribuídos. Este projeto permite orquestrar ataques de Chaos Engineering (latência de rede, falhas de processo, etc.) em máquinas remotas e visualizar o impacto em tempo real.
 
-## Estrutura
+## ✨ Funcionalidades Principais
 
-- `chaos_manager/` — aplica caos via SSH + tc netem e corre cenários.
-- `probe/` — probes ativos (latência, etc.).
-- `collector/` — recolha de métricas dos nós e de Prometheus/Loki (futuro).
-- `evaluation/` — cálculo de SLI/SLO e resilience score.
-- `reporting/` — geração de relatórios HTML e gráficos.
-- `config/` — configuração de nós, cenários e probes.
-- `logs/` — saída de logs e resultados dos experimentos.
+- **Execução em Massa:** Selecione múltiplos nós e múltiplos experimentos para execução simultânea.
+- **Controle Total:** Botão de "Parar Todos" para interromper imediatamente todos os ataques e reverter o estado da rede.
+- **Visualização Inteligente:** Gráfico de latência em tempo real com coloração dinâmica (vermelho apenas nos picos de latência > 100ms).
+- **Driver SSH Personalizado:** Injeção de falhas via SSH usando `tc` (Traffic Control) sem necessidade de agentes pesados.
 
-## Como usar (Legacy Python Script)
+## 🏗 Arquitetura
+
+O sistema é dividido em **Control Plane** (sua máquina) e **Data Plane** (máquinas alvo).
+
+### Control Plane (Docker)
+- **Chaos UI (http://localhost:8000):** Interface web moderna para selecionar alvos e disparar experimentos.
+- **Chaos Toolkit:** Engine de execução dos experimentos.
+- **Prometheus:** Coleta de métricas.
+- **Grafana (http://localhost:3000):** Visualização de métricas e logs.
+- **Loki:** Agregação de logs.
+
+### Data Plane (Máquinas Remotas)
+- **Serviços Alvo:** Seus serviços (Consul, SeaweedFS, etc.).
+- **Promtail:** Agente leve que envia logs locais para o Loki.
+- **SSH:** O Chaos Toolkit conecta via SSH para injetar falhas (sem necessidade de agente pesado de chaos).
+
+## 🚀 Como Iniciar
+
+### 1. Pré-requisitos
+- Docker & Docker Compose
+- Python 3.10+
+- Acesso SSH às máquinas alvo
+
+### 2. Subir o Control Plane
+Inicie a stack de observabilidade e a interface de controle:
+
+```bash
+docker-compose up -d --build
+```
+
+Acesse:
+- **UI de Controle:** [http://localhost:8000](http://localhost:8000)
+- **Grafana:** [http://localhost:3000](http://localhost:3000) (Login: `admin` / `admin`)
+
+### 3. Configurar Máquinas Alvo (Data Plane)
+Instale o agente de logs (Promtail) nas máquinas que você deseja monitorar:
 
 ```bash
 pip install -r requirements.txt
+python3 scripts/deploy_agent.py
+```
+*Siga as instruções interativas para fornecer IP e credenciais SSH.*
 
-python3 main.py run --scenario network_delay --ssh-key ~/.ssh/id_rsa
+### 4. Configurar Alvos
+Edite o arquivo `config/inventory.yaml` para registrar suas máquinas. A UI lê este arquivo para listar os alvos disponíveis.
+
+```yaml
+nodes:
+  - id: server1
+    host: 192.168.1.10
+    ssh_user: root
+    ssh_port: 22
+    # ...
 ```
 
-## 🚀 Setup Chaos Mesh (Novo Sistema)
+## ⚡ Executando um Experimento
 
-Este projeto migrou para usar **Chaos Mesh** sobre Kubernetes (Minikube) para orquestrar ataques, inclusive em máquinas remotas.
+1. Abra a **Chaos UI** em [http://localhost:8000](http://localhost:8000).
+2. Selecione um ou mais **Nós Alvo** na lista (checkboxes).
+3. Escolha um ou mais **Experimentos** (ex: `network_delay`).
+4. Clique em **INICIAR ATAQUE**.
+5. Acompanhe o gráfico em tempo real. Segmentos da linha ficarão vermelhos se a latência subir drasticamente (> 100ms).
+6. Use o botão **PARAR TODOS** para interromper os testes a qualquer momento e reverter as falhas.
 
-### 1. Pré-requisitos
-- **Minikube** instalado e a correr.
-- **Helm** e **Kubectl** instalados.
-- Acesso SSH à máquina alvo (`192.168.1.196`).
+## 📂 Estrutura do Projeto
 
-### 2. Iniciar o Control Plane (Local)
-Inicia o cluster local onde corre o Chaos Mesh:
-```bash
-minikube start
+```
+.
+├── config/                 # Configurações (Prometheus, Loki, Grafana, Nodes)
+├── experiments/            # Definições dos experimentos (JSON/YAML)
+├── scripts/                # Scripts auxiliares (deploy, run manual)
+├── src/
+│   ├── app/                # Aplicação Web (FastAPI)
+│   │   └── templates/      # Templates HTML (Jinja2 + HTMX)
+│   └── lib/                # Drivers e utilitários (SSH Driver)
+├── docker-compose.yml      # Definição da stack completa
+└── requirements.txt        # Dependências Python
 ```
 
-Abre o túnel para aceder ao Dashboard:
-```bash
-# Deixa este terminal aberto
-kubectl port-forward -n chaos-mesh svc/chaos-dashboard 2333:2333
-```
-Acede a: [http://localhost:2333](http://localhost:2333)
+## 🛠 Desenvolvimento
 
-### 3. Obter Token de Acesso
-Para fazer login no Dashboard, gera um token:
-```bash
-kubectl create token account-cluster-manager-sa
-```
-
-### 4. Configurar Agente Remoto (Target)
-Para atacar a máquina remota (`192.168.1.196`) ou os seus containers:
-
-1. Executa o script de instalação automática:
-   ```bash
-   ./install_remote_chaosd.sh
-   ```
-   *Isto instala o `chaosd` no servidor remoto e regista-o no teu Chaos Mesh local.*
-
-2. O script vai devolver o **PID** do container `server1`. Guarda este número!
-
-### 5. Criar um Ataque
-1. No Dashboard, vai a **New Experiment** > **Physical Machine**.
-2. Escolhe o tipo de ataque (ex: **Process Attack** para matar containers, ou **Network Attack** para latência).
-3. No campo "Process ID", usa o PID obtido no passo anterior.
-4. Submete o ataque.
-
----
-
-## Monitorização & Observabilidade
-- **Grafana**: http://localhost:3000 (Dashboards e Visualização)
-  - Login: admin / admin
-- **Prometheus**: http://localhost:9090
-- **Consul UI**: http://localhost:8500
-
-## Infraestrutura (Nós do Cluster)
-- Consul Server 1: 172.21.0.2
-- Consul Server 2: 172.21.0.3
-- Consul Server 3: 172.21.0.4
-
-
-
+Para adicionar novos experimentos, basta criar arquivos `.json` ou `.yaml` na pasta `experiments/`. A UI irá detectá-los automaticamente.

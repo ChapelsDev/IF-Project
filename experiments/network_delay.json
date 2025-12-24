@@ -1,0 +1,71 @@
+{
+    "version": "1.0.0",
+    "title": "Injeção de Latência de Rede via ChaosD Remoto",
+    "description": "Aumenta a latência de rede no servidor remoto e verifica se o serviço responde.",
+    "tags": [
+        "network",
+        "latency",
+        "chaosd"
+    ],
+    "configuration": {
+        "target_host": "127.0.0.1",
+        "latency": "200ms",
+        "ssh_user": "root",
+        "ssh_password": "",
+        "device": "eth0",
+        "duration": 30
+    },
+    "steady-state-hypothesis": {
+        "title": "O serviço deve estar acessível",
+        "probes": [
+            {
+                "type": "probe",
+                "name": "service-is-responding",
+                "tolerance": 200,
+                "provider": {
+                    "type": "http",
+                    "url": "http://${target_host}:8500/v1/status/leader",
+                    "timeout": 1
+                }
+            }
+        ]
+    },
+    "method": [
+        {
+            "type": "action",
+            "name": "inject-network-delay",
+            "provider": {
+                "type": "python",
+                "module": "src.lib.chaos_ssh_driver",
+                "func": "inject_network_delay",
+                "arguments": {
+                    "target_host": "${target_host}",
+                    "ssh_user": "${ssh_user}",
+                    "ssh_password": "${ssh_password}",
+                    "latency": "${latency}",
+                    "device": "${device}"
+                }
+            },
+            "pauses": {
+                "after": "${duration}"
+            }
+        }
+    ],
+    "rollbacks": [
+        {
+            "type": "action",
+            "name": "recover-network",
+            "provider": {
+                "type": "python",
+                "module": "src.lib.chaos_ssh_driver",
+                "func": "recover_network_delay",
+                "arguments": {
+                    "target_host": "${target_host}",
+                    "ssh_user": "${ssh_user}",
+                    "ssh_password": "${ssh_password}",
+                    "uid": "${inject-network-delay}"
+                }
+            }
+        }
+    ]
+}
