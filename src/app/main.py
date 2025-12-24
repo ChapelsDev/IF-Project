@@ -7,6 +7,7 @@ import os
 import asyncio
 import subprocess
 import json
+import time
 from typing import List
 import requests
 from src.lib.chaos_ssh_driver import recover_network_delay
@@ -89,6 +90,7 @@ async def run_experiments(
     experiment_id: List[str] = Form(...),
     node_id: List[str] = Form(...),
     latency: str = Form("200ms"),
+    loss: str = Form("20%"),
     duration: str = Form("30s"),
     device: str = Form("eth0"),
     ssh_user: str = Form(None),
@@ -116,6 +118,10 @@ async def run_experiments(
     if latency and latency.isdigit():
         latency = f"{latency}ms"
 
+    # Sanitize loss: ensure it has a unit (default to % if just a number)
+    if loss and loss.replace('.', '', 1).isdigit():
+        loss = f"{loss}%"
+
     started_pids = []
 
     for exp_id in experiment_id:
@@ -134,6 +140,7 @@ async def run_experiments(
                 "--var", f"ssh_password={final_ssh_password}",
                 "--var", f"ssh_port={target_node.get('ssh_port', 22)}",
                 "--var", f"latency={latency}",
+                "--var", f"loss={loss}",
                 "--var", f"duration={duration}",
                 "--var", f"device={device}"
             ]
@@ -141,6 +148,10 @@ async def run_experiments(
             # Adicionar PYTHONPATH para encontrar módulos customizados
             env = os.environ.copy()
             env["PYTHONPATH"] = PROJECT_ROOT
+            
+            # Pequeno delay para evitar race condition no 'tc' se rodar múltiplos testes simultâneos
+            if len(experiment_id) > 1:
+                time.sleep(2)
 
             proc = subprocess.Popen(
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=PROJECT_ROOT, env=env
@@ -157,6 +168,31 @@ async def run_experiments(
             started_pids.append(str(proc.pid))
     
     return templates.TemplateResponse("partials/running.html", {"request": request, "pids": ",".join(started_pids)})
+
+@app.get("/experiments/check_status")
+async def check_experiments_status(request: Request, pids: str):
+    pid_list = [int(p) for p in pids.split(",") if p.strip().isdigit()]
+    still_running = False
+    
+    # Check if any of the PIDs are still in active_experiments and running
+    for pid in pid_list:
+        if pid in active_experiments:
+            proc = active_experiments[pid]["process"]
+            if proc.poll() is None: # None means still running
+                still_running = True
+                break
+    
+    if still_running:
+        # Return same running html to keep polling
+        return templates.TemplateResponse("partials/running.html", {"request": request, "pids": pids})
+    else:
+        # All finished
+        # Clean up active_experiments
+        for pid in pid_list:
+            if pid in active_experiments:
+                del active_experiments[pid]
+                
+        return templates.TemplateResponse("partials/finished.html", {"request": request})
 
 @app.post("/experiment/stop")
 async def stop_experiment(request: Request, pids: str = Form(...)):
@@ -267,6 +303,23 @@ async def get_latency_metrics(node: str):
             value = float(data["data"]["result"][0]["value"][1])
             return {"timestamp": timestamp, "value": value}
         return {"value": 0} # Retorna 0 se não houver dados (timeout ou down)
+    except Exception as e:
+        print(f"Erro ao consultar Prometheus: {e}")
+        return {"value": 0}
+
+@app.get("/api/metrics/packet_loss")
+async def get_packet_loss_metrics(node: str):
+    prometheus_url = os.getenv("PROMETHEUS_URL", "http://prometheus:9090")
+    # Calcula a taxa de falha nos últimos 10 segundos (com scrape de 1s, temos 10 amostras)
+    # Isso torna o gráfico mais responsivo
+    query = f'(1 - avg_over_time(probe_success{{instance="{node}"}}[10s])) * 100'
+    try:
+        response = requests.get(f"{prometheus_url}/api/v1/query", params={"query": query})
+        data = response.json()
+        if data["status"] == "success" and data["data"]["result"]:
+            value = float(data["data"]["result"][0]["value"][1])
+            return {"value": value}
+        return {"value": 0}
     except Exception as e:
         print(f"Erro ao consultar Prometheus: {e}")
         return {"value": 0}

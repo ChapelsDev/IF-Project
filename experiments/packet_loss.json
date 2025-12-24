@@ -1,22 +1,22 @@
 {
     "version": "1.0.0",
-    "title": "Injeção de Latência de Rede via ChaosD Remoto",
-    "description": "Aumenta a latência de rede no servidor remoto e verifica se o serviço responde.",
+    "title": "Injeção de Perda de Pacotes",
+    "description": "Simula uma rede instável descartando uma porcentagem dos pacotes.",
     "tags": [
         "network",
-        "latency",
-        "chaosd"
+        "loss",
+        "tc"
     ],
     "configuration": {
         "target_host": "127.0.0.1",
-        "latency": "200ms",
+        "loss": "20%",
         "ssh_user": "root",
         "ssh_password": "",
         "device": "eth0",
         "duration": 30
     },
     "steady-state-hypothesis": {
-        "title": "O serviço deve estar acessível",
+        "title": "O serviço deve continuar respondendo apesar da perda de pacotes",
         "probes": [
             {
                 "type": "probe",
@@ -25,7 +25,7 @@
                 "provider": {
                     "type": "http",
                     "url": "http://${target_host}:8500/v1/status/leader",
-                    "timeout": 1
+                    "timeout": 2
                 }
             }
         ]
@@ -33,16 +33,16 @@
     "method": [
         {
             "type": "action",
-            "name": "inject-network-delay",
+            "name": "inject-packet-loss",
             "provider": {
                 "type": "python",
                 "module": "src.lib.chaos_ssh_driver",
-                "func": "inject_network_delay",
+                "func": "inject_packet_loss",
                 "arguments": {
                     "target_host": "${target_host}",
                     "ssh_user": "${ssh_user}",
                     "ssh_password": "${ssh_password}",
-                    "latency": "${latency}",
+                    "loss": "${loss}",
                     "device": "${device}"
                 }
             }
@@ -63,16 +63,16 @@
     "rollbacks": [
         {
             "type": "action",
-            "name": "recover-network",
+            "name": "recover-packet-loss",
             "provider": {
                 "type": "python",
                 "module": "src.lib.chaos_ssh_driver",
-                "func": "recover_network_delay",
+                "func": "recover_packet_loss",
                 "arguments": {
                     "target_host": "${target_host}",
                     "ssh_user": "${ssh_user}",
                     "ssh_password": "${ssh_password}",
-                    "uid": "${inject-network-delay}"
+                    "uid": "${device}"
                 }
             }
         }
