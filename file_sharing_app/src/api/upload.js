@@ -9,12 +9,17 @@ const upload = multer();
 module.exports = function(app) {
     app.post("/upload", upload.single("file"), async (req, res) => {
         try {
+            const filerIp = req.query.filerIp; // Get FILER IP from query parameter
+            if (!filerIp) {
+                return res.status(400).json({ error: "FILER IP is required" });
+            }
+
             const originalName = req.file.originalname;
             const extension = path.extname(originalName);
             const uuid = crypto.randomUUID();
             const storedName = `${uuid}${extension}`;
 
-            await uploadToFiler(`uploads/${storedName}`, req.file.buffer);
+            await uploadToFiler(filerIp, `uploads/${storedName}`, req.file.buffer);
 
             // Store the mapping from original name to stored name
             fileMap.set(originalName, storedName);

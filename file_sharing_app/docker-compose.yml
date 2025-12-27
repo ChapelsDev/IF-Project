@@ -1,19 +1,40 @@
 version: "3.7"
 
 services:
-  master:
+  master1:
     image: chrislusf/seaweedfs
-    command: "master -port=9333 -ip=master -peers=none -defaultReplication=001"
+    container_name: master1
+    command: "master -port=9333 -ip=master1 -peers=master1:9333,master2:9333,master3:9333 -defaultReplication=001"
     ports:
-      - "9333:9333"
+      - "9331:9333"  # Map container port 9333 to host port 9331
     networks:
       - weednet
 
+  master2:
+    image: chrislusf/seaweedfs
+    container_name: master2
+    command: "master -port=9333 -ip=master2 -peers=master1:9333,master2:9333,master3:9333 -defaultReplication=001"
+    ports:
+      - "9332:9333"  # Map container port 9333 to host port 9332
+    networks:
+      - weednet
+
+  master3:
+    image: chrislusf/seaweedfs
+    container_name: master3
+    command: "master -port=9333 -ip=master3 -peers=master1:9333,master2:9333,master3:9333 -defaultReplication=001"
+    ports:
+      - "9333:9333"  # Map container port 9333 to host port 9333
+    networks:
+      - weednet
+
+  # Volume Nodes
   volume1:
     image: chrislusf/seaweedfs
-    command: "volume -port=8080 -ip=volume1 -mserver=master:9333 -dir=/data"
+    container_name: volume1
+    command: "volume -port=8080 -ip=volume1 -mserver=master1:9333,master2:9333,master3:9333 -dir=/data"
     volumes:
-      - vol1:/data
+      - ./data/volume1:/data  # Persistent storage
     ports:
       - "8080:8080"
     networks:
@@ -21,28 +42,117 @@ services:
 
   volume2:
     image: chrislusf/seaweedfs
-    command: "volume -port=8081 -ip=volume2 -mserver=master:9333 -dir=/data"
+    container_name: volume2
+    command: "volume -port=8081 -ip=volume2 -mserver=master1:9333,master2:9333,master3:9333 -dir=/data"
     volumes:
-      - vol2:/data
+      - ./data/volume2:/data  # Persistent storage
     ports:
       - "8081:8081"
     networks:
       - weednet
-
-  filer:
+  
+  volume3:
     image: chrislusf/seaweedfs
-    command: "filer -master=master:9333 -ip=filer -port=8888"
+    container_name: volume3
+    command: "volume -port=8082 -ip=volume3 -mserver=master1:9333,master2:9333,master3:9333 -dir=/data"
+    volumes:
+      - ./data/volume3:/data  # Persistent storage
+    ports:
+      - "8082:8082"
+    networks:
+      - weednet
+
+  # Filer Nodes
+  filer1:
+    image: chrislusf/seaweedfs
+    container_name: filer1
+    command: "filer -master=master1:9333,master2:9333,master3:9333 -ip=filer1 -port=8888"
     ports:
       - "8888:8888"
     volumes:
-      - filerldb:/data
+      - filer1db:/data
+    networks:
+      - weednet
+
+  filer2:
+    image: chrislusf/seaweedfs
+    container_name: filer2
+    command: "filer -master=master1:9333,master2:9333,master3:9333 -ip=filer2 -port=8889"
+    ports:
+      - "8889:8889"
+    volumes:
+      - filer2db:/data
+    networks:
+      - weednet
+
+  filer3:
+    image: chrislusf/seaweedfs
+    container_name: filer3
+    command: "filer -master=master1:9333,master2:9333,master3:9333 -ip=filer3 -port=8890"
+    ports:
+      - "8890:8890"
+    volumes:
+      - filer3db:/data
+    networks:
+      - weednet
+
+  # etcd Nodes
+  etcd1:
+    image: quay.io/coreos/etcd:v3.5.9
+    container_name: etcd1
+    command: >
+      etcd --name etcd1
+      --data-dir=/etcd-data
+      --listen-client-urls http://0.0.0.0:2379
+      --advertise-client-urls http://etcd1:2379
+      --listen-peer-urls http://0.0.0.0:2380
+      --initial-advertise-peer-urls http://etcd1:2380
+      --initial-cluster etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380
+      --initial-cluster-token etcd-cluster
+      --initial-cluster-state new
+    networks:
+      - weednet
+    ports:
+      - "2379:2379"
+
+  etcd2:
+    image: quay.io/coreos/etcd:v3.5.9
+    container_name: etcd2
+    command: >
+      etcd --name etcd2
+      --data-dir=/etcd-data
+      --listen-client-urls http://0.0.0.0:2379
+      --advertise-client-urls http://etcd2:2379
+      --listen-peer-urls http://0.0.0.0:2380
+      --initial-advertise-peer-urls http://etcd2:2380
+      --initial-cluster etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380
+      --initial-cluster-token etcd-cluster
+      --initial-cluster-state new
+    networks:
+      - weednet
+
+  etcd3:
+    image: quay.io/coreos/etcd:v3.5.9
+    container_name: etcd3
+    command: >
+      etcd --name etcd3
+      --data-dir=/etcd-data
+      --listen-client-urls http://0.0.0.0:2379
+      --advertise-client-urls http://etcd3:2379
+      --listen-peer-urls http://0.0.0.0:2380
+      --initial-advertise-peer-urls http://etcd3:2380
+      --initial-cluster etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380
+      --initial-cluster-token etcd-cluster
+      --initial-cluster-state new
     networks:
       - weednet
 
 volumes:
   vol1:
   vol2:
-  filerldb:
+  filer1db:
+  filer2db:
+  filer3db:
 
 networks:
   weednet:
