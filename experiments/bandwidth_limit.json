@@ -1,0 +1,83 @@
+{
+    "version": "1.0.0",
+    "title": "Injeção de Limite de Largura de Banda",
+    "description": "Simula congestionamento limitando a largura de banda da interface de rede usando TBF (Token Bucket Filter).",
+    "tags": [
+        "network",
+        "bandwidth",
+        "limit",
+        "tc"
+    ],
+    "configuration": {
+        "target_host": "127.0.0.1",
+        "rate": "100kbit",
+        "burst": "32kbit",
+        "latency": "400ms",
+        "ssh_user": "root",
+        "ssh_password": "",
+        "device": "enp7s0",
+        "duration": 30
+    },
+    "steady-state-hypothesis": {
+        "title": "O serviço deve continuar respondendo apesar do limite de banda",
+        "probes": [
+            {
+                "type": "probe",
+                "name": "service-is-responding",
+                "tolerance": 200,
+                "provider": {
+                    "type": "http",
+                    "url": "http://${target_host}:8500/v1/status/leader",
+                    "timeout": 2
+                }
+            }
+        ]
+    },
+    "method": [
+        {
+            "type": "action",
+            "name": "inject-bandwidth-limit",
+            "provider": {
+                "type": "python",
+                "module": "src.lib.chaos_ssh_driver",
+                "func": "inject_bandwidth_limit",
+                "arguments": {
+                    "target_host": "${target_host}",
+                    "ssh_user": "${ssh_user}",
+                    "ssh_password": "${ssh_password}",
+                    "rate": "${rate}",
+                    "burst": "${burst}",
+                    "latency": "${latency}",
+                    "device": "${device}"
+                }
+            }
+        },
+        {
+            "type": "action",
+            "name": "wait-duration",
+            "provider": {
+                "type": "python",
+                "module": "src.lib.chaos_ssh_driver",
+                "func": "wait_seconds",
+                "arguments": {
+                    "seconds": "${duration}"
+                }
+            }
+        },
+        {
+            "type": "action",
+            "name": "recover-bandwidth-limit",
+            "provider": {
+                "type": "python",
+                "module": "src.lib.chaos_ssh_driver",
+                "func": "recover_bandwidth_limit",
+                "arguments": {
+                    "target_host": "${target_host}",
+                    "ssh_user": "${ssh_user}",
+                    "ssh_password": "${ssh_password}",
+                    "uid": "${device}"
+                }
+            }
+        }
+    ]
+}

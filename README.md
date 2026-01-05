@@ -6,8 +6,21 @@ Plataforma completa para injeção de falhas e observabilidade em sistemas distr
 
 - **Execução em Massa:** Selecione múltiplos nós e múltiplos experimentos para execução simultânea.
 - **Controle Total:** Botão de "Parar Todos" para interromper imediatamente todos os ataques e reverter o estado da rede.
-- **Visualização Inteligente:** Gráfico de latência em tempo real com coloração dinâmica (vermelho apenas nos picos de latência > 100ms).
+- **Visualização Inteligente:** Gráficos em tempo real para Latência, Perda de Pacotes, Largura de Banda, Duplicação e Reordenação.
 - **Driver SSH Personalizado:** Injeção de falhas via SSH usando `tc` (Traffic Control) sem necessidade de agentes pesados.
+- **Monitoramento Avançado:** Detecção de anomalias de rede complexas (Duplicação e Reordenação) via análise ativa de ICMP.
+
+## 🧪 Experimentos Suportados
+
+A plataforma suporta os seguintes tipos de injeção de falhas de rede:
+
+1.  **Network Delay (Latência):** Adiciona atraso na interface de rede.
+2.  **Packet Loss (Perda):** Descarta pacotes aleatoriamente.
+3.  **Bandwidth Limit (Largura de Banda):** Restringe a taxa de upload/download (TBF).
+4.  **Packet Duplication (Duplicação):** Duplica uma porcentagem dos pacotes enviados.
+5.  **Packet Reordering (Reordenação):** Altera a ordem de entrega dos pacotes.
+6.  **Packet Corruption (Corrupção):** Introduz erros em bits aleatórios dos pacotes.
+7.  **Network Partition (Partição de Rede):** Isola o nó de um IP específico (Blackhole).
 
 ## 🏗 Arquitetura
 

@@ -8,11 +8,74 @@ import asyncio
 import subprocess
 import json
 import time
+import sys
 from typing import List
 import requests
 from src.lib.chaos_ssh_driver import recover_network_delay
+import threading
+import re
+from collections import deque
 
 app = FastAPI()
+
+# --- Monitoramento em Background (Ping) ---
+class PingMonitor:
+    def __init__(self):
+        self.metrics = {} # {ip: {'dup': 0.0, 'reorder': 0.0, 'window': deque(maxlen=20)}}
+        self.threads = {}
+        self.lock = threading.Lock()
+
+    def start_monitoring(self, ip):
+        with self.lock:
+            if ip in self.threads and self.threads[ip].is_alive():
+                return
+            self.metrics[ip] = {'dup': 0.0, 'reorder': 0.0, 'window': deque(maxlen=50)}
+            t = threading.Thread(target=self._ping_loop, args=(ip,), daemon=True)
+            self.threads[ip] = t
+            t.start()
+
+    def _ping_loop(self, ip):
+        # Ping rápido (0.05s intervalo) para detectar reordenação com delays menores
+        # Requer que o delay da rede seja > 50ms para haver reordenação visível
+        proc = subprocess.Popen(['ping', '-i', '0.05', ip], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        last_seq = -1
+        
+        for line in proc.stdout:
+            # Parse seq
+            seq_match = re.search(r'icmp_seq=(\d+)', line)
+            is_dup = "(DUP!)" in line
+            is_reorder = False
+            
+            if seq_match:
+                seq = int(seq_match.group(1))
+                if last_seq != -1 and seq < last_seq and not is_dup:
+                    is_reorder = True
+                if not is_dup: # Só atualiza seq se não for duplicado
+                    last_seq = max(last_seq, seq) # Mantém o maior visto para detectar reordenação
+            
+            with self.lock:
+                # Armazena evento na janela: (is_dup, is_reorder)
+                self.metrics[ip]['window'].append((1 if is_dup else 0, 1 if is_reorder else 0))
+                
+                # Calcula médias
+                window = self.metrics[ip]['window']
+                if window:
+                    total = len(window)
+                    dup_count = sum(x[0] for x in window)
+                    reorder_count = sum(x[1] for x in window)
+                    self.metrics[ip]['dup'] = (dup_count / total) * 100
+                    self.metrics[ip]['reorder'] = (reorder_count / total) * 100
+
+    def get_metrics(self, ip):
+        with self.lock:
+            if ip not in self.metrics:
+                return {'dup': 0.0, 'reorder': 0.0}
+            return {
+                'dup': self.metrics[ip]['dup'],
+                'reorder': self.metrics[ip]['reorder']
+            }
+
+monitor = PingMonitor()
 
 # Configuração de caminhos
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -91,6 +154,12 @@ async def run_experiments(
     node_id: List[str] = Form(...),
     latency: str = Form("200ms"),
     loss: str = Form("20%"),
+    corruption: str = Form("10%"),
+    duplication: str = Form("1%"),
+    reordering: str = Form("5%"),
+    partition_target: str = Form(""),
+    rate: str = Form("1mbit"),
+    burst: str = Form("32kbit"),
     duration: str = Form("30s"),
     device: str = Form("eth0"),
     ssh_user: str = Form(None),
@@ -122,6 +191,9 @@ async def run_experiments(
     if loss and loss.replace('.', '', 1).isdigit():
         loss = f"{loss}%"
 
+    if partition_target:
+        partition_target = partition_target.strip()
+
     started_pids = []
 
     for exp_id in experiment_id:
@@ -141,6 +213,12 @@ async def run_experiments(
                 "--var", f"ssh_port={target_node.get('ssh_port', 22)}",
                 "--var", f"latency={latency}",
                 "--var", f"loss={loss}",
+                "--var", f"corruption={corruption}",
+                "--var", f"duplication={duplication}",
+                "--var", f"reordering={reordering}",
+                "--var", f"partition_target={partition_target}",
+                "--var", f"rate={rate}",
+                "--var", f"burst={burst}",
                 "--var", f"duration={duration}",
                 "--var", f"device={device}"
             ]
@@ -153,8 +231,9 @@ async def run_experiments(
             if len(experiment_id) > 1:
                 time.sleep(2)
 
+            # Redirecionar stdout/stderr para o console do Docker para debug
             proc = subprocess.Popen(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=PROJECT_ROOT, env=env
+                cmd, stdout=sys.stdout, stderr=sys.stderr, text=True, cwd=PROJECT_ROOT, env=env
             )
             
             # Salvar contexto para permitir parada forçada e rollback
@@ -288,6 +367,20 @@ async def websocket_endpoint(websocket: WebSocket):
     except:
         pass
 
+@app.get("/api/metrics/duplication")
+async def get_duplication_metrics(node: str):
+    # Inicia monitoramento se não existir
+    monitor.start_monitoring(node)
+    metrics = monitor.get_metrics(node)
+    return {"value": metrics['dup']}
+
+@app.get("/api/metrics/reordering")
+async def get_reordering_metrics(node: str):
+    # Inicia monitoramento se não existir
+    monitor.start_monitoring(node)
+    metrics = monitor.get_metrics(node)
+    return {"value": metrics['reorder']}
+
 @app.get("/api/metrics/latency")
 async def get_latency_metrics(node: str):
     prometheus_url = os.getenv("PROMETHEUS_URL", "http://prometheus:9090")
@@ -313,6 +406,24 @@ async def get_packet_loss_metrics(node: str):
     # Calcula a taxa de falha nos últimos 10 segundos (com scrape de 1s, temos 10 amostras)
     # Isso torna o gráfico mais responsivo
     query = f'(1 - avg_over_time(probe_success{{instance="{node}"}}[10s])) * 100'
+    try:
+        response = requests.get(f"{prometheus_url}/api/v1/query", params={"query": query})
+        data = response.json()
+        if data["status"] == "success" and data["data"]["result"]:
+            value = float(data["data"]["result"][0]["value"][1])
+            return {"value": value}
+        return {"value": 0}
+    except Exception as e:
+        print(f"Erro ao consultar Prometheus: {e}")
+        return {"value": 0}
+
+@app.get("/api/metrics/throughput")
+async def get_throughput_metrics(node: str):
+    prometheus_url = os.getenv("PROMETHEUS_URL", "http://prometheus:9090")
+    # Taxa de transmissão (Tx) em bits/s nos últimos 30s
+    # Filtramos por device!='lo' para ignorar loopback
+    # O instance no node_exporter geralmente é IP:9100
+    query = f'sum(rate(node_network_transmit_bytes_total{{instance=~"{node}:.*", device!="lo"}}[30s])) * 8'
     try:
         response = requests.get(f"{prometheus_url}/api/v1/query", params={"query": query})
         data = response.json()

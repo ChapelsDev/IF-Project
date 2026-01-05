@@ -2,11 +2,12 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Instalar dependências do sistema (incluindo cliente SSH)
+# Instalar dependências do sistema (incluindo cliente SSH e Ping)
 RUN apt-get update && apt-get install -y \
     sshpass \
     openssh-client \
     iproute2 \
+    iputils-ping \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar requirements e instalar

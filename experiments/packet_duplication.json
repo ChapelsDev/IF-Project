@@ -1,0 +1,61 @@
+{
+    "version": "1.0.0",
+    "title": "Injeção de Duplicação de Pacotes",
+    "description": "Simula duplicação de pacotes na rede.",
+    "tags": ["network", "duplication", "tc"],
+    "configuration": {
+        "target_host": "127.0.0.1",
+        "duplication": "1%",
+        "ssh_user": "root",
+        "ssh_password": "",
+        "device": "enp7s0",
+        "duration": 30
+    },
+    "method": [
+        {
+            "type": "action",
+            "name": "inject-packet-duplication",
+            "provider": {
+                "type": "python",
+                "module": "src.lib.chaos_ssh_driver",
+                "func": "inject_packet_duplication",
+                "arguments": {
+                    "target_host": "${target_host}",
+                    "ssh_user": "${ssh_user}",
+                    "ssh_password": "${ssh_password}",
+                    "duplication": "${duplication}",
+                    "device": "${device}"
+                }
+            }
+        },
+        {
+            "type": "action",
+            "name": "wait-duration",
+            "provider": {
+                "type": "python",
+                "module": "src.lib.chaos_ssh_driver",
+                "func": "wait_seconds",
+                "arguments": {
+                    "seconds": "${duration}"
+                }
+            }
+        }
+    ],
+    "rollbacks": [
+        {
+            "type": "action",
+            "name": "recover-packet-duplication",
+            "provider": {
+                "type": "python",
+                "module": "src.lib.chaos_ssh_driver",
+                "func": "recover_packet_duplication",
+                "arguments": {
+                    "target_host": "${target_host}",
+                    "ssh_user": "${ssh_user}",
+                    "ssh_password": "${ssh_password}",
+                    "uid": "${device}"
+                }
+            }
+        }
+    ]
+}

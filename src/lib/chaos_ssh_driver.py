@@ -56,6 +56,16 @@ def _get_current_netem_params(target_host: str, ssh_user: str, device: str, ssh_
             loss_match = re.search(r'loss\s+([0-9\.]+\%?)', output)
             if loss_match:
                 params.append(f"loss {loss_match.group(1)}")
+
+            # Regex to find duplicate (e.g., duplicate 1%)
+            dup_match = re.search(r'duplicate\s+([0-9\.]+\%?)', output)
+            if dup_match:
+                params.append(f"duplicate {dup_match.group(1)}")
+
+            # Regex to find reorder (e.g., reorder 5%)
+            reorder_match = re.search(r'reorder\s+([0-9\.]+\%?)', output)
+            if reorder_match:
+                params.append(f"reorder {reorder_match.group(1)}")
                 
             return " ".join(params)
     except:
@@ -157,3 +167,175 @@ def recover_packet_loss(target_host: str, ssh_user: str, uid: str, ssh_password:
     Recovers the packet loss attack.
     """
     recover_network_delay(target_host, ssh_user, uid, ssh_password)
+
+def inject_packet_corruption(target_host: str, ssh_user: str, corruption: str = "10%", device: str = "eth0", ssh_password: str = None) -> str:
+    """
+    Injects packet corruption using 'tc' (Traffic Control) via SSH.
+    """
+    # Check for existing params
+    current_params = _get_current_netem_params(target_host, ssh_user, device, ssh_password)
+    
+    new_params = []
+    # Preserve existing delay/loss if possible (simplified logic here)
+    if "delay" in current_params:
+        delay_match = re.search(r'delay\s+([0-9\.]+ms)', current_params)
+        if delay_match:
+            new_params.append(f"delay {delay_match.group(1)}")
+    if "loss" in current_params:
+        loss_match = re.search(r'loss\s+([0-9\.]+\%?)', current_params)
+        if loss_match:
+            new_params.append(f"loss {loss_match.group(1)}")
+
+    new_params.append(f"corrupt {corruption}")
+    
+    params_str = " ".join(new_params)
+    cmd = f"tc qdisc replace dev {device} root netem {params_str}"
+    cmd = _get_sudo_command(cmd, ssh_user, ssh_password)
+    
+    try:
+        run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+        return device
+    except RuntimeError as e:
+        raise RuntimeError(f"Failed to inject packet corruption: {e}")
+
+def recover_packet_corruption(target_host: str, ssh_user: str, uid: str, ssh_password: str = None) -> None:
+    recover_network_delay(target_host, ssh_user, uid, ssh_password)
+
+def inject_bandwidth_limit(target_host: str, ssh_user: str, rate: str = "1mbit", burst: str = "32kbit", latency: str = "400ms", device: str = "eth0", ssh_password: str = None) -> str:
+    """
+    Injects bandwidth limit using 'tc' TBF (Token Bucket Filter).
+    """
+    cmd = f"tc qdisc replace dev {device} root tbf rate {rate} burst {burst} latency {latency}"
+    cmd = _get_sudo_command(cmd, ssh_user, ssh_password)
+    
+    try:
+        run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+        return device
+    except RuntimeError as e:
+        raise RuntimeError(f"Failed to inject bandwidth limit: {e}")
+
+def recover_bandwidth_limit(target_host: str, ssh_user: str, uid: str, ssh_password: str = None) -> None:
+    recover_network_delay(target_host, ssh_user, uid, ssh_password)
+
+def inject_packet_duplication(target_host: str, ssh_user: str, duplication: str = "1%", device: str = "eth0", ssh_password: str = None) -> str:
+    """
+    Injects packet duplication using 'tc' (Traffic Control) via SSH.
+    """
+    current_params = _get_current_netem_params(target_host, ssh_user, device, ssh_password)
+    new_params = []
+    
+    # Preserve existing params
+    if "delay" in current_params:
+        delay_match = re.search(r'delay\s+([0-9\.]+ms)', current_params)
+        if delay_match: new_params.append(f"delay {delay_match.group(1)}")
+    if "loss" in current_params:
+        loss_match = re.search(r'loss\s+([0-9\.]+\%?)', current_params)
+        if loss_match: new_params.append(f"loss {loss_match.group(1)}")
+
+    if "reorder" in current_params:
+        reorder_match = re.search(r'reorder\s+([0-9\.]+\%?)', current_params)
+        if reorder_match: new_params.append(f"reorder {reorder_match.group(1)} 50%")
+        
+    new_params.append(f"duplicate {duplication}")
+    
+    params_str = " ".join(new_params)
+    cmd = f"tc qdisc replace dev {device} root netem {params_str}"
+    cmd = _get_sudo_command(cmd, ssh_user, ssh_password)
+    
+    try:
+        run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+        return device
+    except RuntimeError as e:
+        raise RuntimeError(f"Failed to inject packet duplication: {e}")
+
+def recover_packet_duplication(target_host: str, ssh_user: str, uid: str, ssh_password: str = None) -> None:
+    recover_network_delay(target_host, ssh_user, uid, ssh_password)
+
+def inject_packet_reordering(target_host: str, ssh_user: str, reordering: str = "5%", device: str = "eth0", ssh_password: str = None) -> str:
+    """
+    Injects packet reordering using 'tc' (Traffic Control) via SSH.
+    Note: Reordering usually requires a delay to be effective in netem.
+    If no delay exists, we add a small one (10ms) to make reordering work.
+    """
+    current_params = _get_current_netem_params(target_host, ssh_user, device, ssh_password)
+    new_params = []
+    
+    has_delay = False
+    if "delay" in current_params:
+        delay_match = re.search(r'delay\s+([0-9\.]+ms)', current_params)
+        if delay_match: 
+            new_params.append(f"delay {delay_match.group(1)}")
+            has_delay = True
+    
+    if not has_delay:
+        # Delay must be larger than ping interval (50ms) for reordering to be detected
+        new_params.append("delay 75ms")
+
+    if "loss" in current_params:
+        loss_match = re.search(r'loss\s+([0-9\.]+\%?)', current_params)
+        if loss_match: new_params.append(f"loss {loss_match.group(1)}")
+
+    if "duplicate" in current_params:
+        dup_match = re.search(r'duplicate\s+([0-9\.]+\%?)', current_params)
+        if dup_match: new_params.append(f"duplicate {dup_match.group(1)}")
+
+    # reorder 25% 50% (25% of packets are sent immediately, others are delayed)
+    # Simplified here to just take one value
+    new_params.append(f"reorder {reordering} 50%")
+    
+    params_str = " ".join(new_params)
+    cmd = f"tc qdisc replace dev {device} root netem {params_str}"
+    cmd = _get_sudo_command(cmd, ssh_user, ssh_password)
+    
+    try:
+        run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+        return device
+    except RuntimeError as e:
+        raise RuntimeError(f"Failed to inject packet reordering: {e}")
+
+def recover_packet_reordering(target_host: str, ssh_user: str, uid: str, ssh_password: str = None) -> None:
+    recover_network_delay(target_host, ssh_user, uid, ssh_password)
+
+def inject_network_partition(target_host: str, ssh_user: str, partition_target: str, device: str = "eth0", ssh_password: str = None) -> str:
+    """
+    Injects network partition using 'ip route blackhole'.
+    This is often more robust than iptables as it bypasses firewall chains.
+    """
+    if not partition_target:
+        raise ValueError("Partition target IP is required")
+
+    # Add a blackhole route for the specific IP
+    cmd = f"ip route add blackhole {partition_target}"
+    cmd = _get_sudo_command(cmd, ssh_user, ssh_password)
+    
+    try:
+        run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+        return partition_target
+    except RuntimeError as e:
+        # If route already exists, try to replace it just in case
+        if "File exists" in str(e):
+            try:
+                cmd_replace = f"ip route replace blackhole {partition_target}"
+                cmd_replace = _get_sudo_command(cmd_replace, ssh_user, ssh_password)
+                run_ssh_command(target_host, ssh_user, cmd_replace, ssh_password)
+                return partition_target
+            except:
+                pass
+        raise RuntimeError(f"Failed to inject network partition: {e}")
+
+def recover_network_partition(target_host: str, ssh_user: str, uid: str, ssh_password: str = None) -> None:
+    """
+    Recovers network partition by removing the blackhole route.
+    """
+    partition_target = uid
+    
+    cmd = f"ip route del blackhole {partition_target}"
+    cmd = _get_sudo_command(cmd, ssh_user, ssh_password)
+    
+    try:
+        run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+    except Exception as e:
+        print(f"ERROR: Failed to rollback network partition: {e}")
+        # Try to log it to a file or stderr so it's visible
+        import sys
+        print(f"ERROR: Failed to rollback network partition: {e}", file=sys.stderr)

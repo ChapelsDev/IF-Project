@@ -125,10 +125,20 @@
                                 const checkboxes = document.getElementsByName('experiment_id');
                                 const latencyGroup = document.getElementById('latency-group');
                                 const lossGroup = document.getElementById('loss-group');
+                                const corruptionGroup = document.getElementById('corruption-group');
+                                const duplicationGroup = document.getElementById('duplication-group');
+                                const reorderingGroup = document.getElementById('reordering-group');
+                                const bandwidthGroup = document.getElementById('bandwidth-group');
+                                const partitionGroup = document.getElementById('partition-group');
                                 const selector = document.getElementById('metric-selector');
                                 
                                 let hasLatency = false;
                                 let hasLoss = false;
+                                let hasCorruption = false;
+                                let hasDuplication = false;
+                                let hasReordering = false;
+                                let hasBandwidth = false;
+                                let hasPartition = false;
 
                                 for(let i=0; i<checkboxes.length; i++) {
                                     if (checkboxes[i].checked) {
@@ -138,19 +148,39 @@
                                         if (expId.includes('delay') || expId.includes('latency')) {
                                             hasLatency = true;
                                         }
-                                        if (expId.includes('loss') || expId.includes('packet')) {
+                                        if (expId.includes('loss') || expId.includes('packet_loss')) {
                                             hasLoss = true;
+                                        }
+                                        if (expId.includes('corruption')) {
+                                            hasCorruption = true;
+                                        }
+                                        if (expId.includes('duplication')) {
+                                            hasDuplication = true;
+                                        }
+                                        if (expId.includes('reordering')) {
+                                            hasReordering = true;
+                                        }
+                                        if (expId.includes('bandwidth') || expId.includes('limit')) {
+                                            hasBandwidth = true;
+                                        }
+                                        if (expId.includes('partition')) {
+                                            hasPartition = true;
                                         }
                                     }
                                 }
 
                                 latencyGroup.style.display = hasLatency ? 'block' : 'none';
                                 lossGroup.style.display = hasLoss ? 'block' : 'none';
+                                if(corruptionGroup) corruptionGroup.style.display = hasCorruption ? 'block' : 'none';
+                                if(duplicationGroup) duplicationGroup.style.display = hasDuplication ? 'block' : 'none';
+                                if(reorderingGroup) reorderingGroup.style.display = hasReordering ? 'block' : 'none';
+                                if(bandwidthGroup) bandwidthGroup.style.display = hasBandwidth ? 'block' : 'none';
+                                if(partitionGroup) partitionGroup.style.display = hasPartition ? 'block' : 'none';
 
                                 if (hasLatency && !hasLoss) {
-                                    selector.value = 'latency';
+                                    if(selector) selector.value = 'latency';
                                 } else if (!hasLatency && hasLoss) {
-                                    selector.value = 'packet_loss';
+                                    if(selector) selector.value = 'packet_loss';
                                 }
                                 updateChartTitle();
                             }
@@ -175,6 +205,46 @@
                                 <input type="text" name="loss" value="20%" 
                                        class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white">
                             </div>
+
+                            <div id="corruption-group" style="display: none;">
+                                <label class="block text-xs text-gray-400 mb-1">Corrupção de Pacotes (%)</label>
+                                <input type="text" name="corruption" value="10%" 
+                                       class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white">
+                            </div>
+
+                            <div id="duplication-group" style="display: none;">
+                                <label class="block text-xs text-gray-400 mb-1">Duplicação de Pacotes (%)</label>
+                                <input type="text" name="duplication" value="1%" 
+                                       class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white">
+                            </div>
+
+                            <div id="reordering-group" style="display: none;">
+                                <label class="block text-xs text-gray-400 mb-1">Reordenação de Pacotes (%)</label>
+                                <input type="text" name="reordering" value="5%" 
+                                       class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white">
+                            </div>
+
+                            <div id="bandwidth-group" style="display: none;">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-xs text-gray-400 mb-1">Taxa (Rate)</label>
+                                        <input type="text" name="rate" value="1mbit" 
+                                               class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-400 mb-1">Burst</label>
+                                        <input type="text" name="burst" value="32kbit" 
+                                               class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="partition-group" style="display: none;">
+                                <label class="block text-xs text-gray-400 mb-1">IP Alvo para Bloqueio (Partition Target)</label>
+                                <input type="text" name="partition_target" placeholder="ex: 192.168.1.20" 
+                                       class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white">
+                                <p class="text-[10px] text-gray-500 mt-1">O nó selecionado perderá comunicação com este IP.</p>
+                            </div>
                             
                             <div>
                                 <label class="block text-xs text-gray-400 mb-1">Duração (ex: 60s)</label>
@@ -184,7 +254,7 @@
 
                             <div>
                                 <label class="block text-xs text-gray-400 mb-1">Interface de Rede (ex: eth0, ens18)</label>
-                                <input type="text" name="device" value="eth0" 
+                                <input type="text" name="device" value="enp7s0" 
                                        class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white">
                             </div>
                         </div>
@@ -258,6 +328,24 @@
                             <h3 class="text-gray-400 text-xs font-bold mb-2 absolute top-2 left-2 z-10 bg-gray-900/80 px-2 rounded">PERDA DE PACOTES</h3>
                             <canvas id="packetLossChart"></canvas>
                         </div>
+
+                        <!-- Throughput Chart Container -->
+                        <div id="throughput-wrapper" class="relative w-full h-full transition-all hidden">
+                            <h3 class="text-gray-400 text-xs font-bold mb-2 absolute top-2 left-2 z-10 bg-gray-900/80 px-2 rounded">LARGURA DE BANDA (TX)</h3>
+                            <canvas id="throughputChart"></canvas>
+                        </div>
+
+                        <!-- Duplication Chart Container -->
+                        <div id="duplication-wrapper" class="relative w-full h-full transition-all hidden">
+                            <h3 class="text-gray-400 text-xs font-bold mb-2 absolute top-2 left-2 z-10 bg-gray-900/80 px-2 rounded">DUPLICAÇÃO (%)</h3>
+                            <canvas id="duplicationChart"></canvas>
+                        </div>
+
+                        <!-- Reordering Chart Container -->
+                        <div id="reordering-wrapper" class="relative w-full h-full transition-all hidden">
+                            <h3 class="text-gray-400 text-xs font-bold mb-2 absolute top-2 left-2 z-10 bg-gray-900/80 px-2 rounded">REORDENAÇÃO (%)</h3>
+                            <canvas id="reorderingChart"></canvas>
+                        </div>
                         
                         <!-- Overlay se nenhum nó selecionado -->
                         <div id="graph-overlay" class="absolute inset-0 bg-gray-900/95 flex flex-col items-center justify-center transition-all duration-500 z-20 backdrop-blur-sm">
@@ -278,11 +366,17 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        let latencyChart, packetLossChart;
+        let latencyChart, packetLossChart, throughputChart, duplicationChart, reorderingChart;
         let selectedNodes = []; // Array of objects {id: 'node1', ip: '1.2.3.4'}
         const maxDataPoints = 60; 
         // Cores padrão (sem vermelho) para estado normal
         const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
+
+        function formatThroughput(bits) {
+            if (bits >= 1000000) return (bits / 1000000).toFixed(1) + ' Mbps';
+            if (bits >= 1000) return (bits / 1000).toFixed(1) + ' Kbps';
+            return bits.toFixed(0) + ' bps';
+        }
 
         function createChartConfig(metricType) {
             return {
@@ -305,7 +399,10 @@
                                 color: '#6b7280',
                                 font: { family: 'monospace' },
                                 callback: function(value) { 
-                                    return metricType === 'latency' ? (value * 1000).toFixed(0) + 'ms' : value.toFixed(0) + '%';
+                                    if (metricType === 'latency') return (value * 1000).toFixed(0) + 'ms';
+                                    if (metricType === 'packet_loss' || metricType === 'duplication' || metricType === 'reordering') return value.toFixed(0) + '%';
+                                    if (metricType === 'throughput') return formatThroughput(value);
+                                    return value;
                                 }
                             },
                             border: { display: false }
@@ -327,8 +424,10 @@
                                 label: function(context) {
                                     if (metricType === 'latency') {
                                         return context.dataset.label + ': ' + (context.raw * 1000).toFixed(1) + ' ms';
-                                    } else {
+                                    } else if (metricType === 'packet_loss' || metricType === 'duplication' || metricType === 'reordering') {
                                         return context.dataset.label + ': ' + context.raw.toFixed(1) + '%';
+                                    } else if (metricType === 'throughput') {
+                                        return context.dataset.label + ': ' + formatThroughput(context.raw);
                                     }
                                 }
                             }
@@ -344,48 +443,126 @@
 
             const ctxLoss = document.getElementById('packetLossChart').getContext('2d');
             packetLossChart = new Chart(ctxLoss, createChartConfig('packet_loss'));
+
+            const ctxThroughput = document.getElementById('throughputChart').getContext('2d');
+            throughputChart = new Chart(ctxThroughput, createChartConfig('throughput'));
+
+            const ctxDuplication = document.getElementById('duplicationChart').getContext('2d');
+            duplicationChart = new Chart(ctxDuplication, createChartConfig('duplication'));
+
+            const ctxReordering = document.getElementById('reorderingChart').getContext('2d');
+            reorderingChart = new Chart(ctxReordering, createChartConfig('reordering'));
         }
 
         function updateLayout() {
             const checkboxes = document.querySelectorAll('input[name="experiment_id"]');
             let hasLatency = false;
             let hasLoss = false;
+            let hasThroughput = false;
+            let hasDuplication = false;
+            let hasReordering = false;
 
             checkboxes.forEach(cb => {
                 if (cb.checked) {
-                    const val = cb.value;
+                    const val = cb.value.toLowerCase();
                     if (val.includes('delay') || val.includes('latency')) hasLatency = true;
-                    if (val.includes('loss') || val.includes('packet')) hasLoss = true;
+                    if (val.includes('loss') || val.includes('packet') || val.includes('corruption')) hasLoss = true;
+                    if (val.includes('bandwidth') || val.includes('limit')) hasThroughput = true;
+                    if (val.includes('duplication')) hasDuplication = true;
+                    if (val.includes('reordering')) hasReordering = true;
+                }
+            });
+
+            const latencyWrapper = document.getElementById('latency-wrapper');
+            const lossWrapper = document.getElementById('packetloss-wrapper');
+            const throughputWrapper = document.getElementById('throughput-wrapper');
+            const duplicationWrapper = document.getElementById('duplication-wrapper');
+            const reorderingWrapper = document.getElementById('reordering-wrapper');
+            const container = document.getElementById('charts-container');
+
+            // Reset classes
+            latencyWrapper.classList.add('hidden');
+            lossWrapper.classList.add('hidden');
+            throughputWrapper.classList.add('hidden');
+            duplicationWrapper.classList.add('hidden');
+            reorderingWrapper.classList.add('hidden');
+            container.className = 'bg-gray-900/80 rounded-xl flex-grow p-4 relative border border-gray-800 shadow-inner grid gap-4';
+
+            let activeCharts = 0;
+            if (hasLatency) { latencyWrapper.classList.remove('hidden'); activeCharts++; }
+            if (hasLoss) { lossWrapper.classList.remove('hidden'); activeCharts++; }
+            if (hasThroughput) { throughputWrapper.classList.remove('hidden'); activeCharts++; }
+            if (hasDuplication) { duplicationWrapper.classList.remove('hidden'); activeCharts++; }
+            if (hasReordering) { reorderingWrapper.classList.remove('hidden'); activeCharts++; }
+
+            // Grid layout logic
+            if (activeCharts <= 1) container.classList.add('grid-cols-1', 'grid-rows-1');
+            else if (activeCharts === 2) container.classList.add('grid-cols-1', 'md:grid-cols-2');
+            else if (activeCharts >= 3) container.classList.add('grid-cols-1', 'md:grid-cols-2', 'lg:grid-cols-3');
+        }
+
+        function updateLayout() {
+            const checkboxes = document.querySelectorAll('input[name="experiment_id"]');
+            let hasLatency = false;
+            let hasLoss = false;
+            let hasThroughput = false;
+            let hasDuplication = false;
+            let hasReordering = false;
+
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    const val = cb.value.toLowerCase();
+                    if (val.includes('delay') || val.includes('latency')) hasLatency = true;
+                    if (val.includes('loss') || val.includes('packet') || val.includes('corruption')) hasLoss = true;
+                    if (val.includes('bandwidth') || val.includes('limit')) hasThroughput = true;
+                    if (val.includes('duplication')) hasDuplication = true;
+                    if (val.includes('reordering')) hasReordering = true;
                 }
             });
 
             // Default to latency if nothing selected
-            if (!hasLatency && !hasLoss) {
+            if (!hasLatency && !hasLoss && !hasThroughput && !hasDuplication && !hasReordering) {
                 hasLatency = true;
             }
 
             const container = document.getElementById('charts-container');
             const latencyWrapper = document.getElementById('latency-wrapper');
             const lossWrapper = document.getElementById('packetloss-wrapper');
+            const throughputWrapper = document.getElementById('throughput-wrapper');
+            const duplicationWrapper = document.getElementById('duplication-wrapper');
+            const reorderingWrapper = document.getElementById('reordering-wrapper');
 
             // Reset classes
-            container.classList.remove('grid', 'grid-cols-2', 'gap-4');
+            container.classList.remove('grid', 'grid-cols-2', 'grid-cols-3', 'gap-4');
             latencyWrapper.classList.remove('hidden');
             lossWrapper.classList.remove('hidden');
+            throughputWrapper.classList.remove('hidden');
+            duplicationWrapper.classList.remove('hidden');
+            reorderingWrapper.classList.remove('hidden');
 
-            if (hasLatency && hasLoss) {
-                container.classList.add('grid', 'grid-cols-2', 'gap-4');
-            } else if (hasLatency) {
-                lossWrapper.classList.add('hidden');
-            } else if (hasLoss) {
-                latencyWrapper.classList.add('hidden');
+            const activeCharts = [hasLatency, hasLoss, hasThroughput, hasDuplication, hasReordering].filter(Boolean).length;
+
+            if (activeCharts > 1) {
+                let cols = 'grid-cols-2';
+                if (activeCharts >= 3) cols = 'grid-cols-3';
+                container.classList.add('grid', cols, 'gap-4');
             }
+            
+            if (!hasLatency) latencyWrapper.classList.add('hidden');
+            if (!hasLoss) lossWrapper.classList.add('hidden');
+            if (!hasThroughput) throughputWrapper.classList.add('hidden');
+            if (!hasDuplication) duplicationWrapper.classList.add('hidden');
+            if (!hasReordering) reorderingWrapper.classList.add('hidden');
             
             // Update title
             const title = document.getElementById('chart-title');
-            if (hasLatency && hasLoss) title.innerText = 'Latência e Perda de Pacotes';
-            else if (hasLatency) title.innerText = 'Latência de Rede';
-            else title.innerText = 'Perda de Pacotes';
+            let titles = [];
+            if (hasLatency) titles.push('Latência');
+            if (hasLoss) titles.push('Perda/Corrupção');
+            if (hasThroughput) titles.push('Largura de Banda');
+            if (hasDuplication) titles.push('Duplicação');
+            if (hasReordering) titles.push('Reordenação');
+            if (title) title.innerText = titles.join(' + ') || 'Métricas de Rede';
         }
 
         // Hook into the existing checkExperimentType function or add listener
@@ -400,42 +577,41 @@
 
             const latencyWrapper = document.getElementById('latency-wrapper');
             const lossWrapper = document.getElementById('packetloss-wrapper');
+            const throughputWrapper = document.getElementById('throughput-wrapper');
+            const duplicationWrapper = document.getElementById('duplication-wrapper');
+            const reorderingWrapper = document.getElementById('reordering-wrapper');
+            
             const showLatency = !latencyWrapper.classList.contains('hidden');
             const showLoss = !lossWrapper.classList.contains('hidden');
+            const showThroughput = !throughputWrapper.classList.contains('hidden');
+            const showDuplication = !duplicationWrapper.classList.contains('hidden');
+            const showReordering = !reorderingWrapper.classList.contains('hidden');
 
             for (let i = 0; i < selectedNodes.length; i++) {
                 const node = selectedNodes[i];
                 const baseColor = colors[i % colors.length];
 
-                // Update Latency Chart
-                if (showLatency) {
-                    await updateSingleChart(latencyChart, node, baseColor, '/api/metrics/latency', 'latency');
-                }
-
-                // Update Loss Chart
-                if (showLoss) {
-                    await updateSingleChart(packetLossChart, node, baseColor, '/api/metrics/packet_loss', 'packet_loss');
-                }
+                if (showLatency) await updateSingleChart(latencyChart, node, baseColor, '/api/metrics/latency', 'latency');
+                if (showLoss) await updateSingleChart(packetLossChart, node, baseColor, '/api/metrics/packet_loss', 'packet_loss');
+                if (showThroughput) await updateSingleChart(throughputChart, node, baseColor, '/api/metrics/throughput', 'throughput');
+                if (showDuplication) await updateSingleChart(duplicationChart, node, baseColor, '/api/metrics/duplication', 'duplication');
+                if (showReordering) await updateSingleChart(reorderingChart, node, baseColor, '/api/metrics/reordering', 'reordering');
             }
 
-            if (showLatency) {
-                // Adiciona label de tempo para manter o eixo X andando
-                latencyChart.data.labels.push('');
-                if (latencyChart.data.labels.length > maxDataPoints) {
-                    latencyChart.data.labels.shift();
-                }
-                latencyChart.data.datasets = latencyChart.data.datasets.filter(d => selectedNodes.some(n => n.id === d.label));
-                latencyChart.update('none');
+            if (showLatency) updateChartAxis(latencyChart);
+            if (showLoss) updateChartAxis(packetLossChart);
+            if (showThroughput) updateChartAxis(throughputChart);
+            if (showDuplication) updateChartAxis(duplicationChart);
+            if (showReordering) updateChartAxis(reorderingChart);
+        }
+
+        function updateChartAxis(chart) {
+            chart.data.labels.push('');
+            if (chart.data.labels.length > maxDataPoints) {
+                chart.data.labels.shift();
             }
-            if (showLoss) {
-                // Adiciona label de tempo para manter o eixo X andando
-                packetLossChart.data.labels.push('');
-                if (packetLossChart.data.labels.length > maxDataPoints) {
-                    packetLossChart.data.labels.shift();
-                }
-                packetLossChart.data.datasets = packetLossChart.data.datasets.filter(d => selectedNodes.some(n => n.id === d.label));
-                packetLossChart.update('none');
-            }
+            chart.data.datasets = chart.data.datasets.filter(d => selectedNodes.some(n => n.id === d.label));
+            chart.update('none');
         }
 
         async function updateSingleChart(chartInstance, node, baseColor, endpoint, metricType) {
@@ -459,7 +635,7 @@
                             
                             if (metricType === 'latency') {
                                 if (val0 > 0.1 || val1 > 0.1) return '#ef4444';
-                            } else {
+                            } else if (metricType === 'packet_loss' || metricType === 'duplication' || metricType === 'reordering') {
                                 if (val0 > 0 || val1 > 0) return '#ef4444';
                             }
                             return undefined;
@@ -503,6 +679,18 @@
                 packetLossChart.data.labels = [];
                 packetLossChart.data.datasets = [];
                 packetLossChart.update();
+
+                throughputChart.data.labels = [];
+                throughputChart.data.datasets = [];
+                throughputChart.update();
+
+                duplicationChart.data.labels = [];
+                duplicationChart.data.datasets = [];
+                duplicationChart.update();
+
+                reorderingChart.data.labels = [];
+                reorderingChart.data.datasets = [];
+                reorderingChart.update();
             }
         }
 

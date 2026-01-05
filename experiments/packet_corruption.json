@@ -1,0 +1,78 @@
+{
+    "version": "1.0.0",
+    "title": "Injeção de Corrupção de Pacotes",
+    "description": "Simula uma rede ruidosa corrompendo uma percentagem dos pacotes, forçando retransmissões.",
+    "tags": [
+        "network",
+        "corruption",
+        "tc"
+    ],
+    "configuration": {
+        "target_host": "127.0.0.1",
+        "corruption": "10%",
+        "ssh_user": "root",
+        "ssh_password": "",
+        "device": "eth0",
+        "duration": 30
+    },
+    "steady-state-hypothesis": {
+        "title": "O serviço deve continuar respondendo apesar da corrupção de pacotes",
+        "probes": [
+            {
+                "type": "probe",
+                "name": "service-is-responding",
+                "tolerance": 200,
+                "provider": {
+                    "type": "http",
+                    "url": "http://${target_host}:8500/v1/status/leader",
+                    "timeout": 2
+                }
+            }
+        ]
+    },
+    "method": [
+        {
+            "type": "action",
+            "name": "inject-packet-corruption",
+            "provider": {
+                "type": "python",
+                "module": "src.lib.chaos_ssh_driver",
+                "func": "inject_packet_corruption",
+                "arguments": {
+                    "target_host": "${target_host}",
+                    "ssh_user": "${ssh_user}",
+                    "ssh_password": "${ssh_password}",
+                    "corruption": "${corruption}",
+                    "device": "${device}"
+                }
+            }
+        },
+        {
+            "type": "action",
+            "name": "wait-duration",
+            "provider": {
+                "type": "python",
+                "module": "src.lib.chaos_ssh_driver",
+                "func": "wait_seconds",
+                "arguments": {
+                    "seconds": "${duration}"
+                }
+            }
+        },
+        {
+            "type": "action",
+            "name": "recover-packet-corruption",
+            "provider": {
+                "type": "python",
+                "module": "src.lib.chaos_ssh_driver",
+                "func": "recover_packet_corruption",
+                "arguments": {
+                    "target_host": "${target_host}",
+                    "ssh_user": "${ssh_user}",
+                    "ssh_password": "${ssh_password}",
+                    "uid": "${device}"
+                }
+            }
+        }
+    ]
+}
