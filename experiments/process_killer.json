@@ -1,0 +1,46 @@
+{
+    "version": "1.0.0",
+    "title": "Morte de Processo (Process Killer)",
+    "description": "Mata um processo específico abruptamente (kill -9).",
+    "tags": ["process", "kill", "availability"],
+    "configuration": {
+        "target_host": "127.0.0.1",
+        "ssh_user": "root",
+        "ssh_password": "",
+        "process_name": "nginx"
+    },
+    "method": [
+        {
+            "type": "action",
+            "name": "inject-process-kill",
+            "provider": {
+                "type": "python",
+                "module": "src.lib.chaos_ssh_driver",
+                "func": "inject_process_killer",
+                "arguments": {
+                    "target_host": "${target_host}",
+                    "ssh_user": "${ssh_user}",
+                    "ssh_password": "${ssh_password}",
+                    "process_name": "${process_name}"
+                }
+            }
+        }
+    ],
+    "rollbacks": [
+        {
+            "type": "action",
+            "name": "recover-process-kill",
+            "provider": {
+                "type": "python",
+                "module": "src.lib.chaos_ssh_driver",
+                "func": "recover_process_killer",
+                "arguments": {
+                    "target_host": "${target_host}",
+                    "ssh_user": "${ssh_user}",
+                    "ssh_password": "${ssh_password}",
+                    "uid": "${inject-process-kill}"
+                }
+            }
+        }
+    ]
+}

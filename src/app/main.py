@@ -11,7 +11,11 @@ import time
 import sys
 from typing import List
 import requests
-from src.lib.chaos_ssh_driver import recover_network_delay
+from src.lib.chaos_ssh_driver import (
+    recover_network_delay, 
+    cleanup_node
+)
+
 import threading
 import re
 from collections import deque
@@ -158,6 +162,9 @@ async def run_experiments(
     duplication: str = Form("1%"),
     reordering: str = Form("5%"),
     partition_target: str = Form(""),
+    size_mb: str = Form("512"),
+    process_name: str = Form(""),
+    disk_percent: str = Form("95"),
     rate: str = Form("1mbit"),
     burst: str = Form("32kbit"),
     duration: str = Form("30s"),
@@ -217,6 +224,9 @@ async def run_experiments(
                 "--var", f"duplication={duplication}",
                 "--var", f"reordering={reordering}",
                 "--var", f"partition_target={partition_target}",
+                "--var", f"size_mb={size_mb}",
+                "--var", f"process_name={process_name}",
+                "--var", f"percent={disk_percent}",
                 "--var", f"rate={rate}",
                 "--var", f"burst={burst}",
                 "--var", f"duration={duration}",
@@ -295,11 +305,11 @@ async def stop_experiment(request: Request, pids: str = Form(...)):
                 
             # 2. Executar rollback manualmente
             try:
-                recover_network_delay(
+                cleanup_node(
                     target_host=ctx["target_host"],
                     ssh_user=ctx["ssh_user"],
-                    ssh_password=ctx["ssh_password"],
-                    uid=ctx["device"]
+                    device=ctx["device"],
+                    ssh_password=ctx["ssh_password"]
                 )
                 stopped_count += 1
             except Exception as e:
@@ -424,6 +434,54 @@ async def get_throughput_metrics(node: str):
     # Filtramos por device!='lo' para ignorar loopback
     # O instance no node_exporter geralmente é IP:9100
     query = f'sum(rate(node_network_transmit_bytes_total{{instance=~"{node}:.*", device!="lo"}}[30s])) * 8'
+    try:
+        response = requests.get(f"{prometheus_url}/api/v1/query", params={"query": query})
+        data = response.json()
+        if data["status"] == "success" and data["data"]["result"]:
+            value = float(data["data"]["result"][0]["value"][1])
+            return {"value": value}
+        return {"value": 0}
+    except Exception as e:
+        print(f"Erro ao consultar Prometheus: {e}")
+        return {"value": 0}
+
+@app.get("/api/metrics/cpu")
+async def get_cpu_metrics(node: str):
+    prometheus_url = os.getenv("PROMETHEUS_URL", "http://prometheus:9090")
+    # CPU Usage %: 100 - idle
+    query = f'100 - (avg by (instance) (irate(node_cpu_seconds_total{{mode="idle", instance=~"{node}:.*"}}[1m])) * 100)'
+    try:
+        response = requests.get(f"{prometheus_url}/api/v1/query", params={"query": query})
+        data = response.json()
+        if data["status"] == "success" and data["data"]["result"]:
+            value = float(data["data"]["result"][0]["value"][1])
+            return {"value": value}
+        return {"value": 0}
+    except Exception as e:
+        print(f"Erro ao consultar Prometheus: {e}")
+        return {"value": 0}
+
+@app.get("/api/metrics/memory")
+async def get_memory_metrics(node: str):
+    prometheus_url = os.getenv("PROMETHEUS_URL", "http://prometheus:9090")
+    # Memory Usage %: (Total - Available) / Total * 100
+    query = f'(1 - (node_memory_MemAvailable_bytes{{instance=~"{node}:.*"}} / node_memory_MemTotal_bytes{{instance=~"{node}:.*"}})) * 100'
+    try:
+        response = requests.get(f"{prometheus_url}/api/v1/query", params={"query": query})
+        data = response.json()
+        if data["status"] == "success" and data["data"]["result"]:
+            value = float(data["data"]["result"][0]["value"][1])
+            return {"value": value}
+        return {"value": 0}
+    except Exception as e:
+        print(f"Erro ao consultar Prometheus: {e}")
+        return {"value": 0}
+
+@app.get("/api/metrics/disk")
+async def get_disk_metrics(node: str):
+    prometheus_url = os.getenv("PROMETHEUS_URL", "http://prometheus:9090")
+    # Disk Usage % for root partition
+    query = f'100 - (node_filesystem_avail_bytes{{instance=~"{node}:.*", mountpoint="/"}} / node_filesystem_size_bytes{{instance=~"{node}:.*", mountpoint="/"}} * 100)'
     try:
         response = requests.get(f"{prometheus_url}/api/v1/query", params={"query": query})
         data = response.json()

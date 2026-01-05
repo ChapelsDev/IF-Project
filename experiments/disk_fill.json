@@ -1,0 +1,58 @@
+{
+    "version": "1.0.0",
+    "title": "Enchimento de Disco (Disk Fill)",
+    "description": "Preenche o disco com um arquivo temporário.",
+    "tags": ["resource", "disk", "io"],
+    "configuration": {
+        "target_host": "127.0.0.1",
+        "ssh_user": "root",
+        "ssh_password": "",
+        "percent": "95"
+    },
+    "method": [
+        {
+            "type": "action",
+            "name": "inject-disk-fill",
+            "provider": {
+                "type": "python",
+                "module": "src.lib.chaos_ssh_driver",
+                "func": "inject_disk_fill",
+                "arguments": {
+                    "target_host": "${target_host}",
+                    "ssh_user": "${ssh_user}",
+                    "ssh_password": "${ssh_password}",
+                    "percent": "${percent}"
+                }
+            }
+        },
+        {
+            "type": "action",
+            "name": "wait-duration",
+            "provider": {
+                "type": "python",
+                "module": "src.lib.chaos_ssh_driver",
+                "func": "wait_seconds",
+                "arguments": {
+                    "seconds": "${duration}"
+                }
+            }
+        }
+    ],
+    "rollbacks": [
+        {
+            "type": "action",
+            "name": "recover-disk-fill",
+            "provider": {
+                "type": "python",
+                "module": "src.lib.chaos_ssh_driver",
+                "func": "recover_disk_fill",
+                "arguments": {
+                    "target_host": "${target_host}",
+                    "ssh_user": "${ssh_user}",
+                    "ssh_password": "${ssh_password}",
+                    "uid": "${inject-disk-fill}"
+                }
+            }
+        }
+    ]
+}

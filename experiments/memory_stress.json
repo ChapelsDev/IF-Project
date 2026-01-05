@@ -1,0 +1,60 @@
+{
+    "version": "1.0.0",
+    "title": "Stress de Memória",
+    "description": "Consome uma quantidade fixa de memória RAM.",
+    "tags": ["resource", "memory", "python"],
+    "configuration": {
+        "target_host": "127.0.0.1",
+        "ssh_user": "root",
+        "ssh_password": "",
+        "size_mb": "512",
+        "duration": 30
+    },
+    "method": [
+        {
+            "type": "action",
+            "name": "inject-memory-stress",
+            "provider": {
+                "type": "python",
+                "module": "src.lib.chaos_ssh_driver",
+                "func": "inject_memory_stress",
+                "arguments": {
+                    "target_host": "${target_host}",
+                    "ssh_user": "${ssh_user}",
+                    "ssh_password": "${ssh_password}",
+                    "size_mb": "${size_mb}",
+                    "duration": "${duration}"
+                }
+            }
+        },
+        {
+            "type": "action",
+            "name": "wait-duration",
+            "provider": {
+                "type": "python",
+                "module": "src.lib.chaos_ssh_driver",
+                "func": "wait_seconds",
+                "arguments": {
+                    "seconds": "${duration}"
+                }
+            }
+        }
+    ],
+    "rollbacks": [
+        {
+            "type": "action",
+            "name": "recover-memory-stress",
+            "provider": {
+                "type": "python",
+                "module": "src.lib.chaos_ssh_driver",
+                "func": "recover_memory_stress",
+                "arguments": {
+                    "target_host": "${target_host}",
+                    "ssh_user": "${ssh_user}",
+                    "ssh_password": "${ssh_password}",
+                    "uid": "inject-memory-stress"
+                }
+            }
+        }
+    ]
+}

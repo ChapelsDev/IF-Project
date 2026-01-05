@@ -5252,3 +5252,1887 @@
 [36m[2026-01-05 16:41:52 DEBUG] [__init__:472] No controls to apply on 'experiment'
 [36m[2026-01-05 16:41:52 DEBUG] [__init__:106] Cleaning up controls
 [36m[2026-01-05 16:41:52 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:07:57 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 17:07:57 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 17:07:57 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 17:07:57 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 17:07:57 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:07:57 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:07:57 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:07:57 DEBUG] [caching:35] Cached 2 activities
+[32m[2026-01-05 17:07:57 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 17:07:57 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:07:57 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:07:57 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 17:07:57 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 17:07:57 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:07:57 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 17:07:57 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:07:57 DEBUG] [caching:35] Cached 2 activities
+[36m[2026-01-05 17:07:57 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:07:57 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:07:57 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 17:07:57 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 17:07:57 INFO] [run:440] Running experiment: Stress de CPU
+[36m[2026-01-05 17:07:57 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 17:07:57 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 17:07:57 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 17:07:57 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 17:07:57 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 17:07:57 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 17:07:57 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 17:07:57 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:07:57 INFO] [activity:232] Action: inject-cpu-stress
+[36m[2026-01-05 17:07:57 DEBUG] [python:33] Activity 'inject-cpu-stress' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:07:57 DEBUG] [activity:260]   => succeeded with '101279'
+[36m[2026-01-05 17:07:57 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:07:57 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:07:57 INFO] [activity:232] Action: wait-duration
+[36m[2026-01-05 17:07:57 DEBUG] [python:33] Activity 'wait-duration' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:08:27 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:08:27 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:08:27 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 17:08:27 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 17:08:27 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:08:27 INFO] [rollback:36] Rollback: recover-cpu-stress
+[36m[2026-01-05 17:08:27 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:08:27 INFO] [activity:232] Action: recover-cpu-stress
+[36m[2026-01-05 17:08:27 DEBUG] [python:33] Activity 'recover-cpu-stress' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:08:27 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:08:27 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:08:27 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:08:27 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 17:08:27 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 17:08:27 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 17:08:27 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:13:22 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 17:13:22 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 17:13:22 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 17:13:22 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 17:13:22 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:13:22 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:13:22 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:13:22 DEBUG] [caching:35] Cached 2 activities
+[32m[2026-01-05 17:13:22 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 17:13:22 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:13:22 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:13:22 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 17:13:22 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 17:13:22 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:13:22 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 17:13:22 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:13:22 DEBUG] [caching:35] Cached 2 activities
+[36m[2026-01-05 17:13:22 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:13:22 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:13:22 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 17:13:22 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 17:13:22 INFO] [run:440] Running experiment: Stress de CPU
+[36m[2026-01-05 17:13:22 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 17:13:22 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 17:13:22 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 17:13:22 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 17:13:22 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 17:13:22 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 17:13:22 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 17:13:22 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:13:22 INFO] [activity:232] Action: inject-cpu-stress
+[36m[2026-01-05 17:13:22 DEBUG] [python:33] Activity 'inject-cpu-stress' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:13:23 DEBUG] [activity:260]   => succeeded with '101431'
+[36m[2026-01-05 17:13:23 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:13:23 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:13:23 INFO] [activity:232] Action: wait-duration
+[36m[2026-01-05 17:13:23 DEBUG] [python:33] Activity 'wait-duration' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:13:53 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:13:53 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:13:53 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 17:13:53 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 17:13:53 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:13:53 INFO] [rollback:36] Rollback: recover-cpu-stress
+[36m[2026-01-05 17:13:53 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:13:53 INFO] [activity:232] Action: recover-cpu-stress
+[36m[2026-01-05 17:13:53 DEBUG] [python:33] Activity 'recover-cpu-stress' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:13:53 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:13:53 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:13:53 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:13:53 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 17:13:53 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 17:13:53 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 17:13:53 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:14:06 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 17:14:06 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 17:14:06 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 17:14:06 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 17:14:06 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:14:06 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:14:06 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:14:06 DEBUG] [caching:35] Cached 2 activities
+[32m[2026-01-05 17:14:06 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 17:14:06 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:14:06 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:14:06 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 17:14:06 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 17:14:06 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:14:06 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 17:14:06 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:14:06 DEBUG] [caching:35] Cached 2 activities
+[36m[2026-01-05 17:14:06 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:14:06 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:14:06 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 17:14:06 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 17:14:06 INFO] [run:440] Running experiment: Stress de CPU
+[36m[2026-01-05 17:14:06 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 17:14:06 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 17:14:06 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 17:14:06 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 17:14:06 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 17:14:06 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 17:14:06 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 17:14:06 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:14:06 INFO] [activity:232] Action: inject-cpu-stress
+[36m[2026-01-05 17:14:06 DEBUG] [python:33] Activity 'inject-cpu-stress' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:14:06 DEBUG] [activity:260]   => succeeded with '101556'
+[36m[2026-01-05 17:14:06 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:14:06 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:14:06 INFO] [activity:232] Action: wait-duration
+[36m[2026-01-05 17:14:06 DEBUG] [python:33] Activity 'wait-duration' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:14:36 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:14:36 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:14:36 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 17:14:36 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 17:14:36 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:14:36 INFO] [rollback:36] Rollback: recover-cpu-stress
+[36m[2026-01-05 17:14:36 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:14:36 INFO] [activity:232] Action: recover-cpu-stress
+[36m[2026-01-05 17:14:36 DEBUG] [python:33] Activity 'recover-cpu-stress' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:14:37 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:14:37 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:14:37 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:14:37 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 17:14:37 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 17:14:37 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 17:14:37 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:15:45 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 17:15:45 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 17:15:45 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 17:15:45 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 17:15:45 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:15:45 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:15:45 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:15:45 DEBUG] [caching:35] Cached 2 activities
+[32m[2026-01-05 17:15:45 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 17:15:45 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:15:45 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:15:45 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 17:15:45 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 17:15:45 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:15:45 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 17:15:45 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:15:45 DEBUG] [caching:35] Cached 2 activities
+[36m[2026-01-05 17:15:45 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:15:45 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:15:45 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 17:15:45 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 17:15:45 INFO] [run:440] Running experiment: Stress de CPU
+[36m[2026-01-05 17:15:45 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 17:15:45 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 17:15:45 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 17:15:45 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 17:15:45 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 17:15:45 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 17:15:45 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 17:15:45 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:15:45 INFO] [activity:232] Action: inject-cpu-stress
+[36m[2026-01-05 17:15:45 DEBUG] [python:33] Activity 'inject-cpu-stress' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:15:46 DEBUG] [activity:260]   => succeeded with '101684'
+[36m[2026-01-05 17:15:46 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:15:46 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:15:46 INFO] [activity:232] Action: wait-duration
+[36m[2026-01-05 17:15:46 DEBUG] [python:33] Activity 'wait-duration' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:16:16 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:16:16 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:16:16 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 17:16:16 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 17:16:16 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:16:16 INFO] [rollback:36] Rollback: recover-cpu-stress
+[36m[2026-01-05 17:16:16 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:16:16 INFO] [activity:232] Action: recover-cpu-stress
+[36m[2026-01-05 17:16:16 DEBUG] [python:33] Activity 'recover-cpu-stress' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:16:16 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:16:16 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:16:16 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:16:16 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 17:16:16 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 17:16:16 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 17:16:16 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:17:43 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 17:17:43 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 17:17:43 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 17:17:43 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 17:17:43 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:17:43 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:17:43 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:17:43 DEBUG] [caching:35] Cached 2 activities
+[32m[2026-01-05 17:17:43 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 17:17:43 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:17:43 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:17:43 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 17:17:43 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 17:17:43 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:17:43 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 17:17:43 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:17:43 DEBUG] [caching:35] Cached 2 activities
+[36m[2026-01-05 17:17:43 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:17:43 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:17:43 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 17:17:43 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 17:17:43 INFO] [run:440] Running experiment: Stress de CPU
+[36m[2026-01-05 17:17:43 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 17:17:43 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 17:17:43 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 17:17:43 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 17:17:43 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 17:17:43 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 17:17:43 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 17:17:43 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:17:43 INFO] [activity:232] Action: inject-cpu-stress
+[36m[2026-01-05 17:17:43 DEBUG] [python:33] Activity 'inject-cpu-stress' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:17:44 DEBUG] [activity:260]   => succeeded with '101810'
+[36m[2026-01-05 17:17:44 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:17:44 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:17:44 INFO] [activity:232] Action: wait-duration
+[36m[2026-01-05 17:17:44 DEBUG] [python:33] Activity 'wait-duration' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:18:14 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:18:14 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:18:14 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 17:18:14 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 17:18:14 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:18:14 INFO] [rollback:36] Rollback: recover-cpu-stress
+[36m[2026-01-05 17:18:14 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:18:14 INFO] [activity:232] Action: recover-cpu-stress
+[36m[2026-01-05 17:18:14 DEBUG] [python:33] Activity 'recover-cpu-stress' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:18:14 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:18:14 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:18:14 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:18:14 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 17:18:14 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 17:18:14 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 17:18:14 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:20:09 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 17:20:09 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 17:20:09 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 17:20:09 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 17:20:09 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:20:09 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:20:09 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:20:09 DEBUG] [caching:35] Cached 2 activities
+[32m[2026-01-05 17:20:09 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 17:20:09 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:20:09 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:20:09 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 17:20:09 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 17:20:09 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:20:09 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 17:20:09 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:20:09 DEBUG] [caching:35] Cached 2 activities
+[36m[2026-01-05 17:20:09 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:20:09 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:20:09 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 17:20:09 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 17:20:09 INFO] [run:440] Running experiment: Stress de CPU
+[36m[2026-01-05 17:20:09 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 17:20:09 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 17:20:09 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 17:20:09 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 17:20:09 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 17:20:09 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 17:20:09 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 17:20:09 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:20:09 INFO] [activity:232] Action: inject-cpu-stress
+[36m[2026-01-05 17:20:09 DEBUG] [python:33] Activity 'inject-cpu-stress' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:20:09 DEBUG] [activity:260]   => succeeded with '101950'
+[36m[2026-01-05 17:20:09 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:20:09 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:20:09 INFO] [activity:232] Action: wait-duration
+[36m[2026-01-05 17:20:09 DEBUG] [python:33] Activity 'wait-duration' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[33m[2026-01-05 17:20:39 WARNING] [exit:163] Caught SIGTERM signal, interrupting experiment now
+[36m[2026-01-05 17:20:39 DEBUG] [activity:317] Activity failed
+    Traceback (most recent call last):
+      File "/app/src/lib/chaos_ssh_driver.py", line 129, in wait_seconds
+        s = int(str(seconds).replace('s', ''))
+    ValueError: invalid literal for int() with base 10: 'idu'
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 133, in wait_seconds
+        time.sleep(30)
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/exit.py", line 164, in _terminate_now
+        raise InterruptExecution("SIGTERM signal received")
+    chaoslib.exceptions.InterruptExecution: SIGTERM signal received
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/activity.py", line 310, in run_activity
+        result = run_python_activity(activity, configuration, secrets)
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 58, in run_python_activity
+        raise ActivityFailed(
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 133, in wait_seconds
+        time.sleep(30)
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/exit.py", line 164, in _terminate_now
+        raise InterruptExecution("SIGTERM signal received")
+    chaoslib.exceptions.ActivityFailed: chaoslib.exceptions.InterruptExecution: SIGTERM signal received
+[31m[2026-01-05 17:20:39 ERROR] [activity:268]   => failed: chaoslib.exceptions.InterruptExecution: SIGTERM signal received
+[36m[2026-01-05 17:20:39 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:20:39 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 17:20:39 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 17:20:39 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:20:39 INFO] [rollback:36] Rollback: recover-cpu-stress
+[36m[2026-01-05 17:20:39 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:20:39 INFO] [activity:232] Action: recover-cpu-stress
+[36m[2026-01-05 17:20:39 DEBUG] [python:33] Activity 'recover-cpu-stress' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:20:39 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:20:39 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:20:39 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:20:39 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 17:20:39 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 17:20:39 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 17:20:39 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:22:39 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 17:22:39 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 17:22:39 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 17:22:39 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 17:22:39 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:22:39 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:22:39 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:22:39 DEBUG] [caching:35] Cached 2 activities
+[32m[2026-01-05 17:22:39 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 17:22:39 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:22:39 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:22:39 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 17:22:39 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 17:22:39 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:22:39 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 17:22:39 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:22:39 DEBUG] [caching:35] Cached 2 activities
+[36m[2026-01-05 17:22:39 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:22:39 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:22:39 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 17:22:39 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 17:22:39 INFO] [run:440] Running experiment: Stress de Memória
+[36m[2026-01-05 17:22:39 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 17:22:39 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 17:22:39 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 17:22:39 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 17:22:39 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 17:22:39 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 17:22:39 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 17:22:39 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:22:39 INFO] [activity:232] Action: inject-memory-stress
+[36m[2026-01-05 17:22:39 DEBUG] [python:33] Activity 'inject-memory-stress' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:22:39 DEBUG] [activity:317] Activity failed
+    Traceback (most recent call last):
+      File "/app/src/lib/chaos_ssh_driver.py", line 19, in run_ssh_command
+        result = subprocess.run(ssh_cmd, capture_output=True, text=True, check=True, timeout=10)
+      File "/usr/local/lib/python3.10/subprocess.py", line 526, in run
+        raise CalledProcessError(retcode, process.args,
+    subprocess.CalledProcessError: Command '['ssh', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=/dev/null', '-o', 'BatchMode=yes', 'sidu@192.168.1.72', 'nohup sh -c "echo CmltcG9ydCB0aW1lCnRyeToKICAgIHggPSAnYScgKiAoNTEyICogMTAyNCAqIDEwMjQpCiAgICB0aW1lLnNsZWVwKDYwKQpleGNlcHQgTWVtb3J5RXJyb3I6CiAgICBwcmludCgiTWVtb3J5IEVycm9yIikK | base64 -d | python3" > /dev/null 2>&1 & echo $!']' returned non-zero exit status 255.
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/app/src/lib/chaos_ssh_driver.py", line 424, in inject_memory_stress
+        pid = run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+      File "/app/src/lib/chaos_ssh_driver.py", line 22, in run_ssh_command
+        raise RuntimeError(f"SSH command failed: {e.stderr}")
+    RuntimeError: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    sidu@192.168.1.72: Permission denied (publickey,password).
+    
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 427, in inject_memory_stress
+        raise RuntimeError(f"Failed to inject Memory stress: {e}")
+    RuntimeError: Failed to inject Memory stress: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    sidu@192.168.1.72: Permission denied (publickey,password).
+    
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/activity.py", line 310, in run_activity
+        result = run_python_activity(activity, configuration, secrets)
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 58, in run_python_activity
+        raise ActivityFailed(
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 427, in inject_memory_stress
+        raise RuntimeError(f"Failed to inject Memory stress: {e}")
+    chaoslib.exceptions.ActivityFailed: RuntimeError: Failed to inject Memory stress: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    sidu@192.168.1.72: Permission denied (publickey,password).
+[31m[2026-01-05 17:22:39 ERROR] [activity:268]   => failed: RuntimeError: Failed to inject Memory stress: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    sidu@192.168.1.72: Permission denied (publickey,password).
+[36m[2026-01-05 17:22:39 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:22:39 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:22:39 INFO] [activity:232] Action: wait-duration
+[36m[2026-01-05 17:22:39 DEBUG] [python:33] Activity 'wait-duration' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:22:52 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 17:22:52 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 17:22:52 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 17:22:52 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 17:22:52 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:22:52 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:22:52 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:22:52 DEBUG] [caching:35] Cached 2 activities
+[32m[2026-01-05 17:22:52 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 17:22:52 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:22:52 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:22:52 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 17:22:52 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 17:22:52 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:22:52 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 17:22:52 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:22:52 DEBUG] [caching:35] Cached 2 activities
+[36m[2026-01-05 17:22:52 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:22:52 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:22:52 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 17:22:52 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 17:22:52 INFO] [run:440] Running experiment: Stress de Memória
+[36m[2026-01-05 17:22:52 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 17:22:52 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 17:22:52 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 17:22:52 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 17:22:52 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 17:22:52 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 17:22:52 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 17:22:52 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:22:52 INFO] [activity:232] Action: inject-memory-stress
+[36m[2026-01-05 17:22:52 DEBUG] [python:33] Activity 'inject-memory-stress' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:22:53 DEBUG] [activity:317] Activity failed
+    Traceback (most recent call last):
+      File "/app/src/lib/chaos_ssh_driver.py", line 19, in run_ssh_command
+        result = subprocess.run(ssh_cmd, capture_output=True, text=True, check=True, timeout=10)
+      File "/usr/local/lib/python3.10/subprocess.py", line 526, in run
+        raise CalledProcessError(retcode, process.args,
+    subprocess.CalledProcessError: Command '['ssh', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=/dev/null', '-o', 'BatchMode=yes', 'sidu@192.168.1.72', 'nohup sh -c "echo CmltcG9ydCB0aW1lCnRyeToKICAgIHggPSAnYScgKiAoNTEyICogMTAyNCAqIDEwMjQpCiAgICB0aW1lLnNsZWVwKDYwKQpleGNlcHQgTWVtb3J5RXJyb3I6CiAgICBwcmludCgiTWVtb3J5IEVycm9yIikK | base64 -d | python3" > /dev/null 2>&1 & echo $!']' returned non-zero exit status 255.
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/app/src/lib/chaos_ssh_driver.py", line 424, in inject_memory_stress
+        pid = run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+      File "/app/src/lib/chaos_ssh_driver.py", line 22, in run_ssh_command
+        raise RuntimeError(f"SSH command failed: {e.stderr}")
+    RuntimeError: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    sidu@192.168.1.72: Permission denied (publickey,password).
+    
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 427, in inject_memory_stress
+        raise RuntimeError(f"Failed to inject Memory stress: {e}")
+    RuntimeError: Failed to inject Memory stress: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    sidu@192.168.1.72: Permission denied (publickey,password).
+    
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/activity.py", line 310, in run_activity
+        result = run_python_activity(activity, configuration, secrets)
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 58, in run_python_activity
+        raise ActivityFailed(
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 427, in inject_memory_stress
+        raise RuntimeError(f"Failed to inject Memory stress: {e}")
+    chaoslib.exceptions.ActivityFailed: RuntimeError: Failed to inject Memory stress: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    sidu@192.168.1.72: Permission denied (publickey,password).
+[31m[2026-01-05 17:22:53 ERROR] [activity:268]   => failed: RuntimeError: Failed to inject Memory stress: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    sidu@192.168.1.72: Permission denied (publickey,password).
+[36m[2026-01-05 17:22:53 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:22:53 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:22:53 INFO] [activity:232] Action: wait-duration
+[36m[2026-01-05 17:22:53 DEBUG] [python:33] Activity 'wait-duration' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:22:58 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 17:22:58 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 17:22:58 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 17:22:58 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 17:22:58 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:22:58 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:22:58 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:22:58 DEBUG] [caching:35] Cached 2 activities
+[32m[2026-01-05 17:22:58 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 17:22:58 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:22:58 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:22:58 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 17:22:58 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 17:22:58 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:22:58 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 17:22:58 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:22:58 DEBUG] [caching:35] Cached 2 activities
+[36m[2026-01-05 17:22:58 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:22:58 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:22:58 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 17:22:58 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 17:22:58 INFO] [run:440] Running experiment: Stress de Memória
+[36m[2026-01-05 17:22:58 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 17:22:58 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 17:22:58 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 17:22:58 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 17:22:58 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 17:22:58 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 17:22:58 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 17:22:58 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:22:58 INFO] [activity:232] Action: inject-memory-stress
+[36m[2026-01-05 17:22:58 DEBUG] [python:33] Activity 'inject-memory-stress' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:22:59 DEBUG] [activity:260]   => succeeded with '102166'
+[36m[2026-01-05 17:22:59 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:22:59 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:22:59 INFO] [activity:232] Action: wait-duration
+[36m[2026-01-05 17:22:59 DEBUG] [python:33] Activity 'wait-duration' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[33m[2026-01-05 17:23:01 WARNING] [exit:163] Caught SIGTERM signal, interrupting experiment now
+[36m[2026-01-05 17:23:01 DEBUG] [activity:317] Activity failed
+    Traceback (most recent call last):
+      File "/app/src/lib/chaos_ssh_driver.py", line 129, in wait_seconds
+        s = int(str(seconds).replace('s', ''))
+    ValueError: invalid literal for int() with base 10: 'idu'
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 133, in wait_seconds
+        time.sleep(30)
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/exit.py", line 164, in _terminate_now
+        raise InterruptExecution("SIGTERM signal received")
+    chaoslib.exceptions.InterruptExecution: SIGTERM signal received
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/activity.py", line 310, in run_activity
+        result = run_python_activity(activity, configuration, secrets)
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 58, in run_python_activity
+        raise ActivityFailed(
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 133, in wait_seconds
+        time.sleep(30)
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/exit.py", line 164, in _terminate_now
+        raise InterruptExecution("SIGTERM signal received")
+    chaoslib.exceptions.ActivityFailed: chaoslib.exceptions.InterruptExecution: SIGTERM signal received
+[31m[2026-01-05 17:23:01 ERROR] [activity:268]   => failed: chaoslib.exceptions.InterruptExecution: SIGTERM signal received
+[36m[2026-01-05 17:23:01 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:23:01 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 17:23:01 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 17:23:01 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:23:01 INFO] [rollback:36] Rollback: recover-memory-stress
+[36m[2026-01-05 17:23:01 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:23:01 INFO] [activity:232] Action: recover-memory-stress
+[36m[2026-01-05 17:23:01 DEBUG] [python:33] Activity 'recover-memory-stress' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:23:01 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:23:01 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:23:01 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:23:01 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 17:23:01 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 17:23:01 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 17:23:01 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:23:09 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:23:09 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:23:09 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 17:23:09 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 17:23:09 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:23:09 INFO] [rollback:36] Rollback: recover-memory-stress
+[36m[2026-01-05 17:23:09 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:23:09 INFO] [activity:232] Action: recover-memory-stress
+[36m[2026-01-05 17:23:09 DEBUG] [python:33] Activity 'recover-memory-stress' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:23:09 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:23:09 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:23:09 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:23:09 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 17:23:09 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 17:23:09 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 17:23:09 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:23:16 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 17:23:16 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 17:23:16 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 17:23:16 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 17:23:16 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:23:16 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:23:16 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:23:16 DEBUG] [caching:35] Cached 2 activities
+[32m[2026-01-05 17:23:16 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 17:23:16 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:23:16 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:23:16 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 17:23:16 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 17:23:16 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:23:16 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 17:23:16 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:23:16 DEBUG] [caching:35] Cached 2 activities
+[36m[2026-01-05 17:23:16 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:23:16 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:23:16 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 17:23:16 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 17:23:16 INFO] [run:440] Running experiment: Stress de Memória
+[36m[2026-01-05 17:23:16 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 17:23:16 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 17:23:16 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 17:23:16 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 17:23:16 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 17:23:16 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 17:23:16 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 17:23:16 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:23:16 INFO] [activity:232] Action: inject-memory-stress
+[36m[2026-01-05 17:23:16 DEBUG] [python:33] Activity 'inject-memory-stress' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:23:16 DEBUG] [activity:260]   => succeeded with '102334'
+[36m[2026-01-05 17:23:16 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:23:16 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:23:16 INFO] [activity:232] Action: wait-duration
+[36m[2026-01-05 17:23:16 DEBUG] [python:33] Activity 'wait-duration' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:23:23 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:23:23 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:23:23 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 17:23:23 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 17:23:23 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:23:23 INFO] [rollback:36] Rollback: recover-memory-stress
+[36m[2026-01-05 17:23:23 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:23:23 INFO] [activity:232] Action: recover-memory-stress
+[36m[2026-01-05 17:23:23 DEBUG] [python:33] Activity 'recover-memory-stress' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:23:23 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:23:23 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:23:23 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:23:23 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 17:23:23 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 17:23:23 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 17:23:23 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:23:46 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:23:46 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:23:46 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 17:23:46 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 17:23:46 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:23:46 INFO] [rollback:36] Rollback: recover-memory-stress
+[36m[2026-01-05 17:23:46 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:23:46 INFO] [activity:232] Action: recover-memory-stress
+[36m[2026-01-05 17:23:46 DEBUG] [python:33] Activity 'recover-memory-stress' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:23:46 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:23:46 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:23:46 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:23:46 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 17:23:46 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 17:23:46 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 17:23:46 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:37:47 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 17:37:47 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 17:37:47 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 17:37:47 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 17:37:47 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:37:47 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:37:47 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:37:47 DEBUG] [caching:35] Cached 1 activities
+[32m[2026-01-05 17:37:47 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 17:37:47 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:37:47 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:37:47 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 17:37:47 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 17:37:47 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:37:47 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 17:37:47 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:37:47 DEBUG] [caching:35] Cached 1 activities
+[36m[2026-01-05 17:37:47 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:37:47 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:37:47 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 17:37:47 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 17:37:47 INFO] [run:440] Running experiment: Morte de Processo (Process Killer)
+[36m[2026-01-05 17:37:47 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 17:37:47 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 17:37:47 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 17:37:47 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 17:37:47 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 17:37:47 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 17:37:47 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 17:37:47 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:37:47 INFO] [activity:232] Action: inject-process-kill
+[36m[2026-01-05 17:37:47 DEBUG] [python:33] Activity 'inject-process-kill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:37:47 DEBUG] [activity:260]   => succeeded with 'consul'
+[36m[2026-01-05 17:37:47 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:37:47 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 17:37:47 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 17:37:47 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:37:47 INFO] [rollback:36] Rollback: recover-process-kill
+[36m[2026-01-05 17:37:47 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:37:47 INFO] [activity:232] Action: recover-process-kill
+[36m[2026-01-05 17:37:47 DEBUG] [python:33] Activity 'recover-process-kill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:37:47 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:37:47 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:37:47 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:37:47 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 17:37:47 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 17:37:47 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 17:37:47 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:45:24 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 17:45:24 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 17:45:24 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 17:45:24 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 17:45:24 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:45:24 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:45:24 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:45:24 DEBUG] [caching:35] Cached 2 activities
+[32m[2026-01-05 17:45:24 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 17:45:24 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:45:24 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:45:24 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 17:45:24 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 17:45:24 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:45:24 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 17:45:24 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:45:24 DEBUG] [caching:35] Cached 2 activities
+[36m[2026-01-05 17:45:24 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:45:24 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:45:24 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 17:45:24 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 17:45:24 INFO] [run:440] Running experiment: Enchimento de Disco (Disk Fill)
+[36m[2026-01-05 17:45:24 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 17:45:24 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 17:45:24 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 17:45:24 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 17:45:24 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 17:45:24 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 17:45:24 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 17:45:24 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:45:24 INFO] [activity:232] Action: inject-disk-fill
+[36m[2026-01-05 17:45:24 DEBUG] [python:33] Activity 'inject-disk-fill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:45:25 DEBUG] [activity:317] Activity failed
+    Traceback (most recent call last):
+      File "/app/src/lib/chaos_ssh_driver.py", line 19, in run_ssh_command
+        result = subprocess.run(ssh_cmd, capture_output=True, text=True, check=True, timeout=10)
+      File "/usr/local/lib/python3.10/subprocess.py", line 526, in run
+        raise CalledProcessError(retcode, process.args,
+    subprocess.CalledProcessError: Command '['sshpass', '-p', 'sidu', 'ssh', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=/dev/null', 'sidu@192.168.1.72', 'bash -c \'\n    AVAIL=$(df -B1 /tmp | tail -1 | awk \'{print $4}\')\n    FILL_SIZE=$(echo "$AVAIL * 50 / 100" | bc)\n    fallocate -l $FILL_SIZE /tmp/chaos_disk_fill || dd if=/dev/zero of=/tmp/chaos_disk_fill bs=1M count=$(echo "$FILL_SIZE / 1024 / 1024" | bc)\n    \'']' returned non-zero exit status 2.
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/app/src/lib/chaos_ssh_driver.py", line 488, in inject_disk_fill
+        run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+      File "/app/src/lib/chaos_ssh_driver.py", line 22, in run_ssh_command
+        raise RuntimeError(f"SSH command failed: {e.stderr}")
+    RuntimeError: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    })
+        FILL_SIZE=$(echo "$AVAIL * 50 / 100" | bc)
+        fallocate -l $FILL_SIZE /tmp/chaos_disk_fill || dd if=/dev/zero of=/tmp/chaos_disk_fill bs=1M count=$(echo "$FILL_SIZE / 1024 / 1024" | bc)
+        : -c: line 3: unexpected EOF while looking for matching `)'
+    
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 491, in inject_disk_fill
+        raise RuntimeError(f"Failed to inject Disk Fill: {e}")
+    RuntimeError: Failed to inject Disk Fill: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    })
+        FILL_SIZE=$(echo "$AVAIL * 50 / 100" | bc)
+        fallocate -l $FILL_SIZE /tmp/chaos_disk_fill || dd if=/dev/zero of=/tmp/chaos_disk_fill bs=1M count=$(echo "$FILL_SIZE / 1024 / 1024" | bc)
+        : -c: line 3: unexpected EOF while looking for matching `)'
+    
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/activity.py", line 310, in run_activity
+        result = run_python_activity(activity, configuration, secrets)
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 58, in run_python_activity
+        raise ActivityFailed(
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 491, in inject_disk_fill
+        raise RuntimeError(f"Failed to inject Disk Fill: {e}")
+    chaoslib.exceptions.ActivityFailed: RuntimeError: Failed to inject Disk Fill: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    })
+        FILL_SIZE=$(echo "$AVAIL * 50 / 100" | bc)
+        fallocate -l $FILL_SIZE /tmp/chaos_disk_fill || dd if=/dev/zero of=/tmp/chaos_disk_fill bs=1M count=$(echo "$FILL_SIZE / 1024 / 1024" | bc)
+        : -c: line 3: unexpected EOF while looking for matching `)'
+[31m[2026-01-05 17:45:25 ERROR] [activity:268]   => failed: RuntimeError: Failed to inject Disk Fill: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    })
+        FILL_SIZE=$(echo "$AVAIL * 50 / 100" | bc)
+        fallocate -l $FILL_SIZE /tmp/chaos_disk_fill || dd if=/dev/zero of=/tmp/chaos_disk_fill bs=1M count=$(echo "$FILL_SIZE / 1024 / 1024" | bc)
+        : -c: line 3: unexpected EOF while looking for matching `)'
+[36m[2026-01-05 17:45:25 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:45:25 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:45:25 INFO] [activity:232] Action: wait-duration
+[36m[2026-01-05 17:45:25 DEBUG] [python:33] Activity 'wait-duration' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:45:55 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:45:55 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:45:55 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 17:45:55 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 17:45:55 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:45:55 INFO] [rollback:36] Rollback: recover-disk-fill
+[36m[2026-01-05 17:45:55 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:45:55 INFO] [activity:232] Action: recover-disk-fill
+[36m[2026-01-05 17:45:55 DEBUG] [python:33] Activity 'recover-disk-fill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:45:55 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:45:55 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:45:55 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:45:55 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 17:45:55 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 17:45:55 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 17:45:55 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:48:49 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 17:48:49 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 17:48:49 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 17:48:49 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 17:48:49 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:48:49 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:48:49 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:48:49 DEBUG] [caching:35] Cached 2 activities
+[32m[2026-01-05 17:48:49 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 17:48:49 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:48:49 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:48:49 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 17:48:49 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 17:48:49 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:48:49 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 17:48:49 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:48:49 DEBUG] [caching:35] Cached 2 activities
+[36m[2026-01-05 17:48:49 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:48:49 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:48:49 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 17:48:49 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 17:48:49 INFO] [run:440] Running experiment: Enchimento de Disco (Disk Fill)
+[36m[2026-01-05 17:48:49 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 17:48:49 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 17:48:49 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 17:48:49 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 17:48:49 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 17:48:49 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 17:48:49 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 17:48:49 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:48:49 INFO] [activity:232] Action: inject-disk-fill
+[36m[2026-01-05 17:48:49 DEBUG] [python:33] Activity 'inject-disk-fill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:48:50 DEBUG] [activity:317] Activity failed
+    Traceback (most recent call last):
+      File "/app/src/lib/chaos_ssh_driver.py", line 19, in run_ssh_command
+        result = subprocess.run(ssh_cmd, capture_output=True, text=True, check=True, timeout=10)
+      File "/usr/local/lib/python3.10/subprocess.py", line 526, in run
+        raise CalledProcessError(retcode, process.args,
+    subprocess.CalledProcessError: Command '['sshpass', '-p', 'sidu', 'ssh', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=/dev/null', 'sidu@192.168.1.72', 'echo \'sidu\' | sudo -S bash -c \'\n    STATS=$(df -B1 / | tail -1 | awk \'{print $2, $3}\')\n    TOTAL=$(echo $STATS | awk \'{print $1}\')\n    USED=$(echo $STATS | awk \'{print $2}\')\n    \n    TARGET_USED=$(echo "$TOTAL * 50 / 100" | bc)\n    FILL_SIZE=$(echo "$TARGET_USED - $USED" | bc)\n    \n    if [ $(echo "$FILL_SIZE > 0" | bc) -eq 1 ]; then\n        fallocate -l $FILL_SIZE /chaos_disk_fill || dd if=/dev/zero of=/chaos_disk_fill bs=1M count=$(echo "$FILL_SIZE / 1024 / 1024" | bc)\n    fi\n    \'']' returned non-zero exit status 2.
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/app/src/lib/chaos_ssh_driver.py", line 498, in inject_disk_fill
+        run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+      File "/app/src/lib/chaos_ssh_driver.py", line 22, in run_ssh_command
+        raise RuntimeError(f"SSH command failed: {e.stderr}")
+    RuntimeError: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    [sudo] password for sidu: ,: -c: line 3: unexpected EOF while looking for matching `)'
+    
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 501, in inject_disk_fill
+        raise RuntimeError(f"Failed to inject Disk Fill: {e}")
+    RuntimeError: Failed to inject Disk Fill: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    [sudo] password for sidu: ,: -c: line 3: unexpected EOF while looking for matching `)'
+    
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/activity.py", line 310, in run_activity
+        result = run_python_activity(activity, configuration, secrets)
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 58, in run_python_activity
+        raise ActivityFailed(
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 501, in inject_disk_fill
+        raise RuntimeError(f"Failed to inject Disk Fill: {e}")
+    chaoslib.exceptions.ActivityFailed: RuntimeError: Failed to inject Disk Fill: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    [sudo] password for sidu: ,: -c: line 3: unexpected EOF while looking for matching `)'
+[31m[2026-01-05 17:48:50 ERROR] [activity:268]   => failed: RuntimeError: Failed to inject Disk Fill: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    [sudo] password for sidu: ,: -c: line 3: unexpected EOF while looking for matching `)'
+[36m[2026-01-05 17:48:50 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:48:50 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:48:50 INFO] [activity:232] Action: wait-duration
+[36m[2026-01-05 17:48:50 DEBUG] [python:33] Activity 'wait-duration' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:49:20 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:49:20 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:49:20 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 17:49:20 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 17:49:20 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:49:20 INFO] [rollback:36] Rollback: recover-disk-fill
+[36m[2026-01-05 17:49:20 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:49:20 INFO] [activity:232] Action: recover-disk-fill
+[36m[2026-01-05 17:49:20 DEBUG] [python:33] Activity 'recover-disk-fill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:49:20 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:49:20 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:49:20 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:49:20 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 17:49:20 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 17:49:20 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 17:49:20 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:50:58 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 17:50:58 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 17:50:58 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 17:50:58 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 17:50:58 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:50:58 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:50:58 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:50:58 DEBUG] [caching:35] Cached 2 activities
+[32m[2026-01-05 17:50:58 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 17:50:58 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:50:58 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:50:58 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 17:50:58 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 17:50:58 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:50:58 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 17:50:58 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:50:58 DEBUG] [caching:35] Cached 2 activities
+[36m[2026-01-05 17:50:58 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:50:58 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:50:58 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 17:50:58 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 17:50:58 INFO] [run:440] Running experiment: Enchimento de Disco (Disk Fill)
+[36m[2026-01-05 17:50:58 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 17:50:58 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 17:50:58 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 17:50:58 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 17:50:58 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 17:50:58 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 17:50:58 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 17:50:58 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:50:58 INFO] [activity:232] Action: inject-disk-fill
+[36m[2026-01-05 17:50:58 DEBUG] [python:33] Activity 'inject-disk-fill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:50:58 DEBUG] [activity:317] Activity failed
+    Traceback (most recent call last):
+      File "/app/src/lib/chaos_ssh_driver.py", line 19, in run_ssh_command
+        result = subprocess.run(ssh_cmd, capture_output=True, text=True, check=True, timeout=10)
+      File "/usr/local/lib/python3.10/subprocess.py", line 526, in run
+        raise CalledProcessError(retcode, process.args,
+    subprocess.CalledProcessError: Command '['sshpass', '-p', 'sidu', 'ssh', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=/dev/null', 'sidu@192.168.1.72', "echo 'sidu' | sudo -S echo CmltcG9ydCBvcwppbXBvcnQgc2h1dGlsCmltcG9ydCBzeXMKCmRlZiBmaWxsX2Rpc2socGVyY2VudCk6CiAgICBwYXRoID0gIi8iCiAgICBmaWxlbmFtZSA9ICIvY2hhb3NfZGlza19maWxsIgogICAgCiAgICB0cnk6CiAgICAgICAgdG90YWwsIHVzZWQsIGZyZWUgPSBzaHV0aWwuZGlza191c2FnZShwYXRoKQogICAgICAgIAogICAgICAgICMgSWYgZmlsZSBleGlzdHMsIHN1YnRyYWN0IGl0cyBzaXplIGZyb20gJ3VzZWQnIHRvIGdldCAnYmFzZSB1c2FnZScKICAgICAgICBiYXNlX3VzZWQgPSB1c2VkCiAgICAgICAgaWYgb3MucGF0aC5leGlzdHMoZmlsZW5hbWUpOgogICAgICAgICAgICBiYXNlX3VzZWQgLT0gb3MucGF0aC5nZXRzaXplKGZpbGVuYW1lKQogICAgICAgICAgICAKICAgICAgICAjIENhbGN1bGF0ZSB0YXJnZXQgdXNlZCBieXRlcwogICAgICAgIHRhcmdldF91c2VkID0gaW50KHRvdGFsICogKHBlcmNlbnQgLyAxMDAuMCkpCiAgICAgICAgCiAgICAgICAgIyBDYWxjdWxhdGUgaG93IG1hbnkgYnl0ZXMgd2UgbmVlZCB0byBhZGQgdG8gYmFzZV91c2VkIHRvIHJlYWNoIHRhcmdldF91c2VkCiAgICAgICAgbmVlZGVkX2ZpbGwgPSB0YXJnZXRfdXNlZCAtIGJhc2VfdXNlZAogICAgICAgIAogICAgICAgIGlmIG5lZWRlZF9maWxsIDw9IDA6CiAgICAgICAgICAgIHByaW50KGYiRGlzayB1c2FnZSBhbHJlYWR5IGFib3ZlIHtwZXJjZW50fSUuIikKICAgICAgICAgICAgcmV0dXJuCgogICAgICAgICMgRG9uJ3QgdHJ5IHRvIGZpbGwgbW9yZSB0aGFuIGF2YWlsYWJsZSBmcmVlIHNwYWNlIChhdm9pZCBjcmFzaCkKICAgICAgICBpZiBuZWVkZWRfZmlsbCA+IGZyZWU6CiAgICAgICAgICAgIG5lZWRlZF9maWxsID0gZnJlZSAtICgxMDI0ICogMTAyNCkgIyBMZWF2ZSAxTUIgYnJlYXRoaW5nIHJvb20KICAgICAgICAgICAgCiAgICAgICAgaWYgbmVlZGVkX2ZpbGwgPD0gMDoKICAgICAgICAgICAgIHJldHVybgoKICAgICAgICBwcmludChmIkZpbGxpbmcge25lZWRlZF9maWxsfSBieXRlcyB0byByZWFjaCB7cGVyY2VudH0lIikKICAgICAgICAKICAgICAgICB3aXRoIG9wZW4oZmlsZW5hbWUsICJ3YiIpIGFzIGY6CiAgICAgICAgICAgICMgVHJ5IGZhbGxvY2F0ZSBmaXJzdCAoZmFzdCkKICAgICAgICAgICAgdHJ5OgogICAgICAgICAgICAgICAgIyBvcy5wb3NpeF9mYWxsb2NhdGUoZmQsIG9mZnNldCwgbGVuKQogICAgICAgICAgICAgICAgb3MucG9zaXhfZmFsbG9jYXRlKGYuZmlsZW5vKCksIDAsIG5lZWRlZF9maWxsKQogICAgICAgICAgICBleGNlcHQgKEF0dHJpYnV0ZUVycm9yLCBPU0Vycm9yKToKICAgICAgICAgICAgICAgICMgRmFsbGJhY2s6IHdyaXRlIHplcm9zIGluIGNodW5rcwogICAgICAgICAgICAgICAgY2h1bmtfc2l6ZSA9IDEwICogMTAyNCAqIDEwMjQgIyAxME1CCiAgICAgICAgICAgICAgICB3cml0dGVuID0gMAogICAgICAgICAgICAgICAgd2hpbGUgd3JpdHRlbiA8IG5lZWRlZF9maWxsOgogICAgICAgICAgICAgICAgICAgIHRvX3dyaXRlID0gbWluKGNodW5rX3NpemUsIG5lZWRlZF9maWxsIC0gd3JpdHRlbikKICAgICAgICAgICAgICAgICAgICBmLndyaXRlKGInXDAnICogdG9fd3JpdGUpCiAgICAgICAgICAgICAgICAgICAgd3JpdHRlbiArPSB0b193cml0ZQogICAgICAgICAgICAgICAgICAgICAKICAgIGV4Y2VwdCBFeGNlcHRpb24gYXMgZToKICAgICAgICBwcmludChmIkVycm9yOiB7ZX0iKQogICAgICAgIHN5cy5leGl0KDEpCgppZiBfX25hbWVfXyA9PSAiX19tYWluX18iOgogICAgZmlsbF9kaXNrKDUwKQo= | base64 -d | python3"]' returned non-zero exit status 1.
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/app/src/lib/chaos_ssh_driver.py", line 543, in inject_disk_fill
+        run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+      File "/app/src/lib/chaos_ssh_driver.py", line 22, in run_ssh_command
+        raise RuntimeError(f"SSH command failed: {e.stderr}")
+    RuntimeError: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    [sudo] password for sidu: 
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 546, in inject_disk_fill
+        raise RuntimeError(f"Failed to inject Disk Fill: {e}")
+    RuntimeError: Failed to inject Disk Fill: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    [sudo] password for sidu: 
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/activity.py", line 310, in run_activity
+        result = run_python_activity(activity, configuration, secrets)
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 58, in run_python_activity
+        raise ActivityFailed(
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 546, in inject_disk_fill
+        raise RuntimeError(f"Failed to inject Disk Fill: {e}")
+    chaoslib.exceptions.ActivityFailed: RuntimeError: Failed to inject Disk Fill: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    [sudo] password for sidu:
+[31m[2026-01-05 17:50:58 ERROR] [activity:268]   => failed: RuntimeError: Failed to inject Disk Fill: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    [sudo] password for sidu:
+[36m[2026-01-05 17:50:58 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:50:58 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:50:58 INFO] [activity:232] Action: wait-duration
+[36m[2026-01-05 17:50:58 DEBUG] [python:33] Activity 'wait-duration' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:51:29 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:51:29 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:51:29 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 17:51:29 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 17:51:29 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:51:29 INFO] [rollback:36] Rollback: recover-disk-fill
+[36m[2026-01-05 17:51:29 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:51:29 INFO] [activity:232] Action: recover-disk-fill
+[36m[2026-01-05 17:51:29 DEBUG] [python:33] Activity 'recover-disk-fill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:51:29 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:51:29 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:51:29 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:51:29 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 17:51:29 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 17:51:29 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 17:51:29 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:51:39 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 17:51:39 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 17:51:39 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 17:51:40 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 17:51:40 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:51:40 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:51:40 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:51:40 DEBUG] [caching:35] Cached 2 activities
+[32m[2026-01-05 17:51:40 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 17:51:40 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:51:40 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:51:40 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 17:51:40 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 17:51:40 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:51:40 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 17:51:40 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:51:40 DEBUG] [caching:35] Cached 2 activities
+[36m[2026-01-05 17:51:40 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:51:40 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:51:40 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 17:51:40 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 17:51:40 INFO] [run:440] Running experiment: Enchimento de Disco (Disk Fill)
+[36m[2026-01-05 17:51:40 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 17:51:40 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 17:51:40 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 17:51:40 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 17:51:40 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 17:51:40 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 17:51:40 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 17:51:40 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:51:40 INFO] [activity:232] Action: inject-disk-fill
+[36m[2026-01-05 17:51:40 DEBUG] [python:33] Activity 'inject-disk-fill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:51:40 DEBUG] [activity:317] Activity failed
+    Traceback (most recent call last):
+      File "/app/src/lib/chaos_ssh_driver.py", line 19, in run_ssh_command
+        result = subprocess.run(ssh_cmd, capture_output=True, text=True, check=True, timeout=10)
+      File "/usr/local/lib/python3.10/subprocess.py", line 526, in run
+        raise CalledProcessError(retcode, process.args,
+    subprocess.CalledProcessError: Command '['sshpass', '-p', 'sidu', 'ssh', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=/dev/null', 'sidu@192.168.1.72', "echo 'sidu' | sudo -S echo CmltcG9ydCBvcwppbXBvcnQgc2h1dGlsCmltcG9ydCBzeXMKCmRlZiBmaWxsX2Rpc2socGVyY2VudCk6CiAgICBwYXRoID0gIi8iCiAgICBmaWxlbmFtZSA9ICIvY2hhb3NfZGlza19maWxsIgogICAgCiAgICB0cnk6CiAgICAgICAgdG90YWwsIHVzZWQsIGZyZWUgPSBzaHV0aWwuZGlza191c2FnZShwYXRoKQogICAgICAgIAogICAgICAgICMgSWYgZmlsZSBleGlzdHMsIHN1YnRyYWN0IGl0cyBzaXplIGZyb20gJ3VzZWQnIHRvIGdldCAnYmFzZSB1c2FnZScKICAgICAgICBiYXNlX3VzZWQgPSB1c2VkCiAgICAgICAgaWYgb3MucGF0aC5leGlzdHMoZmlsZW5hbWUpOgogICAgICAgICAgICBiYXNlX3VzZWQgLT0gb3MucGF0aC5nZXRzaXplKGZpbGVuYW1lKQogICAgICAgICAgICAKICAgICAgICAjIENhbGN1bGF0ZSB0YXJnZXQgdXNlZCBieXRlcwogICAgICAgIHRhcmdldF91c2VkID0gaW50KHRvdGFsICogKHBlcmNlbnQgLyAxMDAuMCkpCiAgICAgICAgCiAgICAgICAgIyBDYWxjdWxhdGUgaG93IG1hbnkgYnl0ZXMgd2UgbmVlZCB0byBhZGQgdG8gYmFzZV91c2VkIHRvIHJlYWNoIHRhcmdldF91c2VkCiAgICAgICAgbmVlZGVkX2ZpbGwgPSB0YXJnZXRfdXNlZCAtIGJhc2VfdXNlZAogICAgICAgIAogICAgICAgIGlmIG5lZWRlZF9maWxsIDw9IDA6CiAgICAgICAgICAgIHByaW50KGYiRGlzayB1c2FnZSBhbHJlYWR5IGFib3ZlIHtwZXJjZW50fSUuIikKICAgICAgICAgICAgcmV0dXJuCgogICAgICAgICMgRG9uJ3QgdHJ5IHRvIGZpbGwgbW9yZSB0aGFuIGF2YWlsYWJsZSBmcmVlIHNwYWNlIChhdm9pZCBjcmFzaCkKICAgICAgICBpZiBuZWVkZWRfZmlsbCA+IGZyZWU6CiAgICAgICAgICAgIG5lZWRlZF9maWxsID0gZnJlZSAtICgxMDI0ICogMTAyNCkgIyBMZWF2ZSAxTUIgYnJlYXRoaW5nIHJvb20KICAgICAgICAgICAgCiAgICAgICAgaWYgbmVlZGVkX2ZpbGwgPD0gMDoKICAgICAgICAgICAgIHJldHVybgoKICAgICAgICBwcmludChmIkZpbGxpbmcge25lZWRlZF9maWxsfSBieXRlcyB0byByZWFjaCB7cGVyY2VudH0lIikKICAgICAgICAKICAgICAgICB3aXRoIG9wZW4oZmlsZW5hbWUsICJ3YiIpIGFzIGY6CiAgICAgICAgICAgICMgVHJ5IGZhbGxvY2F0ZSBmaXJzdCAoZmFzdCkKICAgICAgICAgICAgdHJ5OgogICAgICAgICAgICAgICAgIyBvcy5wb3NpeF9mYWxsb2NhdGUoZmQsIG9mZnNldCwgbGVuKQogICAgICAgICAgICAgICAgb3MucG9zaXhfZmFsbG9jYXRlKGYuZmlsZW5vKCksIDAsIG5lZWRlZF9maWxsKQogICAgICAgICAgICBleGNlcHQgKEF0dHJpYnV0ZUVycm9yLCBPU0Vycm9yKToKICAgICAgICAgICAgICAgICMgRmFsbGJhY2s6IHdyaXRlIHplcm9zIGluIGNodW5rcwogICAgICAgICAgICAgICAgY2h1bmtfc2l6ZSA9IDEwICogMTAyNCAqIDEwMjQgIyAxME1CCiAgICAgICAgICAgICAgICB3cml0dGVuID0gMAogICAgICAgICAgICAgICAgd2hpbGUgd3JpdHRlbiA8IG5lZWRlZF9maWxsOgogICAgICAgICAgICAgICAgICAgIHRvX3dyaXRlID0gbWluKGNodW5rX3NpemUsIG5lZWRlZF9maWxsIC0gd3JpdHRlbikKICAgICAgICAgICAgICAgICAgICBmLndyaXRlKGInXDAnICogdG9fd3JpdGUpCiAgICAgICAgICAgICAgICAgICAgd3JpdHRlbiArPSB0b193cml0ZQogICAgICAgICAgICAgICAgICAgICAKICAgIGV4Y2VwdCBFeGNlcHRpb24gYXMgZToKICAgICAgICBwcmludChmIkVycm9yOiB7ZX0iKQogICAgICAgIHN5cy5leGl0KDEpCgppZiBfX25hbWVfXyA9PSAiX19tYWluX18iOgogICAgZmlsbF9kaXNrKDUwKQo= | base64 -d | python3"]' returned non-zero exit status 1.
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/app/src/lib/chaos_ssh_driver.py", line 543, in inject_disk_fill
+        run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+      File "/app/src/lib/chaos_ssh_driver.py", line 22, in run_ssh_command
+        raise RuntimeError(f"SSH command failed: {e.stderr}")
+    RuntimeError: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    [sudo] password for sidu: 
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 546, in inject_disk_fill
+        raise RuntimeError(f"Failed to inject Disk Fill: {e}")
+    RuntimeError: Failed to inject Disk Fill: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    [sudo] password for sidu: 
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/activity.py", line 310, in run_activity
+        result = run_python_activity(activity, configuration, secrets)
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 58, in run_python_activity
+        raise ActivityFailed(
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 546, in inject_disk_fill
+        raise RuntimeError(f"Failed to inject Disk Fill: {e}")
+    chaoslib.exceptions.ActivityFailed: RuntimeError: Failed to inject Disk Fill: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    [sudo] password for sidu:
+[31m[2026-01-05 17:51:40 ERROR] [activity:268]   => failed: RuntimeError: Failed to inject Disk Fill: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    [sudo] password for sidu:
+[36m[2026-01-05 17:51:40 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:51:40 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:51:40 INFO] [activity:232] Action: wait-duration
+[36m[2026-01-05 17:51:40 DEBUG] [python:33] Activity 'wait-duration' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:52:10 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:52:10 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:52:10 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 17:52:10 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 17:52:10 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:52:10 INFO] [rollback:36] Rollback: recover-disk-fill
+[36m[2026-01-05 17:52:10 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:52:10 INFO] [activity:232] Action: recover-disk-fill
+[36m[2026-01-05 17:52:10 DEBUG] [python:33] Activity 'recover-disk-fill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:52:10 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:52:10 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:52:10 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:52:10 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 17:52:10 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 17:52:10 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 17:52:10 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:53:07 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 17:53:07 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 17:53:07 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 17:53:07 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 17:53:07 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:53:07 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:53:07 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:53:07 DEBUG] [caching:35] Cached 2 activities
+[32m[2026-01-05 17:53:07 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 17:53:07 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:53:07 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:53:07 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 17:53:07 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 17:53:07 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:53:07 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 17:53:07 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:53:07 DEBUG] [caching:35] Cached 2 activities
+[36m[2026-01-05 17:53:07 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:53:07 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:53:07 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 17:53:07 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 17:53:07 INFO] [run:440] Running experiment: Enchimento de Disco (Disk Fill)
+[36m[2026-01-05 17:53:07 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 17:53:07 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 17:53:07 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 17:53:07 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 17:53:07 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 17:53:07 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 17:53:07 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 17:53:07 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:53:07 INFO] [activity:232] Action: inject-disk-fill
+[36m[2026-01-05 17:53:07 DEBUG] [python:33] Activity 'inject-disk-fill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:53:07 DEBUG] [activity:317] Activity failed
+    Traceback (most recent call last):
+      File "/app/src/lib/chaos_ssh_driver.py", line 19, in run_ssh_command
+        result = subprocess.run(ssh_cmd, capture_output=True, text=True, check=True, timeout=10)
+      File "/usr/local/lib/python3.10/subprocess.py", line 526, in run
+        raise CalledProcessError(retcode, process.args,
+    subprocess.CalledProcessError: Command '['sshpass', '-p', 'sidu', 'ssh', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=/dev/null', 'sidu@192.168.1.72', "echo 'sidu' | sudo -S echo CmltcG9ydCBvcwppbXBvcnQgc2h1dGlsCmltcG9ydCBzeXMKCmRlZiBmaWxsX2Rpc2socGVyY2VudCk6CiAgICBwYXRoID0gIi8iCiAgICBmaWxlbmFtZSA9ICIvY2hhb3NfZGlza19maWxsIgogICAgCiAgICB0cnk6CiAgICAgICAgdG90YWwsIHVzZWQsIGZyZWUgPSBzaHV0aWwuZGlza191c2FnZShwYXRoKQogICAgICAgIAogICAgICAgICMgSWYgZmlsZSBleGlzdHMsIHN1YnRyYWN0IGl0cyBzaXplIGZyb20gJ3VzZWQnIHRvIGdldCAnYmFzZSB1c2FnZScKICAgICAgICBiYXNlX3VzZWQgPSB1c2VkCiAgICAgICAgaWYgb3MucGF0aC5leGlzdHMoZmlsZW5hbWUpOgogICAgICAgICAgICBiYXNlX3VzZWQgLT0gb3MucGF0aC5nZXRzaXplKGZpbGVuYW1lKQogICAgICAgICAgICAKICAgICAgICAjIENhbGN1bGF0ZSB0YXJnZXQgdXNlZCBieXRlcwogICAgICAgIHRhcmdldF91c2VkID0gaW50KHRvdGFsICogKHBlcmNlbnQgLyAxMDAuMCkpCiAgICAgICAgCiAgICAgICAgIyBDYWxjdWxhdGUgaG93IG1hbnkgYnl0ZXMgd2UgbmVlZCB0byBhZGQgdG8gYmFzZV91c2VkIHRvIHJlYWNoIHRhcmdldF91c2VkCiAgICAgICAgbmVlZGVkX2ZpbGwgPSB0YXJnZXRfdXNlZCAtIGJhc2VfdXNlZAogICAgICAgIAogICAgICAgIGlmIG5lZWRlZF9maWxsIDw9IDA6CiAgICAgICAgICAgIHByaW50KGYiRGlzayB1c2FnZSBhbHJlYWR5IGFib3ZlIHtwZXJjZW50fSUuIikKICAgICAgICAgICAgcmV0dXJuCgogICAgICAgICMgRG9uJ3QgdHJ5IHRvIGZpbGwgbW9yZSB0aGFuIGF2YWlsYWJsZSBmcmVlIHNwYWNlIChhdm9pZCBjcmFzaCkKICAgICAgICBpZiBuZWVkZWRfZmlsbCA+IGZyZWU6CiAgICAgICAgICAgIG5lZWRlZF9maWxsID0gZnJlZSAtICgxMDI0ICogMTAyNCkgIyBMZWF2ZSAxTUIgYnJlYXRoaW5nIHJvb20KICAgICAgICAgICAgCiAgICAgICAgaWYgbmVlZGVkX2ZpbGwgPD0gMDoKICAgICAgICAgICAgIHJldHVybgoKICAgICAgICBwcmludChmIkZpbGxpbmcge25lZWRlZF9maWxsfSBieXRlcyB0byByZWFjaCB7cGVyY2VudH0lIikKICAgICAgICAKICAgICAgICB3aXRoIG9wZW4oZmlsZW5hbWUsICJ3YiIpIGFzIGY6CiAgICAgICAgICAgICMgVHJ5IGZhbGxvY2F0ZSBmaXJzdCAoZmFzdCkKICAgICAgICAgICAgdHJ5OgogICAgICAgICAgICAgICAgIyBvcy5wb3NpeF9mYWxsb2NhdGUoZmQsIG9mZnNldCwgbGVuKQogICAgICAgICAgICAgICAgb3MucG9zaXhfZmFsbG9jYXRlKGYuZmlsZW5vKCksIDAsIG5lZWRlZF9maWxsKQogICAgICAgICAgICBleGNlcHQgKEF0dHJpYnV0ZUVycm9yLCBPU0Vycm9yKToKICAgICAgICAgICAgICAgICMgRmFsbGJhY2s6IHdyaXRlIHplcm9zIGluIGNodW5rcwogICAgICAgICAgICAgICAgY2h1bmtfc2l6ZSA9IDEwICogMTAyNCAqIDEwMjQgIyAxME1CCiAgICAgICAgICAgICAgICB3cml0dGVuID0gMAogICAgICAgICAgICAgICAgd2hpbGUgd3JpdHRlbiA8IG5lZWRlZF9maWxsOgogICAgICAgICAgICAgICAgICAgIHRvX3dyaXRlID0gbWluKGNodW5rX3NpemUsIG5lZWRlZF9maWxsIC0gd3JpdHRlbikKICAgICAgICAgICAgICAgICAgICBmLndyaXRlKGInXDAnICogdG9fd3JpdGUpCiAgICAgICAgICAgICAgICAgICAgd3JpdHRlbiArPSB0b193cml0ZQogICAgICAgICAgICAgICAgICAgICAKICAgIGV4Y2VwdCBFeGNlcHRpb24gYXMgZToKICAgICAgICBwcmludChmIkVycm9yOiB7ZX0iKQogICAgICAgIHN5cy5leGl0KDEpCgppZiBfX25hbWVfXyA9PSAiX19tYWluX18iOgogICAgZmlsbF9kaXNrKDUwKQo= | base64 -d | python3"]' returned non-zero exit status 1.
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/app/src/lib/chaos_ssh_driver.py", line 543, in inject_disk_fill
+        run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+      File "/app/src/lib/chaos_ssh_driver.py", line 22, in run_ssh_command
+        raise RuntimeError(f"SSH command failed: {e.stderr}")
+    RuntimeError: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    [sudo] password for sidu: 
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 546, in inject_disk_fill
+        raise RuntimeError(f"Failed to inject Disk Fill: {e}")
+    RuntimeError: Failed to inject Disk Fill: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    [sudo] password for sidu: 
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/activity.py", line 310, in run_activity
+        result = run_python_activity(activity, configuration, secrets)
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 58, in run_python_activity
+        raise ActivityFailed(
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 546, in inject_disk_fill
+        raise RuntimeError(f"Failed to inject Disk Fill: {e}")
+    chaoslib.exceptions.ActivityFailed: RuntimeError: Failed to inject Disk Fill: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    [sudo] password for sidu:
+[31m[2026-01-05 17:53:07 ERROR] [activity:268]   => failed: RuntimeError: Failed to inject Disk Fill: SSH command failed: Warning: Permanently added '192.168.1.72' (ED25519) to the list of known hosts.
+    [sudo] password for sidu:
+[36m[2026-01-05 17:53:07 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:53:07 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:53:07 INFO] [activity:232] Action: wait-duration
+[36m[2026-01-05 17:53:07 DEBUG] [python:33] Activity 'wait-duration' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:53:09 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 17:53:09 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 17:53:09 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 17:53:09 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 17:53:09 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:53:09 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:53:09 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:53:09 DEBUG] [caching:35] Cached 3 activities
+[32m[2026-01-05 17:53:09 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 17:53:09 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:53:09 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:53:09 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 17:53:09 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 17:53:09 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:53:09 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 17:53:09 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:53:09 DEBUG] [caching:35] Cached 3 activities
+[36m[2026-01-05 17:53:09 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:53:09 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:53:09 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 17:53:09 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 17:53:09 INFO] [run:440] Running experiment: Injeção de Latência de Rede via ChaosD Remoto
+[36m[2026-01-05 17:53:09 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 17:53:09 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 17:53:09 INFO] [run:477] Rollbacks strategy: default
+[36m[2026-01-05 17:53:09 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 17:53:09 DEBUG] [run:654] Running steady-state hypothesis before the method
+[32m[2026-01-05 17:53:09 INFO] [hypothesis:205] Steady state hypothesis: O serviço deve estar acessível
+[36m[2026-01-05 17:53:09 DEBUG] [__init__:472] No controls to apply on 'hypothesis'
+[36m[2026-01-05 17:53:09 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:53:09 INFO] [activity:232] Probe: service-is-responding
+[36m[2026-01-05 17:53:09 DEBUG] [activity:260]   => succeeded with '{'status': 200, 'headers': {'Content-Type': 'application/json', 'Vary': 'Accept-Encoding', 'X-Consul-Default-Acl-Policy': 'allow', 'Date': 'Mon, 05 Jan 2026 17:53:09 GMT', 'Content-Length': '19'}, 'body': '192.168.1.72:8300'}'
+[36m[2026-01-05 17:53:09 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:53:09 DEBUG] [hypothesis:247] allowed tolerance is 200
+[32m[2026-01-05 17:53:09 INFO] [hypothesis:260] Steady state hypothesis is met!
+[36m[2026-01-05 17:53:09 DEBUG] [__init__:472] No controls to apply on 'hypothesis'
+[32m[2026-01-05 17:53:09 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 17:53:09 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 17:53:09 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:53:09 INFO] [activity:232] Action: inject-network-delay
+[36m[2026-01-05 17:53:09 DEBUG] [python:33] Activity 'inject-network-delay' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:53:10 DEBUG] [activity:260]   => succeeded with 'enp7s0'
+[36m[2026-01-05 17:53:10 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:53:10 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:53:10 INFO] [activity:232] Action: wait-duration
+[36m[2026-01-05 17:53:10 DEBUG] [python:33] Activity 'wait-duration' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:53:37 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:53:37 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:53:37 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 17:53:37 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 17:53:37 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:53:37 INFO] [rollback:36] Rollback: recover-disk-fill
+[36m[2026-01-05 17:53:37 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:53:37 INFO] [activity:232] Action: recover-disk-fill
+[36m[2026-01-05 17:53:37 DEBUG] [python:33] Activity 'recover-disk-fill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:53:39 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:53:39 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:53:39 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:53:39 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 17:53:39 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 17:53:39 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 17:53:39 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:53:40 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:53:40 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:53:40 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 17:53:40 DEBUG] [run:696] Running steady-state hypothesis after the method
+[32m[2026-01-05 17:53:40 INFO] [hypothesis:205] Steady state hypothesis: O serviço deve estar acessível
+[36m[2026-01-05 17:53:40 DEBUG] [__init__:472] No controls to apply on 'hypothesis'
+[36m[2026-01-05 17:53:40 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:53:40 INFO] [activity:232] Probe: service-is-responding
+[36m[2026-01-05 17:53:40 DEBUG] [activity:260]   => succeeded with '{'status': 200, 'headers': {'Content-Type': 'application/json', 'Vary': 'Accept-Encoding', 'X-Consul-Default-Acl-Policy': 'allow', 'Date': 'Mon, 05 Jan 2026 17:53:40 GMT', 'Content-Length': '19'}, 'body': '192.168.1.72:8300'}'
+[36m[2026-01-05 17:53:40 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:53:40 DEBUG] [hypothesis:247] allowed tolerance is 200
+[32m[2026-01-05 17:53:40 INFO] [hypothesis:260] Steady state hypothesis is met!
+[36m[2026-01-05 17:53:40 DEBUG] [__init__:472] No controls to apply on 'hypothesis'
+[32m[2026-01-05 17:53:40 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 17:53:40 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:53:40 INFO] [rollback:36] Rollback: recover-network
+[36m[2026-01-05 17:53:40 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:53:40 INFO] [activity:232] Action: recover-network
+[36m[2026-01-05 17:53:40 DEBUG] [python:33] Activity 'recover-network' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:53:41 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:53:41 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:53:41 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:53:41 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 17:53:41 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 17:53:41 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 17:53:41 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:53:57 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 17:53:57 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 17:53:57 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 17:53:57 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 17:53:57 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:53:57 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:53:57 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:53:57 DEBUG] [caching:35] Cached 2 activities
+[32m[2026-01-05 17:53:57 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 17:53:57 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:53:57 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:53:57 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 17:53:57 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 17:53:57 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:53:57 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 17:53:57 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:53:57 DEBUG] [caching:35] Cached 2 activities
+[36m[2026-01-05 17:53:57 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:53:57 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:53:57 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 17:53:57 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 17:53:57 INFO] [run:440] Running experiment: Enchimento de Disco (Disk Fill)
+[36m[2026-01-05 17:53:57 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 17:53:57 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 17:53:57 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 17:53:57 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 17:53:57 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 17:53:57 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 17:53:57 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 17:53:57 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:53:57 INFO] [activity:232] Action: inject-disk-fill
+[36m[2026-01-05 17:53:57 DEBUG] [python:33] Activity 'inject-disk-fill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:53:59 DEBUG] [activity:260]   => succeeded with '/chaos_disk_fill'
+[36m[2026-01-05 17:53:59 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:53:59 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:53:59 INFO] [activity:232] Action: wait-duration
+[36m[2026-01-05 17:53:59 DEBUG] [python:33] Activity 'wait-duration' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[33m[2026-01-05 17:54:20 WARNING] [exit:163] Caught SIGTERM signal, interrupting experiment now
+[36m[2026-01-05 17:54:20 DEBUG] [activity:317] Activity failed
+    Traceback (most recent call last):
+      File "/app/src/lib/chaos_ssh_driver.py", line 129, in wait_seconds
+        s = int(str(seconds).replace('s', ''))
+    ValueError: invalid literal for int() with base 10: '${duration}'
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 133, in wait_seconds
+        time.sleep(30)
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/exit.py", line 164, in _terminate_now
+        raise InterruptExecution("SIGTERM signal received")
+    chaoslib.exceptions.InterruptExecution: SIGTERM signal received
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/activity.py", line 310, in run_activity
+        result = run_python_activity(activity, configuration, secrets)
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 58, in run_python_activity
+        raise ActivityFailed(
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 133, in wait_seconds
+        time.sleep(30)
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/exit.py", line 164, in _terminate_now
+        raise InterruptExecution("SIGTERM signal received")
+    chaoslib.exceptions.ActivityFailed: chaoslib.exceptions.InterruptExecution: SIGTERM signal received
+[31m[2026-01-05 17:54:20 ERROR] [activity:268]   => failed: chaoslib.exceptions.InterruptExecution: SIGTERM signal received
+[36m[2026-01-05 17:54:20 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:54:20 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 17:54:20 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 17:54:20 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:54:20 INFO] [rollback:36] Rollback: recover-disk-fill
+[36m[2026-01-05 17:54:20 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:54:20 INFO] [activity:232] Action: recover-disk-fill
+[36m[2026-01-05 17:54:20 DEBUG] [python:33] Activity 'recover-disk-fill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:54:22 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:54:22 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:54:22 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:54:22 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 17:54:22 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 17:54:22 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 17:54:22 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:56:59 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 17:56:59 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 17:56:59 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 17:56:59 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 17:56:59 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:56:59 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:56:59 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:56:59 DEBUG] [caching:35] Cached 2 activities
+[32m[2026-01-05 17:56:59 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 17:56:59 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:56:59 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:56:59 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 17:56:59 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 17:56:59 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:56:59 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 17:56:59 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:56:59 DEBUG] [caching:35] Cached 2 activities
+[36m[2026-01-05 17:56:59 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:56:59 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:56:59 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 17:56:59 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 17:56:59 INFO] [run:440] Running experiment: Enchimento de Disco (Disk Fill)
+[36m[2026-01-05 17:56:59 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 17:56:59 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 17:56:59 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 17:56:59 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 17:56:59 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 17:56:59 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 17:56:59 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 17:56:59 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:56:59 INFO] [activity:232] Action: inject-disk-fill
+[36m[2026-01-05 17:56:59 DEBUG] [python:33] Activity 'inject-disk-fill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:56:59 DEBUG] [activity:260]   => succeeded with '/chaos_disk_fill'
+[36m[2026-01-05 17:56:59 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:56:59 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:56:59 INFO] [activity:232] Action: wait-duration
+[36m[2026-01-05 17:56:59 DEBUG] [python:33] Activity 'wait-duration' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[33m[2026-01-05 17:57:00 WARNING] [exit:163] Caught SIGTERM signal, interrupting experiment now
+[36m[2026-01-05 17:57:00 DEBUG] [activity:317] Activity failed
+    Traceback (most recent call last):
+      File "/app/src/lib/chaos_ssh_driver.py", line 129, in wait_seconds
+        s = int(str(seconds).replace('s', ''))
+    ValueError: invalid literal for int() with base 10: '${duration}'
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 133, in wait_seconds
+        time.sleep(30)
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/exit.py", line 164, in _terminate_now
+        raise InterruptExecution("SIGTERM signal received")
+    chaoslib.exceptions.InterruptExecution: SIGTERM signal received
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/activity.py", line 310, in run_activity
+        result = run_python_activity(activity, configuration, secrets)
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 58, in run_python_activity
+        raise ActivityFailed(
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 133, in wait_seconds
+        time.sleep(30)
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/exit.py", line 164, in _terminate_now
+        raise InterruptExecution("SIGTERM signal received")
+    chaoslib.exceptions.ActivityFailed: chaoslib.exceptions.InterruptExecution: SIGTERM signal received
+[31m[2026-01-05 17:57:00 ERROR] [activity:268]   => failed: chaoslib.exceptions.InterruptExecution: SIGTERM signal received
+[36m[2026-01-05 17:57:00 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:57:00 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 17:57:00 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 17:57:00 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:57:00 INFO] [rollback:36] Rollback: recover-disk-fill
+[36m[2026-01-05 17:57:00 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:57:00 INFO] [activity:232] Action: recover-disk-fill
+[36m[2026-01-05 17:57:00 DEBUG] [python:33] Activity 'recover-disk-fill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:57:00 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:57:00 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:57:00 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:57:00 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 17:57:00 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 17:57:00 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 17:57:00 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:57:46 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 17:57:46 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 17:57:46 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 17:57:46 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 17:57:46 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:57:46 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 17:57:46 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:57:46 DEBUG] [caching:35] Cached 1 activities
+[32m[2026-01-05 17:57:46 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 17:57:46 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:57:46 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:57:46 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 17:57:46 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 17:57:46 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 17:57:46 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 17:57:46 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 17:57:46 DEBUG] [caching:35] Cached 1 activities
+[36m[2026-01-05 17:57:46 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 17:57:46 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 17:57:46 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 17:57:46 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 17:57:46 INFO] [run:440] Running experiment: Morte de Processo (Process Killer)
+[36m[2026-01-05 17:57:46 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 17:57:46 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 17:57:46 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 17:57:46 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 17:57:46 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 17:57:46 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 17:57:46 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 17:57:46 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:57:46 INFO] [activity:232] Action: inject-process-kill
+[36m[2026-01-05 17:57:46 DEBUG] [python:33] Activity 'inject-process-kill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:57:46 DEBUG] [activity:260]   => succeeded with 'consul'
+[36m[2026-01-05 17:57:46 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:57:46 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 17:57:46 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 17:57:46 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:57:46 INFO] [rollback:36] Rollback: recover-process-kill
+[36m[2026-01-05 17:57:46 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 17:57:46 INFO] [activity:232] Action: recover-process-kill
+[36m[2026-01-05 17:57:46 DEBUG] [python:33] Activity 'recover-process-kill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 17:57:46 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 17:57:46 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 17:57:46 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 17:57:46 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 17:57:46 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 17:57:46 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 17:57:46 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 18:01:45 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 18:01:45 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 18:01:45 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 18:01:45 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 18:01:45 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 18:01:45 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 18:01:45 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 18:01:45 DEBUG] [caching:35] Cached 1 activities
+[32m[2026-01-05 18:01:45 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 18:01:45 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 18:01:45 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 18:01:45 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 18:01:45 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 18:01:45 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 18:01:45 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 18:01:45 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 18:01:45 DEBUG] [caching:35] Cached 1 activities
+[36m[2026-01-05 18:01:45 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 18:01:45 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 18:01:45 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 18:01:45 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 18:01:45 INFO] [run:440] Running experiment: Morte de Processo (Process Killer)
+[36m[2026-01-05 18:01:45 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 18:01:45 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 18:01:45 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 18:01:45 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 18:01:45 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 18:01:45 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 18:01:45 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 18:01:45 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 18:01:45 INFO] [activity:232] Action: inject-process-kill
+[36m[2026-01-05 18:01:45 DEBUG] [python:33] Activity 'inject-process-kill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 18:01:45 DEBUG] [activity:260]   => succeeded with 'consul'
+[36m[2026-01-05 18:01:45 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 18:01:45 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 18:01:45 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 18:01:45 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 18:01:45 INFO] [rollback:36] Rollback: recover-process-kill
+[36m[2026-01-05 18:01:45 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 18:01:45 INFO] [activity:232] Action: recover-process-kill
+[36m[2026-01-05 18:01:45 DEBUG] [python:33] Activity 'recover-process-kill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 18:01:45 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 18:01:45 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 18:01:45 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 18:01:45 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 18:01:45 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 18:01:45 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 18:01:45 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 18:03:03 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 18:03:03 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 18:03:03 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 18:03:03 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 18:03:03 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 18:03:03 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 18:03:03 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 18:03:03 DEBUG] [caching:35] Cached 2 activities
+[32m[2026-01-05 18:03:03 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 18:03:03 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 18:03:03 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 18:03:03 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 18:03:03 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 18:03:03 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 18:03:03 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 18:03:03 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 18:03:03 DEBUG] [caching:35] Cached 2 activities
+[36m[2026-01-05 18:03:03 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 18:03:03 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 18:03:03 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 18:03:03 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 18:03:03 INFO] [run:440] Running experiment: Enchimento de Disco (Disk Fill)
+[36m[2026-01-05 18:03:03 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 18:03:03 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 18:03:03 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 18:03:03 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 18:03:03 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 18:03:03 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 18:03:03 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 18:03:03 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 18:03:03 INFO] [activity:232] Action: inject-disk-fill
+[36m[2026-01-05 18:03:03 DEBUG] [python:33] Activity 'inject-disk-fill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 18:03:03 DEBUG] [activity:260]   => succeeded with '/chaos_disk_fill'
+[36m[2026-01-05 18:03:03 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 18:03:03 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 18:03:03 INFO] [activity:232] Action: wait-duration
+[36m[2026-01-05 18:03:03 DEBUG] [python:33] Activity 'wait-duration' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[33m[2026-01-05 18:03:10 WARNING] [exit:163] Caught SIGTERM signal, interrupting experiment now
+[36m[2026-01-05 18:03:10 DEBUG] [activity:317] Activity failed
+    Traceback (most recent call last):
+      File "/app/src/lib/chaos_ssh_driver.py", line 129, in wait_seconds
+        s = int(str(seconds).replace('s', ''))
+    ValueError: invalid literal for int() with base 10: '${duration}'
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 133, in wait_seconds
+        time.sleep(30)
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/exit.py", line 164, in _terminate_now
+        raise InterruptExecution("SIGTERM signal received")
+    chaoslib.exceptions.InterruptExecution: SIGTERM signal received
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/activity.py", line 310, in run_activity
+        result = run_python_activity(activity, configuration, secrets)
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 58, in run_python_activity
+        raise ActivityFailed(
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/provider/python.py", line 56, in run_python_activity
+        return func(**arguments)
+      File "/app/src/lib/chaos_ssh_driver.py", line 133, in wait_seconds
+        time.sleep(30)
+      File "/usr/local/lib/python3.10/site-packages/chaoslib/exit.py", line 164, in _terminate_now
+        raise InterruptExecution("SIGTERM signal received")
+    chaoslib.exceptions.ActivityFailed: chaoslib.exceptions.InterruptExecution: SIGTERM signal received
+[31m[2026-01-05 18:03:10 ERROR] [activity:268]   => failed: chaoslib.exceptions.InterruptExecution: SIGTERM signal received
+[36m[2026-01-05 18:03:10 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 18:03:10 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 18:03:10 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 18:03:10 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 18:03:10 INFO] [rollback:36] Rollback: recover-disk-fill
+[36m[2026-01-05 18:03:10 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 18:03:10 INFO] [activity:232] Action: recover-disk-fill
+[36m[2026-01-05 18:03:10 DEBUG] [python:33] Activity 'recover-disk-fill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 18:03:10 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 18:03:10 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 18:03:10 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 18:03:10 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 18:03:10 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 18:03:10 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 18:03:10 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 18:04:36 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 18:04:36 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 18:04:36 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 18:04:36 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 18:04:36 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 18:04:36 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 18:04:36 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 18:04:36 DEBUG] [caching:35] Cached 1 activities
+[32m[2026-01-05 18:04:36 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 18:04:36 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 18:04:36 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 18:04:36 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 18:04:36 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 18:04:36 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 18:04:36 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 18:04:36 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 18:04:36 DEBUG] [caching:35] Cached 1 activities
+[36m[2026-01-05 18:04:36 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 18:04:36 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 18:04:36 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 18:04:36 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 18:04:36 INFO] [run:440] Running experiment: Morte de Processo (Process Killer)
+[36m[2026-01-05 18:04:36 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 18:04:36 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 18:04:36 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 18:04:36 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 18:04:36 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 18:04:36 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 18:04:36 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 18:04:36 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 18:04:36 INFO] [activity:232] Action: inject-process-kill
+[36m[2026-01-05 18:04:36 DEBUG] [python:33] Activity 'inject-process-kill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 18:04:36 DEBUG] [activity:260]   => succeeded with 'consul'
+[36m[2026-01-05 18:04:36 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 18:04:36 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 18:04:36 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 18:04:36 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 18:04:36 INFO] [rollback:36] Rollback: recover-process-kill
+[36m[2026-01-05 18:04:36 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 18:04:36 INFO] [activity:232] Action: recover-process-kill
+[36m[2026-01-05 18:04:36 DEBUG] [python:33] Activity 'recover-process-kill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 18:04:36 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 18:04:36 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 18:04:36 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 18:04:36 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 18:04:36 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 18:04:36 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 18:04:36 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 18:08:38 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 18:08:38 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 18:08:38 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 18:08:38 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 18:08:38 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 18:08:38 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 18:08:38 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 18:08:38 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 18:08:38 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 18:08:38 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 18:08:38 DEBUG] [caching:35] Cached 1 activities
+[32m[2026-01-05 18:08:38 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 18:08:38 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 18:08:38 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 18:08:38 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 18:08:38 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 18:08:38 DEBUG] [__init__:472] No controls to apply on 'loader'
+[32m[2026-01-05 18:08:38 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 18:08:38 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 18:08:38 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 18:08:38 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 18:08:38 DEBUG] [caching:35] Cached 1 activities
+[36m[2026-01-05 18:08:38 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 18:08:38 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 18:08:38 DEBUG] [caching:35] Cached 1 activities
+[36m[2026-01-05 18:08:38 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 18:08:38 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 18:08:38 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 18:08:38 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 18:08:38 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 18:08:38 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 18:08:38 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 18:08:38 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 18:08:38 INFO] [run:440] Running experiment: Morte de Processo (Process Killer)
+[32m[2026-01-05 18:08:38 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 18:08:38 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 18:08:38 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 18:08:38 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 18:08:38 DEBUG] [caching:35] Cached 1 activities
+[36m[2026-01-05 18:08:38 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 18:08:38 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 18:08:38 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 18:08:38 DEBUG] [configuration:161] Loading dynamic configuration...
+[36m[2026-01-05 18:08:38 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 18:08:38 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 18:08:38 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 18:08:38 INFO] [run:440] Running experiment: Morte de Processo (Process Killer)
+[32m[2026-01-05 18:08:38 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 18:08:38 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 18:08:38 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 18:08:38 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 18:08:38 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 18:08:38 INFO] [activity:232] Action: inject-process-kill
+[36m[2026-01-05 18:08:38 DEBUG] [python:33] Activity 'inject-process-kill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 18:08:38 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 18:08:38 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 18:08:38 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 18:08:38 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 18:08:38 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 18:08:38 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 18:08:38 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 18:08:38 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 18:08:38 INFO] [activity:232] Action: inject-process-kill
+[36m[2026-01-05 18:08:38 DEBUG] [python:33] Activity 'inject-process-kill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 18:08:39 DEBUG] [activity:260]   => succeeded with 'sleep'
+[36m[2026-01-05 18:08:39 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 18:08:39 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 18:08:39 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 18:08:39 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 18:08:39 INFO] [rollback:36] Rollback: recover-process-kill
+[36m[2026-01-05 18:08:39 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 18:08:39 INFO] [activity:232] Action: recover-process-kill
+[36m[2026-01-05 18:08:39 DEBUG] [python:33] Activity 'recover-process-kill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 18:08:39 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 18:08:39 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 18:08:39 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 18:08:39 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 18:08:39 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 18:08:39 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 18:08:39 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 18:08:43 DEBUG] [activity:260]   => succeeded with 'sleep'
+[36m[2026-01-05 18:08:43 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 18:08:43 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 18:08:43 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 18:08:43 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 18:08:43 INFO] [rollback:36] Rollback: recover-process-kill
+[36m[2026-01-05 18:08:43 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 18:08:43 INFO] [activity:232] Action: recover-process-kill
+[36m[2026-01-05 18:08:43 DEBUG] [python:33] Activity 'recover-process-kill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 18:08:43 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 18:08:43 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 18:08:43 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 18:08:43 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 18:08:43 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 18:08:43 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 18:08:43 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 18:09:20 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 18:09:20 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 18:09:20 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 18:09:20 DEBUG] [__init__:101] ###############################################################################
+[36m[2026-01-05 18:09:20 DEBUG] [__init__:102] Running command 'run'
+[36m[2026-01-05 18:09:20 DEBUG] [__init__:106] Using settings file '/root/.chaostoolkit/settings.yaml'
+[36m[2026-01-05 18:09:21 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 18:09:21 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 18:09:21 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 18:09:21 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 18:09:21 DEBUG] [caching:35] Cached 1 activities
+[32m[2026-01-05 18:09:21 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 18:09:21 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 18:09:21 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 18:09:21 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 18:09:21 DEBUG] [settings:31] The Chaos Toolkit settings file could not be found at '/root/.chaostoolkit/settings.yaml'.
+[36m[2026-01-05 18:09:21 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 18:09:21 DEBUG] [__init__:472] No controls to apply on 'loader'
+[36m[2026-01-05 18:09:21 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 18:09:21 DEBUG] [caching:35] Cached 1 activities
+[32m[2026-01-05 18:09:21 INFO] [experiment:59] Validating the experiment's syntax
+[36m[2026-01-05 18:09:21 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 18:09:21 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 18:09:21 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 18:09:21 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 18:09:21 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 18:09:21 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 18:09:21 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 18:09:21 DEBUG] [caching:35] Cached 1 activities
+[36m[2026-01-05 18:09:21 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 18:09:21 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 18:09:21 DEBUG] [secret:104] Done loading secrets
+[36m[2026-01-05 18:09:21 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 18:09:21 INFO] [run:440] Running experiment: Morte de Processo (Process Killer)
+[32m[2026-01-05 18:09:21 INFO] [experiment:112] Experiment looks valid
+[36m[2026-01-05 18:09:21 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 18:09:21 DEBUG] [run:224] Runtime strategies: hypothesis - default / rollbacks - default
+[36m[2026-01-05 18:09:21 DEBUG] [caching:24] Building activity cache...
+[36m[2026-01-05 18:09:21 DEBUG] [caching:35] Cached 1 activities
+[36m[2026-01-05 18:09:21 DEBUG] [configuration:64] Loading configuration...
+[36m[2026-01-05 18:09:21 DEBUG] [secret:79] Loading secrets...
+[36m[2026-01-05 18:09:21 DEBUG] [__init__:67] Initializing controls
+[36m[2026-01-05 18:09:21 DEBUG] [secret:104] Done loading secrets
+[32m[2026-01-05 18:09:21 INFO] [run:471] Steady-state strategy: default
+[36m[2026-01-05 18:09:21 DEBUG] [configuration:161] Loading dynamic configuration...
+[32m[2026-01-05 18:09:21 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 18:09:21 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 18:09:21 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 18:09:21 INFO] [run:440] Running experiment: Morte de Processo (Process Killer)
+[32m[2026-01-05 18:09:21 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 18:09:21 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 18:09:21 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 18:09:21 INFO] [activity:232] Action: inject-process-kill
+[36m[2026-01-05 18:09:21 DEBUG] [python:33] Activity 'inject-process-kill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 18:09:21 DEBUG] [__init__:67] Initializing controls
+[32m[2026-01-05 18:09:21 INFO] [run:471] Steady-state strategy: default
+[32m[2026-01-05 18:09:21 INFO] [run:477] Rollbacks strategy: default
+[32m[2026-01-05 18:09:21 INFO] [run:485] No steady state hypothesis defined. That's ok, just exploring.
+[36m[2026-01-05 18:09:21 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[32m[2026-01-05 18:09:21 INFO] [run:778] Playing your experiment's method now...
+[36m[2026-01-05 18:09:21 DEBUG] [__init__:472] No controls to apply on 'method'
+[36m[2026-01-05 18:09:21 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 18:09:21 INFO] [activity:232] Action: inject-process-kill
+[36m[2026-01-05 18:09:21 DEBUG] [python:33] Activity 'inject-process-kill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 18:09:21 DEBUG] [activity:260]   => succeeded with 'consul'
+[36m[2026-01-05 18:09:21 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 18:09:21 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 18:09:21 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 18:09:21 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 18:09:21 INFO] [rollback:36] Rollback: recover-process-kill
+[36m[2026-01-05 18:09:21 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 18:09:21 INFO] [activity:232] Action: recover-process-kill
+[36m[2026-01-05 18:09:21 DEBUG] [python:33] Activity 'recover-process-kill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 18:09:21 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 18:09:21 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 18:09:21 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 18:09:21 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 18:09:21 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 18:09:21 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 18:09:21 DEBUG] [caching:42] Clearing activities cache
+[36m[2026-01-05 18:09:25 DEBUG] [activity:260]   => succeeded with 'consul'
+[36m[2026-01-05 18:09:25 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 18:09:25 DEBUG] [__init__:472] No controls to apply on 'method'
+[32m[2026-01-05 18:09:25 INFO] [run:1072] Let's rollback...
+[36m[2026-01-05 18:09:25 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 18:09:25 INFO] [rollback:36] Rollback: recover-process-kill
+[36m[2026-01-05 18:09:25 DEBUG] [__init__:472] No controls to apply on 'activity'
+[32m[2026-01-05 18:09:25 INFO] [activity:232] Action: recover-process-kill
+[36m[2026-01-05 18:09:25 DEBUG] [python:33] Activity 'recover-process-kill' loaded from '/app/src/lib/chaos_ssh_driver.py'
+[36m[2026-01-05 18:09:25 DEBUG] [activity:262]   => succeeded without any result value
+[36m[2026-01-05 18:09:25 DEBUG] [__init__:472] No controls to apply on 'activity'
+[36m[2026-01-05 18:09:25 DEBUG] [__init__:472] No controls to apply on 'rollback'
+[32m[2026-01-05 18:09:25 INFO] [run:598] Experiment ended with status: completed
+[36m[2026-01-05 18:09:25 DEBUG] [__init__:472] No controls to apply on 'experiment'
+[36m[2026-01-05 18:09:25 DEBUG] [__init__:106] Cleaning up controls
+[36m[2026-01-05 18:09:25 DEBUG] [caching:42] Clearing activities cache

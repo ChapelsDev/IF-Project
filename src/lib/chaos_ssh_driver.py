@@ -336,6 +336,280 @@ def recover_network_partition(target_host: str, ssh_user: str, uid: str, ssh_pas
         run_ssh_command(target_host, ssh_user, cmd, ssh_password)
     except Exception as e:
         print(f"ERROR: Failed to rollback network partition: {e}")
-        # Try to log it to a file or stderr so it's visible
         import sys
         print(f"ERROR: Failed to rollback network partition: {e}", file=sys.stderr)
+
+import base64
+
+def inject_cpu_stress(target_host: str, ssh_user: str, duration: str = "60", ssh_password: str = None) -> str:
+    """
+    Injects CPU stress by running a Python script that consumes 100% of all cores.
+    Returns the PID of the parent process.
+    """
+    # Clean duration string (remove 's')
+    try:
+        dur = int(str(duration).replace('s', ''))
+    except:
+        dur = 60
+    
+    # Python script to burn all cores
+    py_script = f"""
+import multiprocessing, time, os, signal, sys
+def burn():
+    while True: pass
+if __name__ == '__main__':
+    procs = [multiprocessing.Process(target=burn) for _ in range(multiprocessing.cpu_count())]
+    [p.start() for p in procs]
+    def handler(signum, frame):
+        [p.terminate() for p in procs]
+        sys.exit(0)
+    signal.signal(signal.SIGTERM, handler)
+    time.sleep({dur})
+    [p.terminate() for p in procs]
+"""
+    
+    # Encode script to base64 to avoid shell escaping issues
+    encoded_script = base64.b64encode(py_script.encode('utf-8')).decode('utf-8')
+    
+    # Command to decode and run
+    # We add a dummy argument 'chaos_cpu_stress' to make it easy to kill
+    cmd = f"nohup sh -c \"echo {encoded_script} | base64 -d | python3 - chaos_cpu_stress\" > /dev/null 2>&1 & echo $!"
+    
+    try:
+        pid = run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+        return pid
+    except RuntimeError as e:
+        raise RuntimeError(f"Failed to inject CPU stress: {e}")
+
+def recover_cpu_stress(target_host: str, ssh_user: str, uid: str, ssh_password: str = None) -> None:
+    """
+    Recovers CPU stress by killing the process and its children.
+    """
+    pid = uid
+    # Kill children (python process) first, then the shell
+    # Also kill by name just in case
+    cmd = f"pkill -f chaos_cpu_stress; pkill -P {pid}; kill {pid}"
+    try:
+        run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+    except: pass
+
+def inject_memory_stress(target_host: str, ssh_user: str, size_mb: str = "512", duration: str = "60", ssh_password: str = None) -> str:
+    """
+    Injects Memory stress by allocating a large string in Python.
+    """
+    try:
+        dur = int(str(duration).replace('s', ''))
+    except:
+        dur = 60
+        
+    try:
+        size = int(str(size_mb).replace('MB', '').replace('mb', ''))
+    except:
+        size = 512
+    
+    py_script = f"""
+import time
+try:
+    x = 'a' * ({size} * 1024 * 1024)
+    time.sleep({dur})
+except MemoryError:
+    print("Memory Error")
+"""
+    
+    # Encode script to base64 to avoid shell escaping issues
+    encoded_script = base64.b64encode(py_script.encode('utf-8')).decode('utf-8')
+    
+    # Command to decode and run
+    # We add a dummy argument 'chaos_memory_stress' to make it easy to kill
+    cmd = f"nohup sh -c \"echo {encoded_script} | base64 -d | python3 - chaos_memory_stress\" > /dev/null 2>&1 & echo $!"
+    
+    try:
+        pid = run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+        return pid
+    except RuntimeError as e:
+        raise RuntimeError(f"Failed to inject Memory stress: {e}")
+
+def recover_memory_stress(target_host: str, ssh_user: str, uid: str, ssh_password: str = None) -> None:
+    pid = uid
+    # Kill children (python process) first, then the shell
+    # Also kill by name just in case
+    cmd = f"pkill -f chaos_memory_stress; pkill -P {pid}; kill {pid}"
+    try:
+        run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+    except: pass
+
+def inject_process_killer(target_host: str, ssh_user: str, process_name: str, ssh_password: str = None) -> str:
+    """
+    Kills a process by name using pkill -9.
+    """
+    if not process_name:
+        raise ValueError("Process name is required")
+        
+    # 1. Try to find PIDs first (debug info)
+    # We use bash -c to handle pipes/redirection if needed
+    find_cmd = f"pgrep -f '{process_name}'"
+    find_cmd = f"bash -c \"{find_cmd}\""
+    find_cmd = _get_sudo_command(find_cmd, ssh_user, ssh_password)
+    
+    try:
+        pids = run_ssh_command(target_host, ssh_user, find_cmd, ssh_password)
+        if not pids:
+            print(f"Warning: No process found matching '{process_name}' before kill.")
+    except:
+        pass
+
+    # 2. Kill aggressively
+    # pkill -9 -f <name> (matches full command line)
+    # Wrapped in bash -c to ensure sudo handles quotes correctly
+    cmd = f"pkill -9 -f '{process_name}'"
+    cmd = f"bash -c \"{cmd}\""
+    cmd = _get_sudo_command(cmd, ssh_user, ssh_password)
+    
+    try:
+        run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+        return process_name
+    except RuntimeError as e:
+        # Ignore if process not found (exit code 1)
+        if "1" in str(e):
+            return process_name
+        raise RuntimeError(f"Failed to kill process: {e}")
+
+def recover_process_killer(target_host: str, ssh_user: str, uid: str, ssh_password: str = None) -> None:
+    """
+    No automatic recovery for process killer (service should restart itself).
+    """
+    pass
+
+def inject_disk_fill(target_host: str, ssh_user: str, percent: str = "95", ssh_password: str = None) -> str:
+    """
+    Fills disk space on the root partition using a Python script.
+    Calculates the amount needed to reach the target percentage of TOTAL disk space.
+    """
+    try:
+        pct = int(str(percent).replace('%', ''))
+        if pct > 100: pct = 100
+        if pct < 1: pct = 1
+    except:
+        pct = 95
+        
+    # Python script to calculate and fill disk
+    py_script = f"""
+import os
+import shutil
+import sys
+
+def fill_disk(percent):
+    path = "/"
+    filename = "/chaos_disk_fill"
+    
+    try:
+        total, used, free = shutil.disk_usage(path)
+        
+        # If file exists, subtract its size from 'used' to get 'base usage'
+        base_used = used
+        if os.path.exists(filename):
+            base_used -= os.path.getsize(filename)
+            
+        # Calculate target used bytes
+        target_used = int(total * (percent / 100.0))
+        
+        # Calculate how many bytes we need to add to base_used to reach target_used
+        needed_fill = target_used - base_used
+        
+        if needed_fill <= 0:
+            print(f"Disk usage already above {{percent}}%.")
+            return
+
+        # Don't try to fill more than available free space (avoid crash)
+        if needed_fill > free:
+            needed_fill = free - (1024 * 1024) # Leave 1MB breathing room
+            
+        if needed_fill <= 0:
+             return
+
+        print(f"Filling {{needed_fill}} bytes to reach {{percent}}%")
+        
+        with open(filename, "wb") as f:
+            # Try fallocate first (fast)
+            try:
+                # os.posix_fallocate(fd, offset, len)
+                os.posix_fallocate(f.fileno(), 0, needed_fill)
+            except (AttributeError, OSError):
+                # Fallback: write zeros in chunks
+                chunk_size = 10 * 1024 * 1024 # 10MB
+                written = 0
+                while written < needed_fill:
+                    to_write = min(chunk_size, needed_fill - written)
+                    f.write(b'\\0' * to_write)
+                    written += to_write
+                     
+    except Exception as e:
+        sys.stderr.write(f"Error: {{e}}\\n")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    fill_disk({pct})
+"""
+    
+    # Encode script to base64 to avoid shell escaping issues
+    encoded_script = base64.b64encode(py_script.encode('utf-8')).decode('utf-8')
+    
+    # Command to decode and run
+    # FIX: Wrap in bash -c so the pipe runs under sudo
+    # Added 'chaos_disk_fill' as argument to python3 for easier pkill
+    inner_cmd = f"echo {encoded_script} | base64 -d | python3 - chaos_disk_fill"
+    cmd = f"bash -c '{inner_cmd}'"
+    cmd = _get_sudo_command(cmd, ssh_user, ssh_password)
+    
+    try:
+        run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+        return "/chaos_disk_fill"
+    except RuntimeError as e:
+        raise RuntimeError(f"Failed to inject Disk Fill: {e}")
+
+def recover_disk_fill(target_host: str, ssh_user: str, uid: str = None, ssh_password: str = None) -> None:
+    """
+    Removes the temporary file.
+    """
+    file_path = uid if uid else "/chaos_disk_fill"
+    cmd = f"rm -f {file_path}"
+    cmd = _get_sudo_command(cmd, ssh_user, ssh_password)
+    try:
+        run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+    except: pass
+
+def cleanup_node(target_host: str, ssh_user: str, device: str = "eth0", ssh_password: str = None) -> None:
+    """
+    Aggressively cleans up all known chaos artifacts from the node.
+    Used for 'Force Stop'.
+    """
+    # 1. Kill Stress Processes (CPU/Memory/Disk) FIRST
+    # Kill processes matching the specific markers we added
+    try:
+        # Wrap in bash -c to ensure all commands run under sudo
+        cmd = "bash -c 'pkill -f chaos_cpu_stress; pkill -f chaos_memory_stress; pkill -f chaos_disk_fill'"
+        cmd = _get_sudo_command(cmd, ssh_user, ssh_password)
+        run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+    except: pass
+
+    # 2. Clean Disk Fill (Remove file)
+    # Only after killing the process to ensure handle is released
+    recover_disk_fill(target_host, ssh_user, "/chaos_disk_fill", ssh_password)
+
+    # 3. Clean Network (TC)
+    try:
+        # Delete root qdisc (removes delay, loss, dup, reorder, bandwidth)
+        cmd = f"tc qdisc del dev {device} root"
+        cmd = _get_sudo_command(cmd, ssh_user, ssh_password)
+        run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+    except: pass
+
+    # 4. Clean Network Partitions (Blackhole routes)
+    try:
+        # List blackhole routes and delete them
+        # ip route show type blackhole -> "blackhole 1.2.3.4"
+        cmd = "ip route show type blackhole | awk '{print $2}' | xargs -I {} ip route del blackhole {}"
+        cmd = _get_sudo_command(cmd, ssh_user, ssh_password)
+        run_ssh_command(target_host, ssh_user, cmd, ssh_password)
+    except: pass
+

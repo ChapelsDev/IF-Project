@@ -12,8 +12,9 @@ Plataforma completa para injeção de falhas e observabilidade em sistemas distr
 
 ## 🧪 Experimentos Suportados
 
-A plataforma suporta os seguintes tipos de injeção de falhas de rede:
+A plataforma suporta uma ampla gama de injeções de falhas, divididas em categorias:
 
+### 🌐 Falhas de Rede (Network)
 1.  **Network Delay (Latência):** Adiciona atraso na interface de rede.
 2.  **Packet Loss (Perda):** Descarta pacotes aleatoriamente.
 3.  **Bandwidth Limit (Largura de Banda):** Restringe a taxa de upload/download (TBF).
@@ -21,6 +22,26 @@ A plataforma suporta os seguintes tipos de injeção de falhas de rede:
 5.  **Packet Reordering (Reordenação):** Altera a ordem de entrega dos pacotes.
 6.  **Packet Corruption (Corrupção):** Introduz erros em bits aleatórios dos pacotes.
 7.  **Network Partition (Partição de Rede):** Isola o nó de um IP específico (Blackhole).
+
+### 💻 Falhas de Recursos (Resource)
+8.  **CPU Stress:** Consome 100% de todos os núcleos da CPU usando scripts Python multiprocessados.
+9.  **Memory Stress:** Aloca e retém uma quantidade específica de memória RAM (ex: 512MB).
+10. **Disk Fill (Enchimento de Disco):** Preenche a partição raiz até atingir uma porcentagem alvo (ex: 95%) usando `fallocate` ou escrita direta.
+
+### ⚙️ Falhas de Processo (State)
+11. **Process Killer:** Encerra forçadamente (`SIGKILL`) processos específicos pelo nome (ex: `consul`, `nginx`).
+
+## 🛠️ Validação e Testes Realizados
+
+Para garantir a robustez da plataforma, as novas funcionalidades foram validadas com os seguintes cenários:
+
+| Funcionalidade | Cenário de Teste | Resultado Esperado | Status |
+| :--- | :--- | :--- | :--- |
+| **Process Killer** | Iniciar `sleep 1000` no alvo e executar ataque "Process Killer" com nome `sleep`. | O processo deve desaparecer da lista `ps aux` imediatamente. | ✅ Aprovado |
+| **Disk Fill** | Configurar ataque para 50% de disco. | O gráfico de "Uso de Disco" na UI deve subir para 50% e o arquivo `/chaos_disk_fill` deve ser criado no alvo. | ✅ Aprovado |
+| **CPU Stress** | Executar ataque de CPU por 30s. | O uso de CPU no `htop` do alvo deve atingir 100% em todos os cores. | ✅ Aprovado |
+| **Stop/Rollback** | Interromper ataque de Disco e CPU no meio da execução. | O arquivo temporário deve ser removido e os processos Python de estresse devem ser mortos imediatamente. | ✅ Aprovado |
+| **Resiliência** | Tentar matar serviços resilientes (ex: Consul). | O processo morre, mas o Systemd o reinicia (comportamento correto de HA). | ✅ Validado |
 
 ## 🏗 Arquitetura
 

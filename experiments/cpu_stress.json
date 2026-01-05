@@ -1,0 +1,58 @@
+{
+    "version": "1.0.0",
+    "title": "Stress de CPU",
+    "description": "Consome 100% de todos os núcleos de CPU.",
+    "tags": ["resource", "cpu", "python"],
+    "configuration": {
+        "target_host": "127.0.0.1",
+        "ssh_user": "root",
+        "ssh_password": "",
+        "duration": 30
+    },
+    "method": [
+        {
+            "type": "action",
+            "name": "inject-cpu-stress",
+            "provider": {
+                "type": "python",
+                "module": "src.lib.chaos_ssh_driver",
+                "func": "inject_cpu_stress",
+                "arguments": {
+                    "target_host": "${target_host}",
+                    "ssh_user": "${ssh_user}",
+                    "ssh_password": "${ssh_password}",
+                    "duration": "${duration}"
+                }
+            }
+        },
+        {
+            "type": "action",
+            "name": "wait-duration",
+            "provider": {
+                "type": "python",
+                "module": "src.lib.chaos_ssh_driver",
+                "func": "wait_seconds",
+                "arguments": {
+                    "seconds": "${duration}"
+                }
+            }
+        }
+    ],
+    "rollbacks": [
+        {
+            "type": "action",
+            "name": "recover-cpu-stress",
+            "provider": {
+                "type": "python",
+                "module": "src.lib.chaos_ssh_driver",
+                "func": "recover_cpu_stress",
+                "arguments": {
+                    "target_host": "${target_host}",
+                    "ssh_user": "${ssh_user}",
+                    "ssh_password": "${ssh_password}",
+                    "uid": "inject-cpu-stress"
+                }
+            }
+        }
+    ]
+}
