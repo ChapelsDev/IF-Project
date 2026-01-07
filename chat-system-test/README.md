@@ -4,16 +4,47 @@ Real-time chat with distributed architecture: Node.js, Redis, NATS, Consul, Sock
 
 ## Features
 
-✅ Real-time messaging • Persistent sessions • Username uniqueness • Presence tracking • Message history • Horizontal scaling • Service discovery • Multi-room support • Auto-discovery
+✅ Real-time messaging • Persistent sessions • Username uniqueness • Presence tracking • Message history • Horizontal scaling • Service discovery • Multi-room support • Auto-discovery • **Automatic dependency management**
 
 ## Quick Start
 
 ### Prerequisites
 
+The script automatically checks for and offers to install missing dependencies:
+
+- **podman** - Container runtime
+- **curl** - HTTP client for API calls
+- **python3** - For JSON parsing and cluster helpers
+- **jq** - JSON processor
+- **ip** (iproute2) - Network utilities
+
 ```bash
-# Install dependencies
-pip3 install requests
-chmod +x chat-system.sh setup-cluster.sh cluster_bridge.py
+# Make scripts executable
+chmod +x chat-system.sh setup-cluster.sh cluster_bridge.py cluster_helper.py
+
+# Run - dependencies will be checked automatically
+./chat-system.sh start
+```
+
+If any dependencies are missing, you'll be prompted:
+```
+✗ Missing dependencies: podman curl jq
+Would you like to install missing dependencies? [y/N]
+```
+
+**Supported package managers:** apt (Debian/Ubuntu), dnf (Fedora), yum (CentOS/RHEL), pacman (Arch), zypper (openSUSE)
+
+### Manual Installation (if needed)
+
+```bash
+# Debian/Ubuntu
+sudo apt install podman curl python3 jq iproute2
+
+# Fedora
+sudo dnf install podman curl python3 jq iproute
+
+# Arch Linux
+sudo pacman -S podman curl python jq iproute2
 ```
 
 ### Auto-Discovery (Recommended)
@@ -264,13 +295,16 @@ Each node autonomously:
 ### Commands
 
 ```bash
-./chat-system.sh start [--auto]        # Start with auto-discovery
-./chat-system.sh start                 # Standalone mode
+./chat-system.sh start [--auto]        # Start with auto-discovery (checks dependencies)
+./chat-system.sh start                 # Standalone mode (checks dependencies)
 ./chat-system.sh stop                  # Stop all services
 ./chat-system.sh restart               # Restart chat nodes
 ./chat-system.sh status                # Show status
-./chat-system.sh logs <service>        # View logs
-./chat-system.sh build                 # Rebuild Docker image
+./chat-system.sh logs <service>        # View logs (redis, nats, consul, chat-1/2/3)
+./chat-system.sh build                 # Rebuild Docker image (checks dependencies)
+./chat-system.sh clear-usernames       # Clear all registered usernames from Redis
+./chat-system.sh cluster-test [url]    # Test connectivity to cluster Consul
+./chat-system.sh deregister [url]      # Manually deregister services from cluster
 ./chat-system.sh help                  # Show all options
 ```
 
@@ -377,6 +411,19 @@ chat-system-test/
 
 ## Troubleshooting
 
+**Dependencies not installing automatically:**
+
+```bash
+# Check your package manager
+which apt-get dnf yum pacman zypper
+
+# Manual install (Debian/Ubuntu)
+sudo apt update && sudo apt install -y podman curl python3 jq iproute2
+
+# Manual install (Fedora)
+sudo dnf install -y podman curl python3 jq iproute
+```
+
 **Nodes not discovering each other:**
 
 ```bash
@@ -393,14 +440,14 @@ curl http://172.20.10.10:8500/v1/catalog/service/chat-service
 **Services not starting:**
 
 ```bash
-# Rebuild image
+# Rebuild image (also checks dependencies)
 ./chat-system.sh build
 
 # Check Python dependencies
 pip3 install requests
 
-# Verify cluster_bridge.py exists
-ls -la cluster_bridge.py
+# Verify cluster helper scripts exist
+ls -la cluster_bridge.py cluster_helper.py
 ```
 
 **Health checks failing:**

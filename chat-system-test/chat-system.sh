@@ -53,6 +53,110 @@ check_podman() {
     fi
 }
 
+# Check and install dependencies
+check_dependencies() {
+    print_info "Checking dependencies..."
+    
+    local missing_deps=()
+    local install_cmds=()
+    
+    # Check for required commands
+    if ! command -v podman &> /dev/null; then
+        missing_deps+=("podman")
+        install_cmds+=("podman")
+    fi
+    
+    if ! command -v curl &> /dev/null; then
+        missing_deps+=("curl")
+        install_cmds+=("curl")
+    fi
+    
+    if ! command -v python3 &> /dev/null; then
+        missing_deps+=("python3")
+        install_cmds+=("python3")
+    fi
+    
+    if ! command -v jq &> /dev/null; then
+        missing_deps+=("jq")
+        install_cmds+=("jq")
+    fi
+    
+    if ! command -v ip &> /dev/null; then
+        missing_deps+=("ip (iproute2)")
+        install_cmds+=("iproute2")
+    fi
+    
+    # If no missing dependencies, return success
+    if [ ${#missing_deps[@]} -eq 0 ]; then
+        print_success "All dependencies are installed"
+        return 0
+    fi
+    
+    # Report missing dependencies
+    print_error "Missing dependencies: ${missing_deps[*]}"
+    echo ""
+    
+    # Ask user if they want to install
+    read -p "Would you like to install missing dependencies? [y/N] " -n 1 -r
+    echo ""
+    
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        print_info "Installing missing dependencies..."
+        
+        # Detect package manager
+        if command -v apt-get &> /dev/null; then
+            # Debian/Ubuntu
+            sudo apt-get update
+            sudo apt-get install -y "${install_cmds[@]}"
+        elif command -v dnf &> /dev/null; then
+            # Fedora/RHEL 8+
+            sudo dnf install -y "${install_cmds[@]}"
+        elif command -v yum &> /dev/null; then
+            # CentOS/RHEL 7
+            sudo yum install -y "${install_cmds[@]}"
+        elif command -v pacman &> /dev/null; then
+            # Arch Linux
+            sudo pacman -Sy --noconfirm "${install_cmds[@]}"
+        elif command -v zypper &> /dev/null; then
+            # openSUSE
+            sudo zypper install -y "${install_cmds[@]}"
+        else
+            print_error "Could not detect package manager. Please install manually:"
+            echo "  ${install_cmds[*]}"
+            exit 1
+        fi
+        
+        # Verify installation
+        local still_missing=()
+        for dep in "${missing_deps[@]}"; do
+            case "$dep" in
+                "ip (iproute2)")
+                    if ! command -v ip &> /dev/null; then
+                        still_missing+=("$dep")
+                    fi
+                    ;;
+                *)
+                    if ! command -v "$dep" &> /dev/null; then
+                        still_missing+=("$dep")
+                    fi
+                    ;;
+            esac
+        done
+        
+        if [ ${#still_missing[@]} -eq 0 ]; then
+            print_success "All dependencies installed successfully"
+        else
+            print_error "Failed to install: ${still_missing[*]}"
+            exit 1
+        fi
+    else
+        print_error "Cannot proceed without required dependencies"
+        echo "Please install manually:"
+        echo "  sudo apt install ${install_cmds[*]}"
+        exit 1
+    fi
+}
+
 get_host_ip() {
     # Get the first non-localhost IP address
     ip addr show | grep 'inet ' | grep -v '127.0.0.1' | awk '{print $2}' | cut -d/ -f1 | head -1
@@ -187,6 +291,10 @@ start_system() {
     print_header "======================================"
     print_header "Distributed Chat System Startup"
     print_header "======================================"
+    echo ""
+    
+    # Check dependencies first
+    check_dependencies
     echo ""
     
     # Auto-discovery mode
@@ -598,6 +706,10 @@ restart_nodes() {
 
 # Command: build
 build_image() {
+    # Check dependencies first
+    check_dependencies
+    echo ""
+    
     print_info "Building chat node image..."
     
     if [ ! -d "chat-node" ]; then
