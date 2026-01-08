@@ -109,3 +109,39 @@ Bash
 ```
 ansible-playbook -i hosts.ini mount_seaweed.yml
 ```
+
+
+Para integrar o SeaweedFS com o Consul, devemos utilizar a API HTTP do Consul para registar cada serviço (**Master**, **Volume** e **Filer**). Isto permitirá que qualquer aplicação ou colega no laboratório encontre os serviços através de DNS (ex: master.service.consul) ou da interface web do Consul.
+
+Abaixo está o playbook desenhado para registar os serviços de forma dinâmica, associando cada um ao nó correto e adicionando **Health Checks** (verificações de saúde) para que o Consul saiba se o SeaweedFS realmente está a responder.
+
+### ---
+
+### **Playbook: Registo de Serviços no Consul**
+
+*https://github.com/ChapelsDev/IF-Project/blob/File-System-Ansible/Ansible/consul\_registration\_seaweed.yml*
+
+### ---
+
+**O que este Playbook faz na prática?**
+
+1. **Service Discovery Automático:** Em vez de decorares que o Filer está no IP .51, podes configurar as tuas apps para procurarem por seaweed-filer.service.consul.  
+2. **Health Checks Inteligentes:** Se o serviço weed master for abaixo no node52, o Consul detecta em 10 segundos e remove-o automaticamente da lista de nós disponíveis. Assim que o serviço voltar, ele reaparece "saudável".  
+3. **Tags para Filtros:** Adicionámos tags como raft ou data que permitem filtrar serviços específicos via API do Consul.
+
+### ---
+
+**Como verificar no Consul?**
+
+Após rodar o playbook, o teu colega pode verificar se os serviços aparecem de três formas:
+
+* **Interface Web (UI):** Abre no browser http://192.168.100.51:8500.  
+* **Linha de comandos:**  
+  Bash  
+  consul catalog services
+
+* **Consulta DNS:**  
+  Bash  
+  dig @127.0.0.1 \-p 8600 seaweed-master.service.consul  
+
+O SeaweedFS também pode ser configurado para usar o Consul diretamente como base de dados de metadados (em vez de usar o modo local), garantindo que os 3 Filers vejam exatamente os mesmos ficheiros ao mesmo tempo.
