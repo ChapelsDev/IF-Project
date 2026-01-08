@@ -1,11 +1,11 @@
 import { createServer } from "http";
 import { Server } from "socket.io";
+import { natsCircuitBreaker, redisCircuitBreaker } from "./circuitBreaker";
 import { publishPresence, publishPrivateMessage, subscribeToMessages, subscribeToPresence, subscribeToPrivateMessages } from "./nats";
-import { addUserToRoom, appendMessage, getMessageHistory, getPrivateMessageHistory, getRoomUsers, isUsernameAvailable, registerUsername, removeUserFromAllRooms, removeUserFromRoom, sendPrivateMessage, unregisterUsername } from "./redis";
-import { validateSocketAuth, generateToken, TokenPayload } from "./tokenValidation";
-import { messageLimiter, connectionLimiter, privateMessageLimiter } from "./rateLimit";
-import { sanitizeUsername, sanitizeText, validateMessagePayload, validatePrivateMessagePayload } from "./sanitizer";
-import { redisCircuitBreaker, natsCircuitBreaker } from "./circuitBreaker";
+import { connectionLimiter, messageLimiter, privateMessageLimiter } from "./rateLimit";
+import { addUserToRoom, appendMessage, getMessageHistory, getPrivateMessageHistory, getRoomUsers, isUsernameAvailable, registerUsername, removeUserFromAllRooms, removeUserFromRoom, sendPrivateMessage } from "./redis";
+import { sanitizeUsername, validateMessagePayload, validatePrivateMessagePayload } from "./sanitizer";
+import { generateToken, TokenPayload, validateSocketAuth } from "./tokenValidation";
 
 // Extend Socket type to include custom properties
 interface ExtendedSocket {
@@ -30,13 +30,14 @@ export function getIO() {
 }
 
 export function startGateway() {
-  const port = 3000 + parseInt(process.env.NODE_ID || "1");
+  const port = parseInt(process.env.PORT || (3000 + parseInt(process.env.NODE_ID || "1")).toString());
   
   const httpServer = createServer((req: any, res: any) => {
     if (req.url === "/health") {
       const health = {
         status: isShuttingDown ? "shutting_down" : "ok",
         nodeId: process.env.NODE_ID,
+        serviceId: process.env.SERVICE_ID,
         connections: activeConnections.size,
         redis: redisCircuitBreaker.getState(),
         nats: natsCircuitBreaker.getState(),
@@ -58,6 +59,31 @@ export function startGateway() {
       const ready = !isShuttingDown;
       res.writeHead(ready ? 200 : 503, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ ready, connections: activeConnections.size }));
+      return;
+    }
+
+    if (req.url === "/metrics") {
+      // Prometheus-style metrics endpoint
+      const metrics = [
+        `# HELP chat_connections_total Total number of active WebSocket connections`,
+        `# TYPE chat_connections_total gauge`,
+        `chat_connections_total{node_id="${process.env.NODE_ID}",service_id="${process.env.SERVICE_ID}"} ${activeConnections.size}`,
+        ``,
+        `# HELP chat_redis_circuit_breaker Redis circuit breaker state (0=closed, 1=half_open, 2=open)`,
+        `# TYPE chat_redis_circuit_breaker gauge`,
+        `chat_redis_circuit_breaker{node_id="${process.env.NODE_ID}"} ${redisCircuitBreaker.getState() === 'CLOSED' ? 0 : redisCircuitBreaker.getState() === 'HALF_OPEN' ? 1 : 2}`,
+        ``,
+        `# HELP chat_nats_circuit_breaker NATS circuit breaker state (0=closed, 1=half_open, 2=open)`,
+        `# TYPE chat_nats_circuit_breaker gauge`,
+        `chat_nats_circuit_breaker{node_id="${process.env.NODE_ID}"} ${natsCircuitBreaker.getState() === 'CLOSED' ? 0 : natsCircuitBreaker.getState() === 'HALF_OPEN' ? 1 : 2}`,
+        ``,
+        `# HELP chat_health_status Node health status (1=ok, 0=unhealthy)`,
+        `# TYPE chat_health_status gauge`,
+        `chat_health_status{node_id="${process.env.NODE_ID}"} ${isShuttingDown ? 0 : 1}`,
+      ].join('\n');
+      
+      res.writeHead(200, { "Content-Type": "text/plain; version=0.0.4" });
+      res.end(metrics);
       return;
     }
     
@@ -350,7 +376,8 @@ export function startGateway() {
       console.log(`[GATEWAY] Cleanup complete. Active connections: ${activeConnections.size}`);
     });
     
-    socket.emit("node-info", { nodeId: process.env.NODE_ID });
+    // Send node information to client - use SERVICE_ID for full identification
+    socket.emit("node-info", { nodeId: process.env.SERVICE_ID || process.env.NODE_ID });
   });
 
   // Subscribe to NATS messages and broadcast to Socket.IO clients

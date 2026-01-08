@@ -17,12 +17,14 @@ REDIS_PORT=6379
 NATS_PORT=4222
 CONSUL_PORT=8500
 CHAT_NODE_PORTS=(3001 3002 3003)
+LOAD_BALANCER_PORT=3000
 CHAT_IMAGE="localhost/chat-node:latest"
 
 # Cluster integration
 CLUSTER_MODE="false"
 CLUSTER_CONSUL_URL="http://192.168.100.53:8500"
 USE_LOCAL_CONSUL="true"
+START_LOAD_BALANCER="false"
 
 # Multi-machine support
 HOST_IP=""
@@ -224,6 +226,10 @@ parse_args() {
                 USE_LOCAL_CONSUL="false"
                 shift 2
                 ;;
+            --with-lb|--load-balancer)
+                START_LOAD_BALANCER="true"
+                shift
+                ;;
             --auto)
                 DEPLOYMENT_MODE="auto"
                 shift
@@ -270,16 +276,16 @@ register_infrastructure_services() {
     # Check if cluster_helper.py exists (preferred) or fall back to cluster_bridge.py
     if [ -f "${script_dir}/cluster_helper.py" ]; then
         # Register Redis (uses TCP health check - Redis doesn't speak HTTP)
-        python3 "${script_dir}/cluster_helper.py" register "redis-service" "redis-${HOSTNAME}" "${host_ip}" "${REDIS_PORT}" "${CLUSTER_CONSUL_URL}" "chat-infrastructure,redis" "tcp" 2>&1 || print_error "Failed to register Redis"
+        python3 "${script_dir}/cluster_helper.py" register "redis-service" "redis-${host_ip//./-}" "${host_ip}" "${REDIS_PORT}" "${CLUSTER_CONSUL_URL}" "chat-infrastructure,redis" "tcp" 2>&1 || print_error "Failed to register Redis"
         
         # Register NATS (uses TCP health check - NATS client port doesn't speak HTTP)
-        python3 "${script_dir}/cluster_helper.py" register "nats-service" "nats-${HOSTNAME}" "${host_ip}" "${NATS_PORT}" "${CLUSTER_CONSUL_URL}" "chat-infrastructure,nats" "tcp" 2>&1 || print_error "Failed to register NATS"
+        python3 "${script_dir}/cluster_helper.py" register "nats-service" "nats-${host_ip//./-}" "${host_ip}" "${NATS_PORT}" "${CLUSTER_CONSUL_URL}" "chat-infrastructure,nats" "tcp" 2>&1 || print_error "Failed to register NATS"
         
         print_success "Infrastructure services registered with cluster"
     elif [ -f "${script_dir}/cluster_bridge.py" ]; then
         # Fallback to old bridge
-        python3 "${script_dir}/cluster_bridge.py" register "redis-service" "redis-${HOSTNAME}" "${host_ip}" "${REDIS_PORT}" "${CLUSTER_CONSUL_URL}" "chat-infrastructure,redis" 2>/dev/null || print_error "Failed to register Redis"
-        python3 "${script_dir}/cluster_bridge.py" register "nats-service" "nats-${HOSTNAME}" "${host_ip}" "${NATS_PORT}" "${CLUSTER_CONSUL_URL}" "chat-infrastructure,nats" 2>/dev/null || print_error "Failed to register NATS"
+        python3 "${script_dir}/cluster_bridge.py" register "redis-service" "redis-${host_ip//./-}" "${host_ip}" "${REDIS_PORT}" "${CLUSTER_CONSUL_URL}" "chat-infrastructure,redis" 2>/dev/null || print_error "Failed to register Redis"
+        python3 "${script_dir}/cluster_bridge.py" register "nats-service" "nats-${host_ip//./-}" "${host_ip}" "${NATS_PORT}" "${CLUSTER_CONSUL_URL}" "chat-infrastructure,nats" 2>/dev/null || print_error "Failed to register NATS"
         print_success "Infrastructure services registered with cluster"
     else
         print_error "cluster_helper.py not found, skipping cluster registration"
@@ -455,17 +461,15 @@ start_system() {
         fi
         
         # Determine number of nodes to start
-        if [ "$DEPLOYMENT_MODE" = "node-only" ]; then
-            # In node-only mode, start just 1 node
-            node_count=1
-        else
-            # In standalone or full mode, start 3 nodes
-            node_count=3
-        fi
+        # Always start 3 nodes for better load balancing
+        node_count=3
         
-        # Determine Consul URL
+        # Determine Consul URL used by containers.
+        # If cluster mode is enabled, register containers with the cluster Consul (central server).
         if [ "$CLUSTER_MODE" = "true" ]; then
             CONSUL_ENV="${CLUSTER_CONSUL_URL}"
+        elif [ "$USE_LOCAL_CONSUL" = "true" ]; then
+            CONSUL_ENV="http://127.0.0.1:${CONSUL_PORT}"
         else
             CONSUL_ENV="http://${HOST_IP}:${CONSUL_PORT}"
         fi
@@ -491,6 +495,7 @@ start_system() {
                 -e NODE_ID="${i}" \
                 -e PORT="${port}" \
                 -e HOST_IP="${host_ip}" \
+                -e SERVICE_ID="chat-node-${host_ip//./-}-${i}" \
                 -e REDIS_URL="redis://${redis_connect_host}:${REDIS_PORT}" \
                 -e NATS_URL="nats://${nats_connect_host}:${NATS_PORT}" \
                 -e CONSUL_URL="${CONSUL_ENV}" \
@@ -500,6 +505,20 @@ start_system() {
                 > /dev/null 2>&1
             print_success "Chat Node ${i} started on port ${port}"
         done
+        
+        # Start load balancer if requested
+        if [ "$START_LOAD_BALANCER" = "true" ]; then
+            print_info "Starting load balancer..."
+            local host_ip=$(get_host_ip)
+            sudo podman run -d --name chat-lb --network host \
+                --stop-timeout=10 \
+                -e LB_PORT="${LOAD_BALANCER_PORT}" \
+                -e CONSUL_URL="${CONSUL_ENV}" \
+                ${CHAT_IMAGE} \
+                npm run start:lb \
+                > /dev/null 2>&1
+            print_success "Load Balancer started on port ${LOAD_BALANCER_PORT}"
+        fi
     fi
     
     echo ""
@@ -511,10 +530,16 @@ start_system() {
         echo ""
         echo "Access URLs:"
         echo "  - Consul UI:    http://localhost:${CONSUL_PORT}"
+        if [ "$START_LOAD_BALANCER" = "true" ]; then
+            echo "  - Load Balancer: http://localhost:${LOAD_BALANCER_PORT}"
+        fi
         echo "  - Chat Node 1:  http://localhost:${CHAT_NODE_PORTS[0]}"
         echo "  - Chat Node 2:  http://localhost:${CHAT_NODE_PORTS[1]}"
         echo "  - Chat Node 3:  http://localhost:${CHAT_NODE_PORTS[2]}"
         echo ""
+        if [ "$START_LOAD_BALANCER" = "true" ]; then
+            echo "Client connects to: http://localhost:${LOAD_BALANCER_PORT}"
+        fi
         echo "Start React client: cd client-react && npm run dev"
         echo "Check status:       ./chat-system.sh status"
         echo ""
@@ -530,6 +555,12 @@ start_system() {
         echo "  - Redis: ${REDIS_HOST}:${REDIS_PORT}"
         echo "  - NATS: ${NATS_HOST}:${NATS_PORT}"
         echo ""
+        if [ "$START_LOAD_BALANCER" = "true" ]; then
+            echo "Load Balancer:"
+            local host_ip=$(get_host_ip)
+            echo "  - http://${host_ip}:${LOAD_BALANCER_PORT}"
+            echo ""
+        fi
         echo "Chat Nodes:"
         echo "  - Chat Node 1:  http://localhost:${CHAT_NODE_PORTS[0]}"
         echo "  - Chat Node 2:  http://localhost:${CHAT_NODE_PORTS[1]}"
@@ -539,6 +570,11 @@ start_system() {
         echo "  - Cluster Consul: ${CLUSTER_CONSUL_URL}"
         echo "  - Consul UI: ${CLUSTER_CONSUL_URL}/ui/dc1/services"
         echo ""
+        if [ "$START_LOAD_BALANCER" = "true" ]; then
+            local host_ip=$(get_host_ip)
+            echo "Client connects to: http://${host_ip}:${LOAD_BALANCER_PORT}"
+            echo ""
+        fi
         echo "Registered services: redis-service, nats-service, chat-service"
         echo ""
         echo "Start React client: cd client-react && npm run dev"
@@ -562,7 +598,15 @@ stop_system() {
     local script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
     local host_ip=$(get_host_ip)
     
-    # Stop chat nodes first (they need to deregister from cluster)
+    # Stop load balancer first
+    if sudo podman ps -a --format "{{.Names}}" | grep -q "^chat-lb$"; then
+        print_info "Stopping load balancer..."
+        sudo podman stop -t 5 chat-lb > /dev/null 2>&1
+        sudo podman rm chat-lb > /dev/null 2>&1
+        print_success "Load balancer stopped"
+    fi
+    
+    # Stop chat nodes (they need to deregister from cluster)
     for i in 1 2 3; do
         service="chat-node-${i}"
         if sudo podman ps -a --format "{{.Names}}" | grep -q "^${service}$"; then
@@ -577,8 +621,26 @@ stop_system() {
     # Deregister infrastructure services from cluster if cluster mode was used
     if [ -f "${script_dir}/cluster_helper.py" ]; then
         print_info "Deregistering services from cluster..."
-        python3 "${script_dir}/cluster_helper.py" deregister "redis-${HOSTNAME}" "${CLUSTER_CONSUL_URL}" 2>/dev/null && print_success "Redis deregistered" || true
-        python3 "${script_dir}/cluster_helper.py" deregister "nats-${HOSTNAME}" "${CLUSTER_CONSUL_URL}" 2>/dev/null && print_success "NATS deregistered" || true
+        
+        # Try IP-based ID first, then hostname-based for compatibility
+        if python3 "${script_dir}/cluster_helper.py" deregister "redis-${host_ip//./-}" "${CLUSTER_CONSUL_URL}" 2>&1 | grep -q "Deregistered"; then
+            print_success "Redis deregistered (IP-based)"
+        elif python3 "${script_dir}/cluster_helper.py" deregister "redis-${HOSTNAME}" "${CLUSTER_CONSUL_URL}" 2>&1 | grep -q "Deregistered"; then
+            print_success "Redis deregistered (hostname)"
+        fi
+        
+        if python3 "${script_dir}/cluster_helper.py" deregister "nats-${host_ip//./-}" "${CLUSTER_CONSUL_URL}" 2>&1 | grep -q "Deregistered"; then
+            print_success "NATS deregistered (IP-based)"
+        elif python3 "${script_dir}/cluster_helper.py" deregister "nats-${HOSTNAME}" "${CLUSTER_CONSUL_URL}" 2>&1 | grep -q "Deregistered"; then
+            print_success "NATS deregistered (hostname)"
+        fi
+        
+        # Deregister chat nodes with IP-based IDs
+        for i in 1 2 3; do
+            if python3 "${script_dir}/cluster_helper.py" deregister "chat-node-${host_ip//./-}-${i}" "${CLUSTER_CONSUL_URL}" 2>&1 | grep -q "Deregistered"; then
+                print_success "Chat node ${i} deregistered (IP-based)"
+            fi
+        done
     fi
     
     # Stop infrastructure services
@@ -678,6 +740,7 @@ show_logs() {
 # Command: restart
 restart_nodes() {
     print_info "Restarting chat nodes..."
+    local host_ip=$(get_host_ip)
     
     for i in {1..3}; do
         if sudo podman ps -a --format "{{.Names}}" | grep -q "^chat-node-${i}$"; then
@@ -693,6 +756,8 @@ restart_nodes() {
         sudo podman run -d --name chat-node-${i} --network host \
             -e NODE_ID=${i} \
             -e PORT=${port} \
+            -e HOST_IP="${host_ip}" \
+            -e SERVICE_ID="chat-node-${host_ip//./-}-${i}" \
             -e REDIS_URL=redis://localhost:${REDIS_PORT} \
             -e NATS_URL=nats://localhost:${NATS_PORT} \
             -e CONSUL_URL=http://localhost:${CONSUL_PORT} \
@@ -767,14 +832,18 @@ deregister_services() {
     # Deregister this host's services
     print_info "Deregistering services from this host (${HOSTNAME})..."
     
-    # Deregister chat nodes
+    # Deregister chat nodes (try multiple ID formats for compatibility)
+    local host_ip=$(get_host_ip)
     for i in 1 2 3; do
-        python3 "${script_dir}/cluster_helper.py" deregister "chat-node-${i}" "${consul_url}" 2>/dev/null && print_success "chat-node-${i} deregistered" || true
+        ids=("chat-node-${host_ip//./-}-${i}" "chat-node-${HOSTNAME}-${i}" "chat-node-${i}")
+        for id in "${ids[@]}"; do
+            python3 "${script_dir}/cluster_helper.py" deregister "$id" "${consul_url}" 2>/dev/null && { print_success "$id deregistered"; break; } || true
+        done
     done
-    
-    # Deregister infrastructure
-    python3 "${script_dir}/cluster_helper.py" deregister "redis-${HOSTNAME}" "${consul_url}" 2>/dev/null && print_success "redis-${HOSTNAME} deregistered" || true
-    python3 "${script_dir}/cluster_helper.py" deregister "nats-${HOSTNAME}" "${consul_url}" 2>/dev/null && print_success "nats-${HOSTNAME} deregistered" || true
+
+    # Deregister infrastructure (try host-ip-based id, then hostname)
+    python3 "${script_dir}/cluster_helper.py" deregister "redis-${host_ip//./-}" "${consul_url}" 2>/dev/null && print_success "redis-${host_ip//./-} deregistered" || true
+    python3 "${script_dir}/cluster_helper.py" deregister "nats-${host_ip//./-}" "${consul_url}" 2>/dev/null && print_success "nats-${host_ip//./-} deregistered" || true
     
     echo ""
     print_success "Deregistration complete"

@@ -61,16 +61,24 @@ export class ClusterDiscovery {
     };
 
     try {
+      console.log(`📝 Registering ${this.serviceId} with Consul at ${this.consulUrl}`);
+      console.log(`   Service: ${this.serviceName}, Address: ${this.myAddress}:${this.myPort}`);
+      
       await axios.put(
         `${this.consulUrl}/v1/agent/service/register`,
-        registration
+        registration,
+        { timeout: 10000 }
       );
-      console.log(`✓ Registered ${this.serviceId} with cluster`);
+      console.log(`✓ Registered ${this.serviceId} with cluster at ${this.myAddress}:${this.myPort}`);
       
       // Start health check updates
       this.startHealthCheck();
     } catch (error: any) {
-      console.error('Failed to register with cluster:', error.message);
+      console.error(`❌ Failed to register ${this.serviceId} with cluster:`, error.message);
+      if (error.response) {
+        console.error(`   Response status: ${error.response.status}`);
+        console.error(`   Response data:`, error.response.data);
+      }
       throw error;
     }
   }

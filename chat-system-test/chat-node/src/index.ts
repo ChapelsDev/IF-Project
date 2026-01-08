@@ -4,12 +4,13 @@ import { startGateway } from "./gateway";
 
 const SERVICE_NAME = 'chat-service';
 const NODE_ID = process.env.NODE_ID || '1';
-const SERVICE_ID = `chat-node-${NODE_ID}`;
+const SERVICE_ID = process.env.SERVICE_ID || `chat-node-${NODE_ID}`;
 const PORT = parseInt(process.env.PORT || '3001');
 const HOST_IP = process.env.HOST_IP || 'localhost';
 const CLUSTER_MODE = process.env.CLUSTER_MODE === 'true';
 const CLUSTER_CONSUL_URL = process.env.CLUSTER_CONSUL_URL || 'http://172.20.10.10:8500';
-const CONSUL_URL = CLUSTER_MODE ? CLUSTER_CONSUL_URL : (process.env.CONSUL_URL || 'http://localhost:8500');
+// Prefer an explicit CONSUL_URL env (set by manager). If not provided, default to local agent.
+const CONSUL_URL = process.env.CONSUL_URL || 'http://127.0.0.1:8500';
 
 let discovery: ClusterDiscovery;
 
