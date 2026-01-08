@@ -7,18 +7,18 @@ export function useSocket() {
   const [nodeId, setNodeId] = useState("unknown");
 
   useEffect(() => {
-    // Round-robin load balancing: randomly pick one of the 3 chat nodes
-    const chatNodes = [
-      'http://localhost:3001',
-      'http://localhost:3001',
-      'http://localhost:3001'
-    ];
+    // Get chat node URL from environment or use localhost
+    // For distributed setup, set VITE_CHAT_NODE_URL in .env
+    const chatNodeUrl = import.meta.env.VITE_CHAT_NODE_URL || 'http://192.168.100.231:3001';
+    
+    // Support comma-separated list for multiple nodes
+    const chatNodes = chatNodeUrl.split(',').map(url => url.trim());
     const socketUrl = chatNodes[Math.floor(Math.random() * chatNodes.length)];
     console.log('Connecting to:', socketUrl);
     
     const sock = io(socketUrl, {
       autoConnect: true,
-      transports: ["websocket"],
+      transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,

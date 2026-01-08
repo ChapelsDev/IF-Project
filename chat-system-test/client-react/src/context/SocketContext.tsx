@@ -21,19 +21,20 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isConnected, setIsConnected] = useState(false)
 
   useEffect(() => {
-    // Round-robin load balancing: randomly pick one of the 3 chat nodes
-    const chatNodes = [
-      'http://localhost:3001',
-      'http://localhost:3001',
-      'http://localhost:3001'
-    ]
-    const socketUrl = chatNodes[Math.floor(Math.random() * chatNodes.length)]
-    console.log('Connecting to:', socketUrl)
+    // Get chat node URL from environment or use detected IP
+    // For distributed setup, set VITE_CHAT_NODE_URL in .env
+    const chatNodeUrl = import.meta.env.VITE_CHAT_NODE_URL || 'http://192.168.100.231:3001';
+    
+    // Support comma-separated list for multiple nodes
+    const chatNodes = chatNodeUrl.split(',').map(url => url.trim());
+    const socketUrl = chatNodes[Math.floor(Math.random() * chatNodes.length)];
+    console.log('Connecting to:', socketUrl);
     
     const newSocket = io(socketUrl, {
       reconnection: true,
       reconnectionDelay: 1000,
-      reconnectionAttempts: 10
+      reconnectionAttempts: 10,
+      transports: ['websocket', 'polling']
     })
 
     newSocket.on('connect', () => {

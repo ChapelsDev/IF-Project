@@ -23,8 +23,8 @@ redis.connect().then(() => {
   console.error("[REDIS] Connection failed:", err);
 });
 
-export async function appendMessage(roomId: string, user: string, text: string) {
-  const msg = { roomId, user, text, ts: Date.now().toString() };
+export async function appendMessage(roomId: string, user: string, text: string, userId?: string) {
+  const msg = { roomId, user, text, userId: userId || '', ts: Date.now().toString() };
   console.log("[REDIS] Appending message to stream:", msg);
   const id = await redis.xAdd(
     `stream:${roomId}`,

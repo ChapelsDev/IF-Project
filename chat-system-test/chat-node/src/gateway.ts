@@ -171,15 +171,30 @@ export function startGateway() {
         console.log(`[GATEWAY] Received message from ${socket.username || socket.id} to ${roomId}`);
         
         // Use circuit breaker for Redis operations
-        await redisCircuitBreaker.executeWithFallback(
-          () => appendMessage(roomId, socket.username || socket.id, text),
+        const msgId = await redisCircuitBreaker.executeWithFallback(
+          () => appendMessage(roomId, socket.username || socket.id, text, socket.id),
           () => {
             console.log(`[GATEWAY] Redis unavailable, message not persisted`);
             return Promise.resolve('fallback-id');
           }
         );
         
-        console.log(`[GATEWAY] Message processed successfully`);
+        // Create message object to send back to sender immediately
+        // Use 'user' field to match the format from Redis/NATS
+        const messageObj = {
+          id: msgId,
+          userId: socket.id,
+          user: socket.username || socket.id,
+          text: text,
+          roomId: roomId,
+          ts: Date.now().toString()
+        };
+        
+        // Send the message back to the sender immediately (acknowledgment)
+        // This prevents the echo when the message comes back through NATS
+        socket.emit("message", messageObj);
+        
+        console.log(`[GATEWAY] Message processed successfully and acknowledged to sender`);
         
       } catch (error: any) {
         console.error(`[GATEWAY] Message handling error:`, error.message);
@@ -344,7 +359,16 @@ export function startGateway() {
     subscribeToMessages(room, (msg: any) => {
       console.log(`[GATEWAY] Received from NATS for room ${room}:`, msg);
       console.log(`[GATEWAY] Broadcasting to ${io.sockets.adapter.rooms.get(room)?.size || 0} clients in room ${room}`);
-      io.to(room).emit("message", msg);
+      
+      // Broadcast to all clients in the room EXCEPT the original sender
+      // This prevents the echo effect where the sender receives their own message twice
+      if (msg.userId) {
+        console.log(`[GATEWAY] Broadcasting to room ${room} except sender ${msg.userId}`);
+        io.to(room).except(msg.userId).emit("message", msg);
+      } else {
+        // If no userId (older messages from history), broadcast to all
+        io.to(room).emit("message", msg);
+      }
     });
   });
   
