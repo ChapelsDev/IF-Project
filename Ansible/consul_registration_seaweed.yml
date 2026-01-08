@@ -1,0 +1,70 @@
+---
+- name: "Registo do SeaweedFS no Consul"
+  hosts: cluster
+  become: true
+  vars:
+    consul_api_url: "http://127.0.0.1:8500/v1/agent/service/register"
+
+  tasks:
+    # --- REGISTO DO MASTER ---
+    - name: "Registar Seaweed Master no Consul"
+      when: inventory_hostname in ['node51', 'node52', 'node53']
+      uri:
+        url: "{{ consul_api_url }}"
+        method: PUT
+        body_format: json
+        body:
+          ID: "seaweed-master-{{ inventory_hostname }}"
+          Name: "seaweed-master"
+          Tags: ["storage", "master", "raft"]
+          Address: "{{ ansible_host }}"
+          Port: 9333
+          Check:
+            Name: "Master HTTP Check"
+            HTTP: "http://{{ ansible_host }}:9333/"
+            Interval: "10s"
+            Timeout: "2s"
+        status_code: 200
+
+    # --- REGISTO DO FILER ---
+    - name: "Registar Seaweed Filer no Consul"
+      when: inventory_hostname in ['node51', 'node52', 'node53']
+      uri:
+        url: "{{ consul_api_url }}"
+        method: PUT
+        body_format: json
+        body:
+          ID: "seaweed-filer-{{ inventory_hostname }}"
+          Name: "seaweed-filer"
+          Tags: ["api", "filer", "http"]
+          Address: "{{ ansible_host }}"
+          Port: 8888
+          Check:
+            Name: "Filer HTTP Check"
+            HTTP: "http://{{ ansible_host }}:8888/"
+            Interval: "10s"
+            Timeout: "2s"
+        status_code: 200
+
+    # --- REGISTO DO VOLUME ---
+    - name: "Registar Seaweed Volume no Consul"
+      uri:
+        url: "{{ consul_api_url }}"
+        method: PUT
+        body_format: json
+        body:
+          ID: "seaweed-volume-{{ inventory_hostname }}"
+          Name: "seaweed-volume"
+          Tags: ["storage", "data"]
+          Address: "{{ ansible_host }}"
+          Port: 8080
+          Check:
+            Name: "Volume HTTP Check"
+            HTTP: "http://{{ ansible_host }}:8080/"
+            Interval: "10s"
+            Timeout: "2s"
+        status_code: 200
+
+    - name: "Confirmar registo no Consul"
+      debug:
+        msg: "Serviços registados com sucesso no agente Consul local."
