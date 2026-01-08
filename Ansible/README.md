@@ -40,6 +40,7 @@ O Ansible funciona através de SSH. O colega precisa de conseguir entrar nas má
    ```
    ssh-copy-id admin@192.168.100.51
    ```
+   (Pass: labcom)
 
    *Repetir para todos os nós (51 a 57).*
 
