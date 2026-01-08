@@ -1,0 +1,62 @@
+---
+- name: "Configurar Acesso ao Sistema de Ficheiros (Mount)"
+  hosts: cluster
+  become: true
+  vars:
+    # IP de um dos teus Filers (nós 51, 52 ou 53)
+    filer_address: "192.168.100.51"
+    mount_path: "/mnt/seaweed"
+
+  tasks:
+    - name: "1. Instalar suporte FUSE"
+      apt:
+        name: fuse
+        state: present
+        update_cache: yes
+
+    - name: "2. Criar ponto de montagem no disco"
+      file:
+        path: "{{ mount_path }}"
+        state: directory
+        mode: '0777'
+
+    - name: "3. Criar serviço Systemd para o Mount"
+      copy:
+        dest: /etc/systemd/system/seaweed_mount.service
+        content: |
+          [Unit]
+          Description=SeaweedFS Filer Mount
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          Type=simple
+          # -filer.path=/ mapeia a raiz do SeaweedFS para a pasta local
+          # -chunkSizeLimitMB=2 reduz o uso de memória em máquinas pequenas
+          ExecStart=/usr/local/bin/weed mount \
+            -filer={{ filer_address }}:8888 \
+            -dir={{ mount_path }} \
+            -filer.path=/
+          
+          # Garante que se a rede oscilar, o mount tenta voltar sozinho
+          Restart=always
+          RestartSec=10
+          
+          # Previne problemas com o FUSE no encerramento
+          ExecStop=/bin/umount -l {{ mount_path }}
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: "4. Ativar e Iniciar o Serviço"
+      systemd:
+        name: seaweed_mount
+        enabled: yes
+        state: restarted
+        daemon_reload: yes
+
+    - name: "5. Verificar se a montagem foi bem sucedida"
+      shell: "mount | grep {{ mount_path }}"
+      register: mount_check
+      changed_when: false
+      failed_when: mount_check.rc != 0
