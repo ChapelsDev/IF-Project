@@ -26,7 +26,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const chatNodeUrl = import.meta.env.VITE_CHAT_NODE_URL || 'http://192.168.100.231:3001';
     
     // Support comma-separated list for multiple nodes
-    const chatNodes = chatNodeUrl.split(',').map(url => url.trim());
+    const chatNodes = chatNodeUrl.split(',').map((url: string) => url.trim());
     const socketUrl = chatNodes[Math.floor(Math.random() * chatNodes.length)];
     console.log('Connecting to:', socketUrl);
     

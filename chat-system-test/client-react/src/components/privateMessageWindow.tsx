@@ -135,7 +135,7 @@ export function PrivateMessageWindow({ socket, currentUser, otherUser, onClose }
               </div>
               <div>{msg.text}</div>
               <div style={{ fontSize: "10px", opacity: 0.5, marginTop: "5px", textAlign: "right" }}>
-                {new Date(parseInt(msg.ts)).toLocaleTimeString()}
+                {new Date(msg.ts ? parseInt(msg.ts) : msg.timestamp).toLocaleTimeString()}
               </div>
             </div>
           );
