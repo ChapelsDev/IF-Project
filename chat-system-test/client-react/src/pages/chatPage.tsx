@@ -4,6 +4,7 @@ import { PrivateMessageWindow } from "../components/privateMessageWindow";
 import { RoomList } from "../components/roomList";
 import { StatusBar } from "../components/statusBar";
 import { UserList } from "../components/userList";
+import { FileUploadTest } from "../components/fileUploadTest";
 import { useSocket } from "../hooks/useSocket";
 
 export function ChatPage() {
@@ -121,6 +122,9 @@ export function ChatPage() {
           onUserClick={handleUserClick}
         />
       </div>
+      
+      {/* SeaweedFS Test Component */}
+      <FileUploadTest backendUrl="http://localhost:3001" />
       
       {/* Private message windows */}
       {privateChats.map((otherUser, index) => (

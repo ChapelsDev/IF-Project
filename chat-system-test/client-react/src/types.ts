@@ -13,6 +13,7 @@ export interface PrivateMessage {
   to: string;
   text: string;
   timestamp: number;
+  ts?: string;
   read?: boolean;
 }
 

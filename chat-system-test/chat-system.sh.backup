@@ -946,7 +946,7 @@ Environment="CLUSTER_CONSUL_URL=${CONSUL_URL}"
 
 # Start services first, then run daemon
 ExecStartPre=${SCRIPT_PATH} start ${CMD_FLAGS}
-ExecStart=${SCRIPT_PATH} daemon
+ExecStart=$(dirname "$SCRIPT_PATH")/chat-system-daemon.sh
 
 # Stop services on daemon exit
 ExecStopPost=${SCRIPT_PATH} stop
@@ -963,6 +963,15 @@ WantedBy=multi-user.target
 EOF
     
     print_success "Service created (Type=simple with continuous monitoring)"
+    
+    # Create daemon script link if it doesn't exist
+    DAEMON_SCRIPT="$(dirname "$SCRIPT_PATH")/chat-system-daemon.sh"
+    if [ ! -f "$DAEMON_SCRIPT" ]; then
+        print_error "Daemon script not found: $DAEMON_SCRIPT"
+        print_info "Please ensure chat-system-daemon.sh exists in the same directory"
+        exit 1
+    fi
+    chmod +x "$DAEMON_SCRIPT"
     
     print_success "Setup complete!"
     echo ""
@@ -1118,16 +1127,6 @@ test_cluster() {
     fi
 }
 
-# Command: daemon - Run continuous monitoring
-run_daemon() {
-    exec "$(dirname "${BASH_SOURCE[0]}")/chat-system-daemon.sh"
-}
-
-# Command: test - Run comprehensive tests
-run_tests() {
-    exec "$(dirname "${BASH_SOURCE[0]}")/test-system.sh" "$@"
-}
-
 # Command: help
 show_help() {
     cat << 'EOF'
@@ -1144,8 +1143,6 @@ CORE COMMANDS:
     restart             Restart chat nodes
     status              Show system status
     build               Build Docker image
-    daemon              Run continuous health monitoring (background service)
-    test [OPTIONS]      Run comprehensive system tests
     
 MANAGEMENT COMMANDS:
     setup-autostart     Configure systemd for autostart & autorecovery (requires sudo)
@@ -1155,11 +1152,6 @@ MANAGEMENT COMMANDS:
     deregister [url]    Deregister services from cluster
     clear-usernames     Clear all registered usernames
     help                Show this help
-
-TEST OPTIONS:
-    ./chat-system.sh test                Run all standard tests
-    ./chat-system.sh test --with-resilience  Include disruptive failure tests
-    ./chat-system.sh test --full         Run all tests including resilience
 
 START OPTIONS:
     --auto                      Auto-discover infrastructure (recommended)
@@ -1302,12 +1294,6 @@ case "$COMMAND" in
         ;;
     build)
         build_image
-        ;;
-    daemon)
-        run_daemon
-        ;;
-    test)
-        run_tests "$@"
         ;;
     clear-usernames)
         clear_usernames
