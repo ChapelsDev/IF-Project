@@ -550,6 +550,7 @@ start_system() {
                 -e CONSUL_URL="${CONSUL_ENV}" \
                 -e CLUSTER_MODE="${CLUSTER_MODE}" \
                 -e CLUSTER_CONSUL_URL="${CLUSTER_CONSUL_URL}" \
+                -e FILESTORE_URL="${FILESTORE_URL:-http://127.0.0.1:8888}" \
                 ${CHAT_IMAGE} \
                 > /dev/null 2>&1
             print_success "Chat Node ${i} started on port ${port}"
@@ -831,6 +832,7 @@ restart_nodes() {
             -e REDIS_URL=redis://localhost:${REDIS_PORT} \
             -e NATS_URL=nats://localhost:${NATS_PORT} \
             -e CONSUL_URL=http://localhost:${CONSUL_PORT} \
+            -e FILESTORE_URL="${FILESTORE_URL:-http://127.0.0.1:8888}" \
             ${CHAT_IMAGE} \
             > /dev/null 2>&1
         print_success "Chat Node ${i} restarted on port ${port}"

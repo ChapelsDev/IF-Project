@@ -40,22 +40,63 @@ export function MessageList({ socket, roomId }: MessageListProps) {
       }
     };
 
+    const handleFileMessage = (msg: any) => {
+      console.log("Received file message:", msg);
+      if (msg.id) {
+        setMessages((prev) => [...prev, {
+          id: msg.id,
+          user: msg.username,
+          text: `[FILE] ${msg.originalName}`,
+          fileUrl: msg.fileUrl,
+          fileName: msg.fileName,
+          timestamp: parseInt(msg.ts) || Date.now(),
+          ts: msg.ts
+        }]);
+      }
+    };
+
     socket.on("history", handleHistory);
     socket.on("message", handleMessage);
+    socket.on("fileMessage", handleFileMessage);
 
     return () => {
       socket.off("message", handleMessage);
       socket.off("history", handleHistory);
+      socket.off("fileMessage", handleFileMessage);
     };
   }, [socket, roomId]);
 
   return (
     <div className="message-list">
-      {messages.map((m) => (
-        <div key={m.id}>
-          <b>{m.user}</b>: {m.text}
-        </div>
-      ))}
+      {messages.map((m) => {
+        // Convert SeaweedFS URL to chat node proxy URL
+        const downloadUrl = m.fileUrl 
+          ? m.fileUrl.replace(/https?:\/\/[^/]+/, import.meta.env.VITE_CHAT_URL || 'http://localhost:3001').replace('/chat-files/', '/download/chat-files/')
+          : '';
+        
+        return (
+          <div key={m.id}>
+            <b>{m.user}</b>: {m.text}
+            {m.fileUrl && (
+              <div style={{ marginTop: '5px' }}>
+                <a 
+                  href={downloadUrl} 
+                  download
+                  style={{ 
+                    color: '#2196F3', 
+                    textDecoration: 'underline',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px'
+                  }}
+                >
+                  📎 Download File
+                </a>
+              </div>
+            )}
+          </div>
+        );
+      })}
       <div ref={messagesEndRef} />
     </div>
   );

@@ -5,6 +5,9 @@ export interface Message {
   user: string;
   text: string;
   timestamp: number;
+  fileUrl?: string;
+  fileName?: string;
+  ts?: string;
 }
 
 export interface PrivateMessage {

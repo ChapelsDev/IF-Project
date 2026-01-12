@@ -6,6 +6,7 @@ import { connectionLimiter, messageLimiter, privateMessageLimiter } from "./rate
 import { addUserToRoom, appendMessage, getMessageHistory, getPrivateMessageHistory, getRoomUsers, isUsernameAvailable, registerUsername, removeUserFromAllRooms, removeUserFromRoom, sendPrivateMessage } from "./redis";
 import { sanitizeUsername, validateMessagePayload, validatePrivateMessagePayload } from "./sanitizer";
 import { generateToken, TokenPayload, validateSocketAuth } from "./tokenValidation";
+import { uploadToSeaweed, downloadFromSeaweed, checkSeaweedHealth } from "./seaweed";
 
 // Extend Socket type to include custom properties
 interface ExtendedSocket {
@@ -32,7 +33,20 @@ export function getIO() {
 export function startGateway() {
   const port = parseInt(process.env.PORT || (3000 + parseInt(process.env.NODE_ID || "1")).toString());
   
-  const httpServer = createServer((req: any, res: any) => {
+  const httpServer = createServer(async (req: any, res: any) => {
+    // Set CORS headers for all requests
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
+    
+    // Handle preflight OPTIONS request
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+    
     if (req.url === "/health") {
       const health = {
         status: isShuttingDown ? "shutting_down" : "ok",
@@ -84,6 +98,75 @@ export function startGateway() {
       
       res.writeHead(200, { "Content-Type": "text/plain; version=0.0.4" });
       res.end(metrics);
+      return;
+    }
+
+    // File upload endpoint
+    if (req.url === "/upload" && req.method === "POST") {
+      let body = '';
+      req.on('data', (chunk: any) => {
+        body += chunk.toString();
+      });
+      
+      req.on('end', async () => {
+        try {
+          const data = JSON.parse(body);
+          const { filename, data: base64Data, username } = data;
+          
+          if (!filename || !base64Data) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Missing filename or data" }));
+            return;
+          }
+
+          // Upload to SeaweedFS
+          const result = await uploadToSeaweed(base64Data, filename, username || 'anonymous');
+          
+          if (result.success) {
+            res.writeHead(200, { 
+              "Content-Type": "application/json"
+            });
+            res.end(JSON.stringify({ 
+              success: true,
+              fileUrl: result.fileUrl,
+              fileName: result.fileName
+            }));
+          } else {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: result.error || "Upload failed" }));
+          }
+        } catch (error: any) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: error.message }));
+        }
+      });
+      return;
+    }
+
+    // File download endpoint (proxy to SeaweedFS)
+    if (req.url?.startsWith("/download/") && req.method === "GET") {
+      const filePath = req.url.replace("/download", "");
+      
+      const fileBuffer = await downloadFromSeaweed(filePath);
+      
+      if (fileBuffer) {
+        res.writeHead(200, { 
+          "Content-Type": "application/octet-stream",
+          "Content-Disposition": `attachment; filename="${filePath.split('/').pop()}"`
+        });
+        res.end(fileBuffer);
+      } else {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "File not found" }));
+      }
+      return;
+    }
+
+    // SeaweedFS health check
+    if (req.url === "/seaweed/health") {
+      const isHealthy = await checkSeaweedHealth();
+      res.writeHead(isHealthy ? 200 : 503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ healthy: isHealthy }));
       return;
     }
     
@@ -253,7 +336,36 @@ export function startGateway() {
       // Send message history when user joins a room
       const history = await getMessageHistory(roomId, 50);
       console.log(`Sending ${history.length} messages to user ${socket.id} for room ${roomId}`);
-      socket.emit("history", { roomId, messages: history });
+      
+      // Parse history to separate regular messages from file messages
+      const regularMessages = [];
+      const fileMessages = [];
+      
+      for (const msg of history) {
+        try {
+          // Check if text field is a JSON string (file message)
+          const parsed = JSON.parse(msg.text);
+          if (parsed.type === 'file') {
+            fileMessages.push({
+              id: msg.id,
+              ...parsed
+            });
+          } else {
+            regularMessages.push(msg);
+          }
+        } catch (e) {
+          // Not JSON, it's a regular message
+          regularMessages.push(msg);
+        }
+      }
+      
+      // Send regular messages as history
+      socket.emit("history", { roomId, messages: regularMessages });
+      
+      // Send file messages separately
+      for (const fileMsg of fileMessages) {
+        socket.emit("fileMessage", fileMsg);
+      }
       
       // Send current users list
       const users = await getRoomUsers(roomId);
@@ -269,6 +381,93 @@ export function startGateway() {
 
     socket.on("typing", ({ roomId, isTyping }: any) => {
       publishPresence("typing", { roomId, userId: socket.id, username: socket.username || socket.id, isTyping });
+    });
+    
+    // File upload via Socket.IO
+    socket.on("uploadFile", async (payload: any) => {
+      try {
+        if (!socket.username) {
+          socket.emit("uploadError", { error: "Username must be set before uploading files" });
+          return;
+        }
+
+        const { filename, data, roomId } = payload;
+
+        if (!filename || !data) {
+          socket.emit("uploadError", { error: "Missing filename or data" });
+          return;
+        }
+
+        console.log(`[GATEWAY] File upload from ${socket.username}: ${filename}`);
+
+        // Upload to SeaweedFS
+        const result = await uploadToSeaweed(data, filename, socket.username);
+
+        if (result.success) {
+          // Send success response
+          socket.emit("uploadSuccess", {
+            fileUrl: result.fileUrl,
+            fileName: result.fileName,
+            originalName: filename
+          });
+
+          // If roomId provided, send file share message to room
+          if (roomId) {
+            const fileMessage: any = {
+              type: 'file',
+              fileUrl: result.fileUrl,
+              fileName: result.fileName,
+              originalName: filename,
+              username: socket.username,
+              roomId,
+              ts: Date.now().toString()
+            };
+
+            // Store in Redis
+            const msgId = await redisCircuitBreaker.executeWithFallback(
+              () => appendMessage(roomId, socket.username, JSON.stringify(fileMessage), socket.id),
+              () => {
+                console.log(`[GATEWAY] Redis unavailable, file message not persisted`);
+                return Promise.resolve('fallback-id');
+              }
+            );
+
+            fileMessage.id = msgId;
+            fileMessage.userId = socket.id;
+            
+            // Broadcast to all users in the room on this node
+            io.to(roomId).emit("fileMessage", fileMessage);
+            
+            // Publish to NATS so other nodes receive it
+            await natsCircuitBreaker.executeWithFallback(
+              async () => {
+                const { publishMessage } = await import("./nats");
+                // Create message format that NATS subscriber expects
+                const natsMessage = {
+                  id: msgId,
+                  userId: socket.id,
+                  user: socket.username,
+                  text: JSON.stringify(fileMessage),
+                  roomId: roomId,
+                  ts: fileMessage.ts
+                };
+                await publishMessage(roomId, natsMessage);
+              },
+              () => {
+                console.log(`[GATEWAY] NATS unavailable, file message not broadcast to other nodes`);
+                return Promise.resolve();
+              }
+            );
+          }
+
+          console.log(`[GATEWAY] File uploaded successfully: ${result.fileUrl}`);
+        } else {
+          socket.emit("uploadError", { error: result.error || "Upload failed" });
+        }
+      } catch (error: any) {
+        console.error(`[GATEWAY] File upload error:`, error.message);
+        socket.emit("uploadError", { error: error.message });
+      }
     });
     
     // Private messaging handlers
@@ -387,14 +586,34 @@ export function startGateway() {
       console.log(`[GATEWAY] Received from NATS for room ${room}:`, msg);
       console.log(`[GATEWAY] Broadcasting to ${io.sockets.adapter.rooms.get(room)?.size || 0} clients in room ${room}`);
       
-      // Broadcast to all clients in the room EXCEPT the original sender
-      // This prevents the echo effect where the sender receives their own message twice
-      if (msg.userId) {
-        console.log(`[GATEWAY] Broadcasting to room ${room} except sender ${msg.userId}`);
-        io.to(room).except(msg.userId).emit("message", msg);
-      } else {
-        // If no userId (older messages from history), broadcast to all
-        io.to(room).emit("message", msg);
+      // Check if this is a file message (text field contains JSON with type: 'file')
+      let isFileMessage = false;
+      try {
+        const parsed = JSON.parse(msg.text);
+        if (parsed.type === 'file') {
+          isFileMessage = true;
+          // Emit as fileMessage instead
+          if (msg.userId) {
+            io.to(room).except(msg.userId).emit("fileMessage", { id: msg.id, ...parsed });
+          } else {
+            io.to(room).emit("fileMessage", { id: msg.id, ...parsed });
+          }
+        }
+      } catch (e) {
+        // Not JSON, it's a regular message
+      }
+      
+      // Only emit regular message if it's not a file message
+      if (!isFileMessage) {
+        // Broadcast to all clients in the room EXCEPT the original sender
+        // This prevents the echo effect where the sender receives their own message twice
+        if (msg.userId) {
+          console.log(`[GATEWAY] Broadcasting to room ${room} except sender ${msg.userId}`);
+          io.to(room).except(msg.userId).emit("message", msg);
+        } else {
+          // If no userId (older messages from history), broadcast to all
+          io.to(room).emit("message", msg);
+        }
       }
     });
   });
