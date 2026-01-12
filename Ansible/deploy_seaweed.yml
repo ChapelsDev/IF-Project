@@ -1,138 +1,146 @@
 ---
-- name: "Deploy Completo SeaweedFS - Alta Disponibilidade e Resiliência"
-  hosts: cluster
-  become: true
+- name: SeaweedFS Cluster - Produção Total
+  hosts: seaweed_nodes
+  become: yes
   vars:
-    # Definição dos Masters (Quórum de 3 nós para HA)
-    master_nodes: "192.168.100.51:9333,192.168.100.52:9333,192.168.100.53:9333"
-    # IP do líder principal para os serviços dependentes
-    primary_master: "192.168.100.51"
-    primary_filer: "192.168.100.51"
+    # 1. Extração dinâmica de IPs do grupo de masters no inventário
+    masters_group: "{{ groups['seaweed_masters'] | map('extract', hostvars, 'ansible_host') | list }}"
+    masters_string: "{{ masters_group | map('regex_replace', '$', ':9333') | join(',') }}"
+    
+    # 2. Identificação dinâmica do Master que fará o Bootstrap
+    bootstrap_node_ip: "{{ hostvars[groups['seaweed_masters'][0]]['ansible_host'] }}"
+    
+    data_dir: "/data/seaweedfs"
+    mount_dir: "/mnt/seaweed"
 
   tasks:
-    ## 1. PREPARAÇÃO DO AMBIENTE
-    - name: "Instalar dependências do sistema"
-      apt:
-        name: [fuse, jq, curl]
-        state: present
-        update_cache: yes
+    ## 1. PREPARAÇÃO
+    - name: "Sanitização: Stop e Limpeza"
+      shell: "systemctl stop seaweed_* || true; umount -l {{ mount_dir }} || true"
+      ignore_errors: yes
 
-    - name: "Criar estrutura de diretórios de dados"
+    - name: "Estrutura: Diretórios com permissões admin"
       file:
         path: "{{ item }}"
         state: directory
+        owner: admin
+        group: admin
         mode: '0755'
-      loop:
-        - /data/seaweedfs/master
-        - /data/seaweedfs/volume
-        - /data/seaweedfs/filer
+      loop: ["{{ data_dir }}/master", "{{ data_dir }}/volume", "{{ data_dir }}/filer", "{{ mount_dir }}"]
 
-    ## 2. CONFIGURAÇÃO DO MASTER (Apenas nós 51, 52 e 53)
-    - name: "Configurar Serviço Master (HA Quorum)"
-      when: inventory_hostname in ['node51', 'node52', 'node53']
+    ## 2. INSTALAÇÃO DO BINÁRIO
+    - name: "Install: SeaweedFS Latest Release"
+      unarchive:
+        src: "https://github.com/seaweedfs/seaweedfs/releases/latest/download/seaweedfs_linux_amd64.tar.gz"
+        dest: /usr/local/bin/
+        remote_src: yes
+        mode: '0755'
+      run_once: true
+
+    ## 3. SERVIÇOS PROVIDER (MASTERS & VOLUMES)
+
+    - name: "Service: Master (Bootstrap Inteligente)"
       copy:
         dest: /etc/systemd/system/seaweed_master.service
         content: |
           [Unit]
           Description=SeaweedFS Master
           After=network.target
-
           [Service]
           Type=simple
-          ExecStart=/usr/local/bin/weed master -ip={{ ansible_host }} -port=9333 -mdir=/data/seaweedfs/master -peers={% if inventory_hostname == 'node51' %}192.168.100.52:9333,192.168.100.53:9333{% elif inventory_hostname == 'node52' %}192.168.100.51:9333,192.168.100.53:9333{% elif inventory_hostname == 'node53' %}192.168.100.51:9333,192.168.100.52:9333{% endif %}
-          
+          # A replicação é definida apenas no Master
+          ExecStart=/usr/local/bin/weed master -ip={{ ansible_host }} -peers={{ masters_string }} -mdir={{ data_dir }}/master -defaultReplication=002 {{ '-raftBootstrap' if ansible_host == bootstrap_node_ip else '' }}
           Restart=always
           RestartSec=5
-
+          LimitNOFILE=65536
           [Install]
           WantedBy=multi-user.target
+      when: inventory_hostname in groups['seaweed_masters']
 
-    ## 3. CONFIGURAÇÃO DO VOLUME (Todos os nós: 51 a 57)
-    - name: "Configurar Serviço Volume"
+    - name: "Service: Volume (Dinâmico e Escalonável)"
       copy:
         dest: /etc/systemd/system/seaweed_volume.service
         content: |
           [Unit]
           Description=SeaweedFS Volume
-          After=network.target seaweed_master.service
-
+          After=seaweed_master.service
           [Service]
           Type=simple
-          ExecStart=/usr/local/bin/weed volume -mserver={{ master_nodes }} -ip={{ ansible_host }} -port=8080 -dir=/data/seaweedfs/volume -max=20
-          
+          ExecStart=/usr/local/bin/weed volume -mserver={{ masters_string }} -ip={{ ansible_host }} -dir={{ data_dir }}/volume -max=100
           Restart=always
           RestartSec=5
-
+          LimitNOFILE=65536
           [Install]
           WantedBy=multi-user.target
 
-    ## 4. CONFIGURAÇÃO DO FILER (Nós 51, 52 e 53 para redundância de entrada)
-    - name: "Configurar Serviço Filer"
-      when: inventory_hostname in ['node51', 'node52', 'node53']
+    ## 4. METADADOS E SYNC (FULL MESH)
+
+    - name: "Service: Filer"
       copy:
         dest: /etc/systemd/system/seaweed_filer.service
         content: |
           [Unit]
           Description=SeaweedFS Filer
-          After=network.target seaweed_master.service
-
           [Service]
           Type=simple
-          ExecStart=/usr/local/bin/weed filer -master={{ master_nodes }} -ip={{ ansible_host }} -port=8888
-          
+          ExecStart=/usr/local/bin/weed filer -master={{ masters_string }} -ip={{ ansible_host }}
           Restart=always
           RestartSec=5
-
           [Install]
           WantedBy=multi-user.target
+      when: inventory_hostname in groups['seaweed_masters']
 
-    ## 5. CONFIGURAÇÃO DO MOUNT (Para acesso local em todos os nós)
-    - name: "Configurar Serviço Mount"
+    - name: "Service: Filer Sync Mesh (Automático)"
+      copy:
+        dest: "/etc/systemd/system/seaweed_sync_to_{{ item | replace('.', '_') }}.service"
+        content: |
+          [Unit]
+          Description=Filer Sync to {{ item }}
+          [Service]
+          ExecStart=/usr/local/bin/weed filer.sync -filer={{ ansible_host }}:8888 -peer={{ hostvars[item]['ansible_host'] }}:8888
+          Restart=always
+          RestartSec=10
+          [Install]
+          WantedBy=multi-user.target
+      loop: "{{ groups['seaweed_masters'] }}"
+      when: "inventory_hostname in groups['seaweed_masters'] and hostvars[item]['ansible_host'] != ansible_host"
+
+    ## 5. CLIENT SIDE (MOUNT)
+
+    - name: "Service: Mount Client (Alta Disponibilidade)"
       copy:
         dest: /etc/systemd/system/seaweed_mount.service
         content: |
           [Unit]
-          Description=SeaweedFS Mount
-          After=network.target seaweed_filer.service
-
+          Description=SeaweedFS Mount Client
           [Service]
           Type=simple
-          ExecStart=/usr/local/bin/weed mount -filer={{ primary_filer }}:8888 -dir=/mnt/seaweed -filer.path=/
-          
+          # O Mount consome todos os Filers para failover imediato
+          ExecStart=/usr/local/bin/weed mount -filer={{ masters_group | map('regex_replace', '$', ':8888') | join(',') }} -dir={{ mount_dir }} -filer.path=/
+          ExecStop=/bin/umount -l {{ mount_dir }}
           Restart=always
-          RestartSec=10
-
           [Install]
           WantedBy=multi-user.target
+      when: inventory_hostname in groups['seaweed_clients']
 
-    ## 6. ORQUESTRAÇÃO DO ARRANQUE (Garantir ordem de dependência)
-    - name: "Reload systemd e ativar serviços"
-      systemd:
-        daemon_reload: yes
-
-    - name: "Iniciar Master Nodes"
-      when: inventory_hostname in ['node51', 'node52', 'node53']
-      systemd:
-        name: seaweed_master
-        state: restarted
-        enabled: yes
-
-    - name: "Pausa para eleição de Líder (Raft)"
-      pause:
-        seconds: 10
-
-    - name: "Iniciar Volume Nodes"
-      systemd:
-        name: seaweed_volume
-        state: restarted
-        enabled: yes
-
-    - name: "Iniciar Filers e Mounts"
+    ## 6. ORQUESTRAÇÃO E VALIDAÇÃO
+    - name: "Ativar Infraestrutura"
       systemd:
         name: "{{ item }}"
         state: restarted
         enabled: yes
-      loop:
-        - seaweed_filer
-        - seaweed_mount
-      when: inventory_hostname in ['node51', 'node52', 'node53'] or (item == 'seaweed_mount')
+        daemon_reload: yes
+      loop: [seaweed_master, seaweed_volume, seaweed_filer]
+      ignore_errors: yes
+
+    - name: "Ativar Mesh e Mount"
+      shell: "systemctl enable --now seaweed_sync_to_* seaweed_mount || true"
+
+    - name: "Validar Saúde do Cluster"
+      uri:
+        url: "http://{{ ansible_host }}:9333/cluster/status"
+        return_content: yes
+      register: health
+      until: health.json.Leader != ""
+      retries: 5
+      delay: 5
