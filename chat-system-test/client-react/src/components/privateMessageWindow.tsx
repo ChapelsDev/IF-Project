@@ -91,7 +91,7 @@ export function PrivateMessageWindow({ socket, currentUser, otherUser, onClose }
         alignItems: "center",
         backgroundColor: "#1e1e1e"
       }}>
-        <h3 style={{ margin: 0, fontSize: "16px" }}>Private Chat with {otherUser}</h3>
+        <h3 style={{ margin: 0, fontSize: "16px", color: "white" }}>Private Chat with {otherUser}</h3>
         <button 
           onClick={onClose}
           style={{
@@ -127,14 +127,15 @@ export function PrivateMessageWindow({ socket, currentUser, otherUser, onClose }
                 backgroundColor: isFromMe ? "#0084ff" : "#3a3a3a",
                 padding: "10px",
                 borderRadius: "12px",
-                wordBreak: "break-word"
+                wordBreak: "break-word",
+                color: "white"
               }}
             >
-              <div style={{ fontSize: "10px", opacity: 0.7, marginBottom: "5px" }}>
+              <div style={{ fontSize: "10px", opacity: 0.7, marginBottom: "5px", color: "white" }}>
                 {isFromMe ? "You" : msg.from}
               </div>
-              <div>{msg.text}</div>
-              <div style={{ fontSize: "10px", opacity: 0.5, marginTop: "5px", textAlign: "right" }}>
+              <div style={{ color: "white" }}>{msg.text}</div>
+              <div style={{ fontSize: "10px", opacity: 0.5, marginTop: "5px", textAlign: "right", color: "white" }}>
                 {new Date(msg.ts ? parseInt(msg.ts) : msg.timestamp).toLocaleTimeString()}
               </div>
             </div>

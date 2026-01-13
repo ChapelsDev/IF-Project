@@ -95,7 +95,7 @@ export function ChatPage() {
     <div className="app">
       <StatusBar connected={connected} nodeId={nodeId} />
       <div style={{ position: "absolute", top: "10px", right: "10px", zIndex: 1000 }}>
-        <span style={{ marginRight: "10px", fontWeight: "bold" }}>{username}</span>
+        <span style={{ marginRight: "10px", fontWeight: "bold", color: "white" }}>{username}</span>
         <button 
           onClick={handleLogout}
           style={{ 
@@ -119,6 +119,7 @@ export function ChatPage() {
           roomId={room} 
           currentUser={username}
           onUserClick={handleUserClick}
+          usersWithDMs={privateChats}
         />
       </div>
       
