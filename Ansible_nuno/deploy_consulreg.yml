@@ -1,0 +1,296 @@
+---
+- name: "Deploy Completo SeaweedFS - Alta Disponibilidade e Resiliência"
+  hosts: cluster
+  become: true
+  vars:
+    # Definição dos Masters (Quórum de 3 nós para HA)
+    master_nodes: "192.168.100.51:9333,192.168.100.52:9333,192.168.100.53:9333"
+    # IP do líder principal para os serviços dependentes
+    primary_master: "192.168.100.51"
+    primary_filer: "192.168.100.51"
+
+  tasks:
+    ## 1. PREPARAÇÃO DO AMBIENTE
+    - name: "Instalar dependências do sistema"
+      apt:
+        name: [fuse, jq, curl]
+        state: present
+        update_cache: yes
+
+    - name: "Criar estrutura de diretórios de dados"
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /data/seaweedfs/master
+        - /data/seaweedfs/volume
+        - /data/seaweedfs/filer
+        - /opt/seaweedfs/scripts
+
+    ## 2. CRIAR SCRIPTS DE CONSUL REGISTRATION (Updated for Load Balancing)
+
+    - name: "Criar script de registro do Master no Consul"
+      when: inventory_hostname in ['node51', 'node52', 'node53']
+      copy:
+        dest: /opt/seaweedfs/scripts/register_master.sh
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          HOSTNAME={{ inventory_hostname }}
+          IP={{ ansible_host }}
+          
+          curl -X PUT -H "Content-Type: application/json" \
+            -d "{
+              \"ID\": \"seaweed-master-${HOSTNAME}\",
+              \"Name\": \"seaweed-master\",
+              \"Tags\": [\"master\", \"${HOSTNAME}\"],
+              \"Address\": \"${IP}\",
+              \"Port\": 9333,
+              \"Check\": {
+                \"HTTP\": \"http://${IP}:9333/cluster/status\",
+                \"Interval\": \"10s\",
+                \"DeregisterCriticalServiceAfter\": \"1m\"
+              }
+            }" \
+            http://${IP}:8500/v1/agent/service/register
+
+    - name: "Criar script de desregistro do Master no Consul"
+      when: inventory_hostname in ['node51', 'node52', 'node53']
+      copy:
+        dest: /opt/seaweedfs/scripts/deregister_master.sh
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          HOSTNAME={{ inventory_hostname }}
+          IP={{ ansible_host }}
+          curl -X PUT http://${IP}:8500/v1/agent/service/deregister/seaweed-master-${HOSTNAME}
+
+    - name: "Criar script de registro do Volume no Consul"
+      copy:
+        dest: /opt/seaweedfs/scripts/register_volume.sh
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          HOSTNAME={{ inventory_hostname }}
+          IP={{ ansible_host }}
+          
+          curl -X PUT -H "Content-Type: application/json" \
+            -d "{
+              \"ID\": \"seaweed-volume-${HOSTNAME}\",
+              \"Name\": \"seaweed-volume\",
+              \"Tags\": [\"volume\", \"${HOSTNAME}\"],
+              \"Address\": \"${IP}\",
+              \"Port\": 8080,
+              \"Check\": {
+                \"HTTP\": \"http://${IP}:8080/status\",
+                \"Interval\": \"10s\",
+                \"DeregisterCriticalServiceAfter\": \"1m\"
+              }
+            }" \
+            http://${IP}:8500/v1/agent/service/register
+
+    - name: "Criar script de desregistro do Volume no Consul"
+      copy:
+        dest: /opt/seaweedfs/scripts/deregister_volume.sh
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          HOSTNAME={{ inventory_hostname }}
+          IP={{ ansible_host }}
+          curl -X PUT http://${IP}:8500/v1/agent/service/deregister/seaweed-volume-${HOSTNAME}
+
+    - name: "Criar script de registro do Filer no Consul"
+      when: inventory_hostname in ['node51', 'node52', 'node53']
+      copy:
+        dest: /opt/seaweedfs/scripts/register_filer.sh
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          HOSTNAME={{ inventory_hostname }}
+          IP={{ ansible_host }}
+          
+          curl -X PUT -H "Content-Type: application/json" \
+            -d "{
+              \"ID\": \"seaweed-filer-${HOSTNAME}\",
+              \"Name\": \"seaweed-filer\",
+              \"Tags\": [\"filer\", \"${HOSTNAME}\"],
+              \"Address\": \"${IP}\",
+              \"Port\": 8888,
+              \"Check\": {
+                \"HTTP\": \"http://${IP}:8888/\",
+                \"Interval\": \"10s\",
+                \"DeregisterCriticalServiceAfter\": \"1m\"
+              }
+            }" \
+            http://${IP}:8500/v1/agent/service/register
+
+    - name: "Criar script de desregistro do Filer no Consul"
+      when: inventory_hostname in ['node51', 'node52', 'node53']
+      copy:
+        dest: /opt/seaweedfs/scripts/deregister_filer.sh
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          HOSTNAME={{ inventory_hostname }}
+          IP={{ ansible_host }}
+          curl -X PUT http://${IP}:8500/v1/agent/service/deregister/seaweed-filer-${HOSTNAME}
+
+    - name: "Criar script de registro do Mount no Consul"
+      copy:
+        dest: /opt/seaweedfs/scripts/register_mount.sh
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          HOSTNAME={{ inventory_hostname }}
+          IP={{ ansible_host }}
+          
+          curl -X PUT -H "Content-Type: application/json" \
+            -d "{
+              \"ID\": \"seaweed-mount-${HOSTNAME}\",
+              \"Name\": \"seaweed-mount\",
+              \"Tags\": [\"mount\", \"${HOSTNAME}\"],
+              \"Address\": \"${IP}\",
+              \"Port\": 8888,
+              \"Check\": {
+                \"HTTP\": \"http://${IP}:8888/\",
+                \"Interval\": \"10s\",
+                \"DeregisterCriticalServiceAfter\": \"1m\"
+              }
+            }" \
+            http://${IP}:8500/v1/agent/service/register
+
+    - name: "Criar script de desregistro do Mount no Consul"
+      copy:
+        dest: /opt/seaweedfs/scripts/deregister_mount.sh
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          HOSTNAME={{ inventory_hostname }}
+          IP={{ ansible_host }}
+          curl -X PUT http://${IP}:8500/v1/agent/service/deregister/seaweed-mount-${HOSTNAME}
+
+    ## 3. CONFIGURAÇÃO DO MASTER (Apenas nós 51, 52 e 53)
+    - name: "Configurar Serviço Master (HA Quorum)"
+      when: inventory_hostname in ['node51', 'node52', 'node53']
+      copy:
+        dest: /etc/systemd/system/seaweed_master.service
+        content: |
+          [Unit]
+          Description=SeaweedFS Master
+          After=network.target
+
+          [Service]
+          Type=simple
+          ExecStart=/usr/local/bin/weed master -ip={{ ansible_host }} -port=9333 -metricsPort=9327 -mdir=/data/seaweedfs/master -peers={% if inventory_hostname == 'node51' %}192.168.100.52:9333,192.168.100.53:9333{% elif inventory_hostname == 'node52' %}192.168.100.51:9333,192.168.100.53:9333{% elif inventory_hostname == 'node53' %}192.168.100.51:9333,192.168.100.52:9333{% endif %}
+
+          ExecStartPost=/opt/seaweedfs/scripts/register_master.sh
+          ExecStop=/opt/seaweedfs/scripts/deregister_master.sh
+          Restart=always
+          RestartSec=5
+
+          [Install]
+          WantedBy=multi-user.target
+
+    ## 4. CONFIGURAÇÃO DO VOLUME (Todos os nós: 51 a 57)
+    - name: "Configurar Serviço Volume"
+      copy:
+        dest: /etc/systemd/system/seaweed_volume.service
+        content: |
+          [Unit]
+          Description=SeaweedFS Volume
+          After=network.target seaweed_master.service
+
+          [Service]
+          Type=simple
+          ExecStart=/usr/local/bin/weed volume -mserver={{ master_nodes }} -ip={{ ansible_host }} -port=8080 -metricsPort=9328 -dir=/data/seaweedfs/volume -max=20
+          ExecStartPost=/opt/seaweedfs/scripts/register_volume.sh
+          ExecStop=/opt/seaweedfs/scripts/deregister_volume.sh
+          Restart=always
+          RestartSec=5
+
+          [Install]
+          WantedBy=multi-user.target
+
+    ## 5. CONFIGURAÇÃO DO FILER (Nós 51, 52 e 53 para redundância de entrada)
+    - name: "Configurar Serviço Filer"
+      when: inventory_hostname in ['node51', 'node52', 'node53']
+      copy:
+        dest: /etc/systemd/system/seaweed_filer.service
+        content: |
+          [Unit]
+          Description=SeaweedFS Filer
+          After=network.target seaweed_master.service
+
+          [Service]
+          Type=simple
+          ExecStart=/usr/local/bin/weed filer -master={{ master_nodes }} -ip={{ ansible_host }} -port=8888 -metricsPort=9329
+          ExecStartPost=/opt/seaweedfs/scripts/register_filer.sh
+          ExecStop=/opt/seaweedfs/scripts/deregister_filer.sh
+          Restart=always
+          RestartSec=5
+
+          [Install]
+          WantedBy=multi-user.target
+
+    ## 6. CONFIGURAÇÃO DO MOUNT (Para acesso local em todos os nós)
+    - name: "Configurar Serviço Mount com HA Filers"
+      copy:
+        dest: /etc/systemd/system/seaweed_mount.service
+        content: |
+          [Unit]
+          Description=SeaweedFS Mount
+          After=network.target seaweed_filer.service
+
+          [Service]
+          Type=simple
+          ExecStart=/usr/local/bin/weed mount -filer=192.168.100.51:8888,192.168.100.52:8888,192.168.100.53:8888 -dir=/mnt/seaweed -filer.path=/
+          ExecStartPost=/opt/seaweedfs/scripts/register_mount.sh
+          ExecStop=/opt/seaweedfs/scripts/deregister_mount.sh
+          Restart=always
+          RestartSec=10
+
+          [Install]
+          WantedBy=multi-user.target
+
+    ## 7. CRIAR DIRETÓRIO DE MOUNT
+    - name: "Ensure mount directory exists and has correct permissions"
+      shell: |
+        if [ ! -d /mnt/seaweed ]; then
+          mkdir -p /mnt/seaweed
+        fi
+        chmod 755 /mnt/seaweed
+        chown root:root /mnt/seaweed
+      changed_when: false
+
+    ## 8. ORQUESTRAÇÃO DO ARRANQUE (Garantir ordem de dependência)
+    - name: "Reload systemd e ativar serviços"
+      systemd:
+        daemon_reload: yes
+
+    - name: "Iniciar Master Nodes"
+      when: inventory_hostname in ['node51', 'node52', 'node53']
+      systemd:
+        name: seaweed_master
+        state: restarted
+        enabled: yes
+
+    - name: "Pausa para eleição de Líder (Raft)"
+      pause:
+        seconds: 10
+
+    - name: "Iniciar Volume Nodes"
+      systemd:
+        name: seaweed_volume
+        state: restarted
+        enabled: yes
+
+    - name: "Iniciar Filers e Mounts"
+      systemd:
+        name: "{{ item }}"
+        state: restarted
+        enabled: yes
+      loop:
+        - seaweed_filer
+        - seaweed_mount
+      when: inventory_hostname in ['node51', 'node52', 'node53'] or (item == 'seaweed_mount')

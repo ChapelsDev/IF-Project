@@ -1,0 +1,14 @@
+ansible cluster -i hosts.ini --ask-become-pass -m shell -a "
+systemctl stop seaweed_master seaweed_volume seaweed_filer seaweed_mount 2>/dev/null || true;
+rm -f /usr/local/bin/weed;
+cd /tmp;
+rm -f linux_amd64.tar.gz weed;
+wget -O linux_amd64.tar.gz 'https://github.com/seaweedfs/seaweedfs/releases/download/3.47/linux_amd64.tar.gz';
+tar -xzf linux_amd64.tar.gz;
+chmod +x weed;
+mv weed /usr/local/bin/weed;
+chown root:root /usr/local/bin/weed;
+rm -f linux_amd64.tar.gz;
+ls -la /usr/local/bin/weed;
+/usr/local/bin/weed version
+"
