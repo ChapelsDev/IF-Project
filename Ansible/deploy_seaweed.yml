@@ -1,138 +1,286 @@
 ---
-- name: "Deploy Completo SeaweedFS - Alta Disponibilidade e Resiliência"
+- name: SeaweedFS - Implementação de Produção Hardened (7 Nós)
   hosts: cluster
-  become: true
+  become: yes
+  
   vars:
-    # Definição dos Masters (Quórum de 3 nós para HA)
-    master_nodes: "192.168.100.51:9333,192.168.100.52:9333,192.168.100.53:9333"
-    # IP do líder principal para os serviços dependentes
-    primary_master: "192.168.100.51"
-    primary_filer: "192.168.100.51"
+    # 1️⃣ CONTRATO DE TOPOLOGIA DECLARATIVA
+    seaweed_version: "3.81"
+    # SRE: ESTE HASH DEVE SER O SHA256 REAL DO FICHEIRO seaweedfs_linux_amd64.tar.gz
+    seaweed_checksum: "sha256:73a17e0828230538096c1664449830882e987c94412e73a0c441999249e083c0" 
+    
+    masters_ips:
+      - "192.168.100.51"
+      - "192.168.100.52"
+      - "192.168.100.53"
+      
+    clients_ips:
+      - "192.168.100.54"
+      - "192.168.100.55"
+      - "192.168.100.56"
+      - "192.168.100.57"
+
+    # Plano de Dados: Cobertura total de 7 nós
+    volumes_ips: "{{ masters_ips + clients_ips }}"
+
+    # 2️⃣ MAPEAMENTO DE IDENTIDADE LÓGICA
+    host_ip: "{{ ansible_host }}"
+    is_master: "{{ host_ip in masters_ips }}"
+    is_volume: "{{ host_ip in volumes_ips }}"
+    is_client: "{{ host_ip in clients_ips }}"
+
+    # 3️⃣ STRINGS DE CONEXÃO E BOOTSTRAP
+    masters_csv: "{{ masters_ips | map('regex_replace', '$', ':9333') | join(',') }}"
+    filers_csv: "{{ masters_ips | map('regex_replace', '$', ':8888') | join(',') }}"
+    bootstrap_ip: "{{ masters_ips[0] }}"
+    
+    # 4️⃣ AMBIENTE E SEGURANÇA SRE
+    install_path: "/opt/seaweedfs/{{ seaweed_version }}"
+    data_dir: "/data/seaweedfs"
+    mount_dir: "/mnt/seaweed"
+    user_owner: "admin"
 
   tasks:
-    ## 1. PREPARAÇÃO DO AMBIENTE
-    - name: "Instalar dependências do sistema"
-      apt:
-        name: [fuse, jq, curl]
-        state: present
-        update_cache: yes
+    ## 1. PREFLIGHT E AUDITORIA DE SEGURANÇA
+    - name: "Preflight: Validar se o nó pertence à topologia"
+      assert:
+        that:
+          - host_ip in volumes_ips
+        fail_msg: "ERRO DE TOPOLOGIA: O nó {{ host_ip }} não faz parte do plano Master ou Client."
 
-    - name: "Criar estrutura de diretórios de dados"
+    - name: "FS: Estrutura de diretórios versionada e de dados"
       file:
         path: "{{ item }}"
         state: directory
+        owner: "{{ user_owner }}"
+        group: "{{ user_owner }}"
         mode: '0755'
-      loop:
-        - /data/seaweedfs/master
-        - /data/seaweedfs/volume
-        - /data/seaweedfs/filer
+      loop: ["{{ install_path }}", "{{ data_dir }}/master", "{{ data_dir }}/volume", "{{ data_dir }}/filer", "{{ mount_dir }}"]
 
-    ## 2. CONFIGURAÇÃO DO MASTER (Apenas nós 51, 52 e 53)
-    - name: "Configurar Serviço Master (HA Quorum)"
-      when: inventory_hostname in ['node51', 'node52', 'node53']
+    ## 2. GESTÃO DE BINÁRIOS (IMUTABILIDADE)
+    - name: "Binário: Download com Checksum (Prevenir Repacks)"
+      unarchive:
+        src: "https://github.com/seaweedfs/seaweedfs/releases/download/{{ seaweed_version }}/seaweedfs_linux_amd64.tar.gz"
+        dest: "{{ install_path }}"
+        remote_src: yes
+        creates: "{{ install_path }}/weed"
+        checksum: "{{ seaweed_checksum }}"
+      notify: "Update Atomic Symlink"
+
+    - name: "Binário: Link simbólico para execução global"
+      file:
+        src: "{{ install_path }}/weed"
+        dest: /usr/local/bin/weed
+        state: link
+        force: yes
+
+    ## 3. SERVIÇOS SYSTEMD (HARDENING E DEPENDÊNCIAS REAIS)
+
+    - name: "Systemd: Master Service"
       copy:
         dest: /etc/systemd/system/seaweed_master.service
         content: |
           [Unit]
-          Description=SeaweedFS Master
-          After=network.target
-
+          Description=SeaweedFS Master (Raft Plan)
+          After=network-online.target
+          Wants=network-online.target
           [Service]
-          Type=simple
-          ExecStart=/usr/local/bin/weed master -ip={{ ansible_host }} -port=9333 -mdir=/data/seaweedfs/master -peers={% if inventory_hostname == 'node51' %}192.168.100.52:9333,192.168.100.53:9333{% elif inventory_hostname == 'node52' %}192.168.100.51:9333,192.168.100.53:9333{% elif inventory_hostname == 'node53' %}192.168.100.51:9333,192.168.100.52:9333{% endif %}
-          
+          User={{ user_owner }}
+          ExecStart=/usr/local/bin/weed master \
+            -ip={{ host_ip }} \
+            -peers={{ masters_csv }} \
+            -mdir={{ data_dir }}/master \
+            -defaultReplication=002 \
+            {{ '-raftBootstrap' if host_ip == bootstrap_ip else '' }}
           Restart=always
-          RestartSec=5
-
+          RestartSec=10
+          LimitNOFILE=65536
+          NoNewPrivileges=true
+          ProtectSystem=full
+          ReadWritePaths={{ data_dir }}
+          OOMScoreAdjust=-900
           [Install]
           WantedBy=multi-user.target
+      when: is_master
+      notify: Restart Master
 
-    ## 3. CONFIGURAÇÃO DO VOLUME (Todos os nós: 51 a 57)
-    - name: "Configurar Serviço Volume"
+    - name: "Systemd: Volume Service (Todos os 7 nós)"
       copy:
         dest: /etc/systemd/system/seaweed_volume.service
         content: |
           [Unit]
-          Description=SeaweedFS Volume
-          After=network.target seaweed_master.service
-
+          Description=SeaweedFS Volume Server (Data Plan)
+          After=network-online.target
+          Wants=network-online.target
           [Service]
-          Type=simple
-          ExecStart=/usr/local/bin/weed volume -mserver={{ master_nodes }} -ip={{ ansible_host }} -port=8080 -dir=/data/seaweedfs/volume -max=20
-          
+          User={{ user_owner }}
+          # SRE: Dependência lógica de rede POSIX (Aguardar Master Leader)
+          ExecStartPre=/bin/bash -c 'until echo > /dev/tcp/{{ bootstrap_ip }}/9333; do sleep 5; done'
+          ExecStart=/usr/local/bin/weed volume \
+            -mserver={{ masters_csv }} \
+            -ip={{ host_ip }} \
+            -dir={{ data_dir }}/volume \
+            -max=100
           Restart=always
-          RestartSec=5
-
+          RestartSec=10
+          LimitNOFILE=65536
+          NoNewPrivileges=true
+          ProtectSystem=full
+          ReadWritePaths={{ data_dir }}
+          OOMScoreAdjust=-900
           [Install]
           WantedBy=multi-user.target
+      when: is_volume
+      notify: Restart Volume
 
-    ## 4. CONFIGURAÇÃO DO FILER (Nós 51, 52 e 53 para redundância de entrada)
-    - name: "Configurar Serviço Filer"
-      when: inventory_hostname in ['node51', 'node52', 'node53']
+    - name: "Systemd: Filer Service"
       copy:
         dest: /etc/systemd/system/seaweed_filer.service
         content: |
           [Unit]
-          Description=SeaweedFS Filer
-          After=network.target seaweed_master.service
-
+          Description=SeaweedFS Filer (Metadata Plan)
+          After=seaweed_volume.service
+          Requires=seaweed_master.service
           [Service]
-          Type=simple
-          ExecStart=/usr/local/bin/weed filer -master={{ master_nodes }} -ip={{ ansible_host }} -port=8888
-          
+          User={{ user_owner }}
+          ExecStart=/usr/local/bin/weed filer \
+            -master={{ masters_csv }} \
+            -ip={{ host_ip }}
           Restart=always
-          RestartSec=5
-
+          RestartSec=10
+          LimitNOFILE=65536
+          NoNewPrivileges=true
+          ProtectSystem=full
+          ReadWritePaths={{ data_dir }}
+          TimeoutStartSec=60
           [Install]
           WantedBy=multi-user.target
+      when: is_master
+      notify: Restart Filer
 
-    ## 5. CONFIGURAÇÃO DO MOUNT (Para acesso local em todos os nós)
-    - name: "Configurar Serviço Mount"
+    - name: "Systemd: Filer Sync Mesh"
+      copy:
+        dest: "/etc/systemd/system/seaweed_sync_to_{{ item | replace('.', '_') }}.service"
+        content: |
+          [Unit]
+          Description=Filer Sync to {{ item }}
+          After=seaweed_filer.service
+          Requires=seaweed_filer.service
+          [Service]
+          User={{ user_owner }}
+          ExecStartPre=/bin/sleep 10
+          ExecStart=/usr/local/bin/weed filer.sync \
+            -filer={{ host_ip }}:8888 \
+            -peer={{ item }}:8888
+          Restart=always
+          TimeoutStartSec=60
+          [Install]
+          WantedBy=multi-user.target
+      loop: "{{ masters_ips }}"
+      when: 
+        - is_master
+        - item != host_ip
+
+    - name: "Systemd: Mount Service (Hardened Client)"
       copy:
         dest: /etc/systemd/system/seaweed_mount.service
         content: |
           [Unit]
-          Description=SeaweedFS Mount
-          After=network.target seaweed_filer.service
-
+          Description=SeaweedFS Mount Client
+          Requires=network-online.target
+          After=network-online.target
           [Service]
-          Type=simple
-          ExecStart=/usr/local/bin/weed mount -filer={{ primary_filer }}:8888 -dir=/mnt/seaweed -filer.path=/
-          
+          # SRE: Aguarda Filer estar pronto no quórum antes de montar FUSE
+          ExecStartPre=/bin/bash -c 'until echo > /dev/tcp/{{ bootstrap_ip }}/8888; do sleep 5; done'
+          ExecStart=/usr/local/bin/weed mount \
+            -filer={{ filers_csv }} \
+            -dir={{ mount_dir }} \
+            -filer.path=/
+          ExecStop=/bin/umount -l {{ mount_dir }}
           Restart=always
-          RestartSec=10
-
+          RestartSec=30
+          # Hardening
+          NoNewPrivileges=true
+          ProtectSystem=full
+          ReadWritePaths={{ mount_dir }}
+          KillMode=process
+          TimeoutStartSec=60
+          LimitNOFILE=1048576
           [Install]
           WantedBy=multi-user.target
+      when: is_client
+      notify: Restart Mount
 
-    ## 6. ORQUESTRAÇÃO DO ARRANQUE (Garantir ordem de dependência)
-    - name: "Reload systemd e ativar serviços"
-      systemd:
-        daemon_reload: yes
+    ## 4. ORQUESTRAÇÃO DE ARRANQUE DETERMINÍSTICA
 
-    - name: "Iniciar Master Nodes"
-      when: inventory_hostname in ['node51', 'node52', 'node53']
-      systemd:
-        name: seaweed_master
-        state: restarted
-        enabled: yes
+    - name: "Status: Iniciar Masters"
+      systemd: { name: seaweed_master, state: started, enabled: yes, daemon_reload: yes }
+      when: is_master
 
-    - name: "Pausa para eleição de Líder (Raft)"
-      pause:
-        seconds: 10
+    - name: "Audit: Aguardar Liderança Raft Ativa"
+      uri:
+        url: "http://{{ bootstrap_ip }}:9333/cluster/status"
+        return_content: yes
+      register: raft_status
+      until: "raft_status.json is defined and raft_status.json.Leader != ''"
+      retries: 20
+      delay: 5
+      run_once: true
 
-    - name: "Iniciar Volume Nodes"
-      systemd:
-        name: seaweed_volume
-        state: restarted
-        enabled: yes
-
-    - name: "Iniciar Filers e Mounts"
+    - name: "Status: Iniciar Plano de Dados (Volume e Filer)"
       systemd:
         name: "{{ item }}"
-        state: restarted
+        state: started
         enabled: yes
-      loop:
-        - seaweed_filer
-        - seaweed_mount
-      when: inventory_hostname in ['node51', 'node52', 'node53'] or (item == 'seaweed_mount')
+      loop: [seaweed_volume, seaweed_filer]
+      when: 
+        - (item == 'seaweed_volume' and is_volume) or (item == 'seaweed_filer' and is_master)
+
+    - name: "Status: Iniciar Malha de Sincronização e Mounts"
+      systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop: >-
+        {{
+          (masters_ips | select('reject', 'equalto', host_ip) | map('regex_replace', '^(.*)$', 'seaweed_sync_to_' + '\\1' | replace('.', '_')) | list)
+          if is_master else
+          (['seaweed_mount'] if is_client else [])
+        }}
+      when: item != ""
+
+    ## 5. AUDITORIA SRE FINAL
+
+    - name: "Audit: Aplicar Política de Replicação 002"
+      shell: |
+        /usr/local/bin/weed shell -master={{ masters_csv }} -command="volume.fix.replication -replication=002"
+      run_once: true
+      register: fix_rep
+      changed_when: "'fixed' in fix_rep.stdout"
+
+    - name: "Assert: Validar 7 Nós de Volume Ativos"
+      uri:
+        url: "http://{{ bootstrap_ip }}:9333/dir/status"
+        return_content: yes
+      register: dir_status
+      run_once: true
+
+    - name: "Assert: Verificação Final do Cluster"
+      assert:
+        that:
+          - "(dir_status.json.Topology.DataCenters | map(attribute='Racks') | flatten | map(attribute='DataNodes') | flatten | length) == 7"
+          - "dir_status.json.Topology.Layouts | selectattr('replication', 'equalto', '002') | list | length > 0"
+        fail_msg: "AUDITORIA CRÍTICA: Cluster incompleto (esperados 7 nós) ou sem layout de replicação 002."
+      run_once: true
+
+  handlers:
+    - name: "Update Atomic Symlink"
+      file: { src: "{{ install_path }}/weed", dest: /usr/local/bin/weed, state: link, force: yes }
+    - name: Restart Master
+      systemd: { name: seaweed_master, state: restarted }
+    - name: Restart Volume
+      systemd: { name: seaweed_volume, state: restarted }
+    - name: Restart Filer
+      systemd: { name: seaweed_filer, state: restarted }
+    - name: Restart Mount
+      systemd: { name: seaweed_mount, state: restarted }

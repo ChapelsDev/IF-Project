@@ -1,0 +1,128 @@
+---
+- name: SeaweedFS - ROLLBACK TOTAL (Destrutivo)
+  hosts: cluster
+  become: yes
+  serial: 1   # SRE: evita desmontagens simultâneas de FUSE
+
+  vars:
+    seaweed_paths:
+      - /data/seaweedfs
+      - /mnt/seaweed
+
+    systemd_units:
+      - seaweed_mount
+      - seaweed_sync_to_
+      - seaweed_filer
+      - seaweed_volume
+      - seaweed_master
+
+    weed_bin_paths:
+      - /usr/local/bin/weed
+
+    install_root: /opt/seaweedfs
+
+  tasks:
+    ####################################################################
+    # 1️⃣ PRÉ-CHECK EXPLÍCITO (ANTI-DESASTRE ACIDENTAL)
+    ####################################################################
+    - name: "Preflight: Confirmar execução explícita de rollback destrutivo"
+      assert:
+        that:
+          - rollback_confirmed | default(false) | bool
+        fail_msg: >
+          ROLLBACK BLOQUEADO.
+          Tens de executar com:
+          ansible-playbook rollback_seaweedfs.yml -e rollback_confirmed=true
+
+    ####################################################################
+    # 2️⃣ DESMONTAR FUSE (SE EXISTIR)
+    ####################################################################
+    - name: "Unmount: Desmontar SeaweedFS FUSE se montado"
+      shell: |
+        mountpoint -q /mnt/seaweed && umount -l /mnt/seaweed || true
+      changed_when: false
+
+    ####################################################################
+    # 3️⃣ PARAR E DESATIVAR SERVIÇOS SYSTEMD
+    ####################################################################
+    - name: "Systemd: Parar serviços SeaweedFS (se existirem)"
+      systemd:
+        name: "{{ item }}"
+        state: stopped
+        enabled: no
+      loop:
+        - seaweed_mount
+        - seaweed_filer
+        - seaweed_volume
+        - seaweed_master
+      failed_when: false
+
+    - name: "Systemd: Parar serviços de sync (pattern-based)"
+      shell: |
+        systemctl list-units --full --all | awk '{print $1}' | grep '^seaweed_sync_to_' | xargs -r systemctl stop
+      changed_when: false
+
+    - name: "Systemd: Desativar serviços de sync"
+      shell: |
+        systemctl list-unit-files | awk '{print $1}' | grep '^seaweed_sync_to_' | xargs -r systemctl disable
+      changed_when: false
+
+    ####################################################################
+    # 4️⃣ REMOVER UNITS SYSTEMD
+    ####################################################################
+    - name: "Systemd: Remover unit files SeaweedFS"
+      file:
+        path: "/etc/systemd/system/{{ item }}"
+        state: absent
+      loop:
+        - seaweed_master.service
+        - seaweed_volume.service
+        - seaweed_filer.service
+        - seaweed_mount.service
+
+    - name: "Systemd: Remover unit files de sync"
+      shell: |
+        rm -f /etc/systemd/system/seaweed_sync_to_*.service || true
+      changed_when: false
+
+    - name: "Systemd: Reload daemon"
+      systemd:
+        daemon_reload: yes
+
+    ####################################################################
+    # 5️⃣ REMOVER BINÁRIOS
+    ####################################################################
+    - name: "Binário: Remover symlink weed"
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop: "{{ weed_bin_paths }}"
+
+    - name: "Binário: Remover diretório de instalação versionada"
+      file:
+        path: "{{ install_root }}"
+        state: absent
+
+    ####################################################################
+    # 6️⃣ REMOVER DADOS (DESTRUTIVO)
+    ####################################################################
+    - name: "Dados: Remover diretórios de dados e mount"
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop: "{{ seaweed_paths }}"
+
+    ####################################################################
+    # 7️⃣ LIMPEZA FINAL
+    ####################################################################
+    - name: "Audit: Garantir que não existem processos weed ativos"
+      shell: |
+        pgrep -f weed && exit 1 || exit 0
+      register: weed_process
+      failed_when: weed_process.rc != 0
+
+    - name: "Audit: Confirmar rollback completo"
+      debug:
+        msg: >
+          Rollback concluído com sucesso.
+          Nó {{ inventory_hostname }} encontra-se limpo de SeaweedFS.

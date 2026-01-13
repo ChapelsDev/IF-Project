@@ -1,0 +1,131 @@
+---
+- name: Bootstrap de Sistema – Utilizador admin (Determinístico e Auditável)
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  vars:
+    admin_user: "admin"
+    admin_uid: 1001
+    admin_gid: 1001
+    admin_home: "/home/admin"
+    admin_shell: "/bin/bash"
+    sudoers_file: "/etc/sudoers.d/admin"
+
+  tasks:
+
+    ####################################################################
+    # 1. VERIFICAÇÃO DE GRUPO
+    ####################################################################
+
+    - name: "Check | Grupo admin existe?"
+      getent:
+        database: group
+        key: "{{ admin_user }}"
+      register: admin_group
+      failed_when: false
+
+    - name: "Create | Grupo admin (GID determinístico)"
+      group:
+        name: "{{ admin_user }}"
+        gid: "{{ admin_gid }}"
+        state: present
+      when: admin_group.failed or admin_group is not defined
+
+    - name: "Assert | GID do grupo admin é correto"
+      assert:
+        that:
+          - admin_group is failed or admin_group.entries[admin_user][1] | int == admin_gid
+        fail_msg: >
+          ERRO CRÍTICO: O grupo 'admin' existe mas com GID diferente de {{ admin_gid }}.
+          Isto quebra consistência entre nós.
+        success_msg: "Grupo admin com GID correto."
+
+    ####################################################################
+    # 2. VERIFICAÇÃO DE UTILIZADOR
+    ####################################################################
+
+    - name: "Check | Utilizador admin existe?"
+      getent:
+        database: passwd
+        key: "{{ admin_user }}"
+      register: admin_user_info
+      failed_when: false
+
+    - name: "Create | Utilizador admin (UID determinístico)"
+      user:
+        name: "{{ admin_user }}"
+        uid: "{{ admin_uid }}"
+        group: "{{ admin_user }}"
+        home: "{{ admin_home }}"
+        shell: "{{ admin_shell }}"
+        create_home: yes
+        state: present
+      when: admin_user_info.failed or admin_user_info is not defined
+
+    - name: "Assert | UID correto"
+      assert:
+        that:
+          - admin_user_info is failed or admin_user_info.entries[admin_user][1] | int == admin_uid
+        fail_msg: >
+          ERRO CRÍTICO: O utilizador 'admin' existe mas com UID diferente de {{ admin_uid }}.
+          Abortado para evitar corrupção de permissões.
+        success_msg: "UID do utilizador admin validado."
+
+    - name: "Assert | Shell correta"
+      assert:
+        that:
+          - admin_user_info is failed or admin_user_info.entries[admin_user][5] == admin_shell
+        fail_msg: "Shell do utilizador admin não é {{ admin_shell }}."
+        success_msg: "Shell correta."
+
+    - name: "Assert | Home directory correto"
+      assert:
+        that:
+          - admin_user_info is failed or admin_user_info.entries[admin_user][4] == admin_home
+        fail_msg: "Home directory do admin incorreto."
+        success_msg: "Home directory validado."
+
+    ####################################################################
+    # 3. PERMISSÕES DO HOME
+    ####################################################################
+
+    - name: "Fix | Permissões do home do admin"
+      file:
+        path: "{{ admin_home }}"
+        owner: "{{ admin_user }}"
+        group: "{{ admin_user }}"
+        mode: "0755"
+        state: directory
+
+    ####################################################################
+    # 4. SUDO (ROOT SEM PASSWORD – OBRIGATÓRIO)
+    ####################################################################
+
+    - name: "Create | Sudoers admin (NOPASSWD)"
+      copy:
+        dest: "{{ sudoers_file }}"
+        content: |
+          {{ admin_user }} ALL=(ALL) NOPASSWD:ALL
+        owner: root
+        group: root
+        mode: "0440"
+
+    - name: "Validate | Sintaxe do sudoers"
+      command: visudo -cf {{ sudoers_file }}
+      changed_when: false
+
+    ####################################################################
+    # 5. ASSERT FINAL DE CONFORMIDADE
+    ####################################################################
+
+    - name: "Assert | admin pode executar sudo sem password"
+      command: sudo -n true
+      become_user: "{{ admin_user }}"
+      changed_when: false
+
+    - name: "FINAL | Sistema pronto para deploy industrial"
+      debug:
+        msg: >
+          OK. Utilizador 'admin' existe, é determinístico, tem sudo total
+          e o sistema está pronto para playbooks de produção.
