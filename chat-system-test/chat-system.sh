@@ -26,6 +26,13 @@ CLUSTER_CONSUL_URL="http://192.168.100.53:8500"
 USE_LOCAL_CONSUL="true"
 START_LOAD_BALANCER="false"
 
+# NATS Clustering
+ENABLE_NATS_CLUSTER="true"
+NATS_CLUSTER_PORT=6222
+
+# Redis Mode: "local" (each machine), "shared" (use discovered Redis), "cluster" (Redis Cluster)
+REDIS_MODE="shared"
+
 # Multi-machine support
 HOST_IP=""
 DEPLOYMENT_MODE="standalone"  # standalone, infrastructure, node-only, or auto
@@ -162,6 +169,44 @@ check_dependencies() {
 get_host_ip() {
     # Get the first non-localhost IP address
     ip addr show | grep 'inet ' | grep -v '127.0.0.1' | awk '{print $2}' | cut -d/ -f1 | head -1
+}
+
+# Discover other NATS instances from Consul for clustering
+discover_nats_cluster_routes() {
+    local consul_url="${1:-$CLUSTER_CONSUL_URL}"
+    local script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+    local host_ip=$(get_host_ip)
+    
+    if [ ! -f "${script_dir}/cluster_helper.py" ]; then
+        return
+    fi
+    
+    # Discover all NATS instances
+    local nats_instances=$(python3 "${script_dir}/cluster_helper.py" discover "nats-service" "${consul_url}" 2>/dev/null | grep -oP '\d+\.\d+\.\d+\.\d+' | grep -v "${host_ip}")
+    
+    # Build routes list
+    local routes=""
+    for nats_ip in $nats_instances; do
+        if [ -n "$routes" ]; then
+            routes="${routes},"
+        fi
+        routes="${routes}nats-route://${nats_ip}:${NATS_CLUSTER_PORT}"
+    done
+    
+    echo "$routes"
+}
+
+# Discover Redis instance from Consul
+discover_redis_instance() {
+    local consul_url="${1:-$CLUSTER_CONSUL_URL}"
+    local script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+    
+    if [ ! -f "${script_dir}/cluster_helper.py" ]; then
+        return
+    fi
+    
+    # Discover Redis instances and return the first one
+    python3 "${script_dir}/cluster_helper.py" discover "redis-service" "${consul_url}" 2>/dev/null | grep -oP '\d+\.\d+\.\d+\.\d+' | head -1
 }
 
 # Auto-detect cluster and discover infrastructure
@@ -377,6 +422,8 @@ start_system() {
     if [ "$CLUSTER_MODE" = "true" ]; then
         print_info "Cluster Mode: Enabled"
         print_info "Cluster Consul: $CLUSTER_CONSUL_URL"
+        print_info "NATS Clustering: Enabled (messages shared across machines)"
+        print_info "Redis: Shared across machines"
     fi
     echo ""
     
@@ -413,16 +460,30 @@ start_system() {
         fi
         print_success "Redis started on port ${REDIS_PORT}"
         
-        # NATS
+        # NATS with clustering
+        print_info "Starting NATS with clustering..."
+        local nats_routes=""
+        if [ "$CLUSTER_MODE" = "true" ]; then
+            nats_routes=$(discover_nats_cluster_routes "${CLUSTER_CONSUL_URL}")
+            if [ -n "$nats_routes" ]; then
+                print_info "  Found NATS cluster routes: ${nats_routes}"
+            fi
+        fi
+        
+        local nats_cmd="-p ${NATS_PORT} --http_port 8222 --cluster_name chat_cluster --cluster nats://0.0.0.0:6222"
+        if [ -n "$nats_routes" ]; then
+            nats_cmd="${nats_cmd} --routes ${nats_routes}"
+        fi
+        
         sudo podman run -d --name nats --network host \
             --restart=on-failure:5 \
             --health-cmd="nc -z localhost ${NATS_PORT} || exit 1" \
             --health-interval=30s \
             --health-timeout=5s \
             --health-retries=3 \
-            docker.io/nats:2.10-alpine \
+            docker.io/nats:2.10-alpine ${nats_cmd} \
             > /dev/null 2>&1
-        print_success "NATS started on port ${NATS_PORT}"
+        print_success "NATS started on port ${NATS_PORT} with clustering on port 6222"
         
         # Consul (local) - bind to 127.0.0.1 to avoid multi-interface issues
         sudo podman run -d --name consul --network host \
@@ -451,15 +512,27 @@ start_system() {
             > /dev/null 2>&1
         print_success "Redis started on port ${REDIS_PORT}"
         
+        # NATS with clustering
+        print_info "Starting NATS with clustering..."
+        local nats_routes=$(discover_nats_cluster_routes "${CLUSTER_CONSUL_URL}")
+        if [ -n "$nats_routes" ]; then
+            print_info "  Found NATS cluster routes: ${nats_routes}"
+        fi
+        
+        local nats_cmd="-p ${NATS_PORT} --http_port 8222 --cluster_name chat_cluster --cluster nats://0.0.0.0:6222"
+        if [ -n "$nats_routes" ]; then
+            nats_cmd="${nats_cmd} --routes ${nats_routes}"
+        fi
+        
         sudo podman run -d --name nats --network host \
             --restart=on-failure:5 \
             --health-cmd="nc -z localhost ${NATS_PORT} || exit 1" \
             --health-interval=30s \
             --health-timeout=5s \
             --health-retries=3 \
-            docker.io/nats:2.10-alpine \
+            docker.io/nats:2.10-alpine ${nats_cmd} \
             > /dev/null 2>&1
-        print_success "NATS started on port ${NATS_PORT}"
+        print_success "NATS started on port ${NATS_PORT} with clustering on port 6222"
         
         # Set REDIS_HOST and NATS_HOST to local IP for chat nodes
         REDIS_HOST=$(get_host_ip)
@@ -1861,9 +1934,24 @@ QUICK START EXAMPLES:
 ARCHITECTURE:
     Redis (6379)         Shared state & message history
     NATS (4222)          Pub/sub messaging between nodes
+    NATS Cluster (6222)  NATS mesh clustering port
     Consul (8500)        Service discovery & health checks
     Chat Nodes (3002-4)  Socket.IO gateways
     Load Balancer (3001) Round-robin client distribution
+
+DISTRIBUTED MESSAGING (Cluster Mode):
+    When running with --cluster flag:
+    • NATS Clustering: Instances auto-discover via Consul and form a mesh
+    • Messages replicated across ALL machines automatically
+    • Redis shared across cluster for session state
+    • Users on different machines can chat seamlessly
+    
+    Multi-machine setup:
+        Machine 1: ./chat-system.sh start --cluster --mode full
+        Machine 2: ./chat-system.sh start --cluster --mode full
+        Machine 3+: Same command - auto-joins cluster
+    
+    See DISTRIBUTED_MESSAGING.md for details.
 
 AUTOSTART & RECOVERY:
     Configure automatic startup with continuous health monitoring:
@@ -1930,12 +2018,13 @@ TROUBLESHOOTING:
     View cluster services:
 PORTS:
     6379     Redis
-    4222     NATS
+    4222     NATS (client connections)
+    6222     NATS (cluster mesh - cross-machine communication)
     8500     Consul
     3001     Load Balancer
     3002-4   Chat nodes
 
-For detailed documentation, see README.md
+For detailed documentation, see README.md and DISTRIBUTED_MESSAGING.md
 EOF
 }
 
