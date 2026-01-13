@@ -133,6 +133,7 @@
                                 const memoryGroup = document.getElementById('memory-group');
                                 const processGroup = document.getElementById('process-group');
                                 const diskGroup = document.getElementById('disk-group');
+                                const cpuGroup = document.getElementById('cpu-group');
                                 const selector = document.getElementById('metric-selector');
                                 
                                 let hasLatency = false;
@@ -145,6 +146,7 @@
                                 let hasMemory = false;
                                 let hasProcess = false;
                                 let hasDisk = false;
+                                let hasCpu = false;
 
                                 for(let i=0; i<checkboxes.length; i++) {
                                     if (checkboxes[i].checked) {
@@ -181,6 +183,9 @@
                                         if (expId.includes('disk') || expId.includes('fill')) {
                                             hasDisk = true;
                                         }
+                                        if (expId.includes('cpu') || expId.includes('stress')) {
+                                            hasCpu = true;
+                                        }
                                     }
                                 }
 
@@ -194,6 +199,7 @@
                                 if(memoryGroup) memoryGroup.style.display = hasMemory ? 'block' : 'none';
                                 if(processGroup) processGroup.style.display = hasProcess ? 'block' : 'none';
                                 if(diskGroup) diskGroup.style.display = hasDisk ? 'block' : 'none';
+                                if(cpuGroup) cpuGroup.style.display = hasCpu ? 'block' : 'none';
 
                                 if (hasLatency && !hasLoss) {
                                     if(selector) selector.value = 'latency';
@@ -269,6 +275,13 @@
                                 <input type="number" name="size_mb" value="512" min="64"
                                        class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white">
                                 <p class="text-[10px] text-gray-500 mt-1">Quantidade de memória a ser consumida.</p>
+                            </div>
+
+                            <div id="cpu-group" style="display: none;">
+                                <label class="block text-xs text-gray-400 mb-1">Carga de CPU (%)</label>
+                                <input type="number" name="cpu_load" value="100" min="1" max="100"
+                                       class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white">
+                                <p class="text-[10px] text-gray-500 mt-1">Porcentagem de carga em todos os núcleos.</p>
                             </div>
 
                             <div id="process-group" style="display: none;">

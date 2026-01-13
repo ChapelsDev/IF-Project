@@ -1,10 +1,25 @@
 nodes:
-  - id: local-pc
-    host: 192.168.1.68
-    ssh_user: guilherme
+  - id: remote-pc
+    host: 192.168.100.51
+    ssh_user: labcom
     ssh_port: 22
   
-  - id: remote-pc
-    host: 192.168.1.72
-    ssh_user: root
+  - id: remote-pc1
+    host: 192.168.100.52
+    ssh_user: labcom
+    ssh_port: 22
+
+  - id: remote-pc2
+    host: 192.168.100.53
+    ssh_user: labcom
+    ssh_port: 22
+
+  - id: remote-pc3
+    host: 192.168.100.54
+    ssh_user: labcom
+    ssh_port: 22
+
+  - id: remote-pc4
+    host: 192.168.100.59
+    ssh_user: labcom
     ssh_port: 22

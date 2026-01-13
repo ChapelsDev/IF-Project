@@ -111,7 +111,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "up{job=\"node_exporter\", instance=\"$instance\"}",
+          "expr": "up{job=\"node_exporter\", instance=~\"$instance\"}",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -173,7 +173,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "node_time_seconds{instance=\"$instance\"} - node_boot_time_seconds{instance=\"$instance\"}",
+          "expr": "node_time_seconds{instance=~\"$instance\"} - node_boot_time_seconds{instance=~\"$instance\"}",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -274,7 +274,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\", instance=\"$instance\"}[1m])) * 100)",
+          "expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\", instance=~\"$instance\"}[1m])) * 100)",
           "legendFormat": "Total Usage",
           "range": true,
           "refId": "A"
@@ -285,7 +285,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "avg by (instance) (rate(node_cpu_seconds_total{mode=\"iowait\", instance=\"$instance\"}[1m])) * 100",
+          "expr": "avg by (instance) (rate(node_cpu_seconds_total{mode=\"iowait\", instance=~\"$instance\"}[1m])) * 100",
           "legendFormat": "IO Wait (Disk Stress)",
           "range": true,
           "refId": "B"
@@ -296,7 +296,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "avg by (instance) (rate(node_cpu_seconds_total{mode=\"system\", instance=\"$instance\"}[1m])) * 100",
+          "expr": "avg by (instance) (rate(node_cpu_seconds_total{mode=\"system\", instance=~\"$instance\"}[1m])) * 100",
           "legendFormat": "System",
           "range": true,
           "refId": "C"
@@ -385,7 +385,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "node_load1{instance=\"$instance\"}",
+          "expr": "node_load1{instance=~\"$instance\"}",
           "legendFormat": "Load 1m",
           "range": true,
           "refId": "A"
@@ -396,7 +396,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "node_load5{instance=\"$instance\"}",
+          "expr": "node_load5{instance=~\"$instance\"}",
           "legendFormat": "Load 5m",
           "range": true,
           "refId": "B"
@@ -407,7 +407,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "node_load15{instance=\"$instance\"}",
+          "expr": "node_load15{instance=~\"$instance\"}",
           "legendFormat": "Load 15m",
           "range": true,
           "refId": "C"
@@ -508,7 +508,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "node_memory_MemTotal_bytes{instance=\"$instance\"} - node_memory_MemAvailable_bytes{instance=\"$instance\"}",
+          "expr": "node_memory_MemTotal_bytes{instance=~\"$instance\"} - node_memory_MemAvailable_bytes{instance=~\"$instance\"}",
           "legendFormat": "RAM Used",
           "range": true,
           "refId": "A"
@@ -519,7 +519,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "node_memory_MemTotal_bytes{instance=\"$instance\"}",
+          "expr": "node_memory_MemTotal_bytes{instance=~\"$instance\"}",
           "legendFormat": "RAM Total",
           "range": true,
           "refId": "B"
@@ -609,7 +609,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "node_memory_SwapTotal_bytes{instance=\"$instance\"} - node_memory_SwapFree_bytes{instance=\"$instance\"}",
+          "expr": "node_memory_SwapTotal_bytes{instance=~\"$instance\"} - node_memory_SwapFree_bytes{instance=~\"$instance\"}",
           "legendFormat": "Swap Used",
           "range": true,
           "refId": "A"
@@ -710,7 +710,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "rate(node_network_receive_bytes_total{instance=\"$instance\"}[1m])",
+          "expr": "rate(node_network_receive_bytes_total{instance=~\"$instance\"}[1m])",
           "legendFormat": "RX (In)",
           "range": true,
           "refId": "A"
@@ -721,7 +721,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "rate(node_network_transmit_bytes_total{instance=\"$instance\"}[1m])",
+          "expr": "rate(node_network_transmit_bytes_total{instance=~\"$instance\"}[1m])",
           "legendFormat": "TX (Out)",
           "range": true,
           "refId": "B"
@@ -814,7 +814,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "rate(node_network_receive_errs_total{instance=\"$instance\"}[1m]) + rate(node_network_receive_drop_total{instance=\"$instance\"}[1m])",
+          "expr": "rate(node_network_receive_errs_total{instance=~\"$instance\"}[1m]) + rate(node_network_receive_drop_total{instance=~\"$instance\"}[1m])",
           "legendFormat": "RX Errors/Drops",
           "range": true,
           "refId": "A"
@@ -825,7 +825,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "rate(node_network_transmit_errs_total{instance=\"$instance\"}[1m]) + rate(node_network_transmit_drop_total{instance=\"$instance\"}[1m])",
+          "expr": "rate(node_network_transmit_errs_total{instance=~\"$instance\"}[1m]) + rate(node_network_transmit_drop_total{instance=~\"$instance\"}[1m])",
           "legendFormat": "TX Errors/Drops",
           "range": true,
           "refId": "B"
@@ -926,7 +926,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "rate(node_disk_read_bytes_total{instance=\"$instance\"}[1m])",
+          "expr": "rate(node_disk_read_bytes_total{instance=~\"$instance\"}[1m])",
           "legendFormat": "Read",
           "range": true,
           "refId": "A"
@@ -937,7 +937,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "rate(node_disk_written_bytes_total{instance=\"$instance\"}[1m])",
+          "expr": "rate(node_disk_written_bytes_total{instance=~\"$instance\"}[1m])",
           "legendFormat": "Write",
           "range": true,
           "refId": "B"
@@ -1027,7 +1027,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "rate(node_disk_io_time_seconds_total{instance=\"$instance\"}[1m])",
+          "expr": "rate(node_disk_io_time_seconds_total{instance=~\"$instance\"}[1m])",
           "legendFormat": "IO Time",
           "range": true,
           "refId": "A"
@@ -1055,8 +1055,8 @@
         },
         "definition": "label_values(node_uname_info, instance)",
         "hide": 0,
-        "includeAll": false,
-        "multi": false,
+        "includeAll": true,
+        "multi": true,
         "name": "instance",
         "options": [],
         "query": {

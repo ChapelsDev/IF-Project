@@ -125,3 +125,6 @@ nodes:
 ## 🛠 Desenvolvimento
 
 Para adicionar novos experimentos, basta criar arquivos `.json` ou `.yaml` na pasta `experiments/`. A UI irá detectá-los automaticamente.
+
+
+sudo tc qdisc del dev enp3s0 root

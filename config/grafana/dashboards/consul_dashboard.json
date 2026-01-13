@@ -94,7 +94,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "consul_memberlist_health_score",
+          "expr": "consul_memberlist_health_score{instance=~\"$node\"}",
           "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
@@ -171,7 +171,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "consul_raft_state_leader",
+          "expr": "consul_server_isLeader{instance=~\"$node\"}",
           "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
@@ -260,7 +260,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "consul_catalog_nodes",
+          "expr": "consul_catalog_nodes{instance=~\"$node\"}",
           "legendFormat": "Nodes in Catalog",
           "range": true,
           "refId": "A"
@@ -271,7 +271,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "consul_serf_member_join",
+          "expr": "consul_serf_member_join{instance=~\"$node\"}",
           "legendFormat": "Member Joins",
           "range": true,
           "refId": "B"
@@ -282,7 +282,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "consul_serf_member_failed",
+          "expr": "consul_serf_member_failed{instance=~\"$node\"}",
           "legendFormat": "Member Failures",
           "range": true,
           "refId": "C"
@@ -390,7 +390,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "rate(consul_raft_commitTime_sum[1m]) / rate(consul_raft_commitTime_count[1m])",
+          "expr": "rate(consul_raft_commitTime_sum{instance=~\"$node\"}[1m]) / rate(consul_raft_commitTime_count{instance=~\"$node\"}[1m])",
           "legendFormat": "Commit Time (Avg)",
           "range": true,
           "refId": "A"
@@ -401,7 +401,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "consul_raft_leader_lastContact",
+          "expr": "consul_raft_leader_lastContact{instance=~\"$node\"}",
           "legendFormat": "Leader Last Contact",
           "range": true,
           "refId": "B"
@@ -490,7 +490,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "consul_raft_state_candidate",
+          "expr": "consul_raft_state_candidate{instance=~\"$node\"}",
           "legendFormat": "Candidate State Count",
           "range": true,
           "refId": "A"
@@ -501,7 +501,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "rate(consul_raft_leader_dispatchLog_count[1m])",
+          "expr": "rate(consul_raft_leader_dispatchLog_count{instance=~\"$node\"}[1m])",
           "legendFormat": "Log Dispatch Rate",
           "range": true,
           "refId": "B"
@@ -605,7 +605,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "rate(consul_client_rpc_failed[1m])",
+          "expr": "rate(consul_client_rpc_failed{instance=~\"$node\"}[1m])",
           "legendFormat": "RPC Failed",
           "range": true,
           "refId": "A"
@@ -616,7 +616,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "rate(consul_client_rpc_exceeded[1m])",
+          "expr": "rate(consul_client_rpc_exceeded{instance=~\"$node\"}[1m])",
           "legendFormat": "RPC Exceeded",
           "range": true,
           "refId": "B"
@@ -706,7 +706,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "rate(consul_memberlist_udp_received[1m])",
+          "expr": "rate(consul_memberlist_udp_received{instance=~\"$node\"}[1m])",
           "legendFormat": "UDP Received",
           "range": true,
           "refId": "A"
@@ -717,7 +717,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "rate(consul_memberlist_tcp_sent[1m])",
+          "expr": "rate(consul_memberlist_tcp_sent{instance=~\"$node\"}[1m])",
           "legendFormat": "TCP Sent",
           "range": true,
           "refId": "B"
@@ -817,7 +817,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "consul_runtime_num_goroutines",
+          "expr": "consul_runtime_num_goroutines{instance=~\"$node\"}",
           "legendFormat": "Goroutines",
           "range": true,
           "refId": "A"
@@ -907,7 +907,7 @@
             "uid": "prometheus-ds"
           },
           "editorMode": "code",
-          "expr": "consul_runtime_alloc_bytes",
+          "expr": "consul_runtime_alloc_bytes{instance=~\"$node\"}",
           "legendFormat": "Heap Alloc",
           "range": true,
           "refId": "A"
@@ -917,12 +917,40 @@
       "type": "timeseries"
     }
   ],
-  "refresh": "",
+  "refresh": "1s",
   "schemaVersion": 38,
   "style": "dark",
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus-ds"
+        },
+        "definition": "label_values(up{job=\"consul_metrics\"}, instance)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Node",
+        "multi": true,
+        "name": "node",
+        "options": [],
+        "query": {
+          "query": "label_values(up{job=\"consul_metrics\"}, instance)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
   },
   "time": {
     "from": "now-6h",

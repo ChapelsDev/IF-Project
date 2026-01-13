@@ -1,13 +1,14 @@
 {
     "version": "1.0.0",
     "title": "Stress de CPU",
-    "description": "Consome 100% de todos os núcleos de CPU.",
+    "description": "Consome % definido de todos os núcleos de CPU.",
     "tags": ["resource", "cpu", "python"],
     "configuration": {
         "target_host": "127.0.0.1",
         "ssh_user": "root",
         "ssh_password": "",
-        "duration": 30
+        "duration": 30,
+        "load": "100%"
     },
     "method": [
         {
@@ -21,7 +22,8 @@
                     "target_host": "${target_host}",
                     "ssh_user": "${ssh_user}",
                     "ssh_password": "${ssh_password}",
-                    "duration": "${duration}"
+                    "duration": "${duration}",
+                    "load": "${load}"
                 }
             }
         },

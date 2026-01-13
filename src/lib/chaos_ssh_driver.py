@@ -341,9 +341,9 @@ def recover_network_partition(target_host: str, ssh_user: str, uid: str, ssh_pas
 
 import base64
 
-def inject_cpu_stress(target_host: str, ssh_user: str, duration: str = "60", ssh_password: str = None) -> str:
+def inject_cpu_stress(target_host: str, ssh_user: str, duration: str = "60", load: str = "100", ssh_password: str = None) -> str:
     """
-    Injects CPU stress by running a Python script that consumes 100% of all cores.
+    Injects CPU stress by running a Python script that consumes a % of all cores.
     Returns the PID of the parent process.
     """
     # Clean duration string (remove 's')
@@ -352,17 +352,44 @@ def inject_cpu_stress(target_host: str, ssh_user: str, duration: str = "60", ssh
     except:
         dur = 60
     
-    # Python script to burn all cores
+    # Parse load
+    try:
+        load_pct = int(str(load).replace('%', ''))
+        if load_pct < 0: load_pct = 100
+        if load_pct > 100: load_pct = 100
+    except:
+        load_pct = 100
+
+    # Python script to burn cores with load control
     py_script = f"""
 import multiprocessing, time, os, signal, sys
-def burn():
-    while True: pass
+
+def burn(load):
+    # Cycle 100ms
+    chunk = 0.1 
+    if load >= 100:
+        while True: pass
+    
+    on_time = chunk * (load / 100.0)
+    # Correct sleep time (subtract overhead not needed for simple logic)
+    off_time = chunk - on_time
+    
+    while True:
+        start = time.time()
+        # Busy loop
+        while time.time() - start < on_time:
+            pass 
+        time.sleep(off_time)
+
 if __name__ == '__main__':
-    procs = [multiprocessing.Process(target=burn) for _ in range(multiprocessing.cpu_count())]
+    # Launch process for every core
+    procs = [multiprocessing.Process(target=burn, args=({load_pct},)) for _ in range(multiprocessing.cpu_count())]
     [p.start() for p in procs]
+    
     def handler(signum, frame):
         [p.terminate() for p in procs]
         sys.exit(0)
+    
     signal.signal(signal.SIGTERM, handler)
     time.sleep({dur})
     [p.terminate() for p in procs]
@@ -557,7 +584,8 @@ if __name__ == "__main__":
     # Command to decode and run
     # FIX: Wrap in bash -c so the pipe runs under sudo
     # Added 'chaos_disk_fill' as argument to python3 for easier pkill
-    inner_cmd = f"echo {encoded_script} | base64 -d | python3 - chaos_disk_fill"
+    # Use nohup ... & to run in background so we don't block/timeout
+    inner_cmd = f"nohup sh -c \"echo {encoded_script} | base64 -d | python3 - chaos_disk_fill\" > /dev/null 2>&1 & echo $!"
     cmd = f"bash -c '{inner_cmd}'"
     cmd = _get_sudo_command(cmd, ssh_user, ssh_password)
     
@@ -571,6 +599,14 @@ def recover_disk_fill(target_host: str, ssh_user: str, uid: str = None, ssh_pass
     """
     Removes the temporary file.
     """
+    # 1. Kill the process first to release file handle
+    kill_cmd = "pkill -f chaos_disk_fill"
+    kill_cmd = _get_sudo_command(kill_cmd, ssh_user, ssh_password)
+    try:
+         run_ssh_command(target_host, ssh_user, kill_cmd, ssh_password)
+    except: pass
+
+    # 2. Remove the file
     file_path = uid if uid else "/chaos_disk_fill"
     cmd = f"rm -f {file_path}"
     cmd = _get_sudo_command(cmd, ssh_user, ssh_password)

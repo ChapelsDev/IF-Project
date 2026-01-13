@@ -1,39 +1,48 @@
 global:
-  scrape_interval: 15s
+  scrape_interval: 1s
 
 scrape_configs:
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
 
-  # Monitoramento do Consul (Métricas dos Agentes)
   - job_name: 'consul_metrics'
+    scrape_interval: 1s
     metrics_path: '/v1/agent/metrics'
     params:
       format: ['prometheus']
     static_configs:
       - targets: 
-        - '192.168.1.72:8500' # PC Remoto
-        - '192.168.1.68:8500' # Seu PC Local (Control Plane) 
-
+        - '192.168.100.51:8500'
+        - '192.168.100.52:8500' 
+        - '192.168.100.53:8500' 
+        - '192.168.100.54:8500' 
+        - '192.168.100.59:8500'
+        
   - job_name: 'seaweedfs'
     metrics_path: /metrics
     static_configs:
-      - targets: ['192.168.1.72:9324']
+      - targets: ['192.168.100.51:9327', '192.168.100.52:9327', '192.168.100.53:9327']
         labels:
           role: 'master'
-      - targets: ['192.168.1.72:9325']
+      - targets: ['192.168.100.51:9328', '192.168.100.52:9328', '192.168.100.53:9328', '192.168.100.54:9328']
         labels:
           role: 'volume'
-      - targets: ['192.168.1.72:9327']
+      - targets: ['192.168.100.51:9329', '192.168.100.52:9329', '192.168.100.53:9329']
         labels:
           role: 'filer'
+      - targets: ['192.168.100.51:9330', '192.168.100.52:9330', '192.168.100.53:9330', '192.168.100.54:9330', '192.168.100.59:9330']
+        labels:
+          role: 'client'
 
   - job_name: 'node_exporter'
     static_configs:
       - targets: 
-        - '192.168.1.72:9100'
-        - '192.168.1.68:9100'
+        - '192.168.100.51:9101'
+        - '192.168.100.52:9101'
+        - '192.168.100.53:9101'
+        - '192.168.100.54:9101'
+        - '192.168.100.59:9101'
 
   - job_name: 'blackbox'
     scrape_interval: 1s
@@ -42,8 +51,11 @@ scrape_configs:
       module: [icmp]
     static_configs:
       - targets:
-        - 192.168.1.72
-        - 192.168.1.68
+        - 192.168.100.51
+        - 192.168.100.52
+        - 192.168.100.53
+        - 192.168.100.54
+        - 192.168.100.59
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
@@ -51,3 +63,21 @@ scrape_configs:
         target_label: instance
       - target_label: __address__
         replacement: blackbox_exporter:9115
+
+  - job_name: 'NATS'
+    static_configs:
+      - targets: 
+        - '192.168.100.51:7777'
+        - '192.168.100.52:7777'
+        - '192.168.100.53:7777'
+        - '192.168.100.54:7777'
+        - '192.168.100.59:7777'
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: 
+        - '192.168.100.51:9121'
+        - '192.168.100.52:9121'
+        - '192.168.100.53:9121'
+        - '192.168.100.54:9121'
+        - '192.168.100.59:9121'
