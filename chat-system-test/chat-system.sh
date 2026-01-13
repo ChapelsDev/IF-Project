@@ -895,38 +895,36 @@ setup_autostart() {
     
     SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/chat-system.sh"
     
-    # Get configuration
-    print_info "Configuration:"
+    # Auto-detect configuration
+    print_info "Auto-detecting configuration..."
     echo ""
     
-    read -p "Number of chat nodes [3]: " NODE_COUNT
-    NODE_COUNT=${NODE_COUNT:-3}
+    # Get this machine's IP
+    local HOST_IP=$(get_host_ip)
+    print_success "Detected host IP: ${HOST_IP}"
     
-    read -p "Cluster mode? (yes/no) [yes]: " CLUSTER_INPUT
-    CLUSTER_INPUT=${CLUSTER_INPUT:-yes}
+    # Production defaults
+    local NODE_COUNT=3
+    local CLUSTER_INPUT="yes"
+    local FULL_INPUT="yes"
+    local LB_INPUT="yes"
     
-    read -p "Run full mode (own redis/nats)? (yes/no) [yes]: " FULL_INPUT
-    FULL_INPUT=${FULL_INPUT:-yes}
+    # Build Consul URL from detected IP (assumes Consul on port 8500)
+    local CONSUL_URL="http://${HOST_IP}:8500"
+    print_success "Cluster Consul URL: ${CONSUL_URL}"
     
-    read -p "Enable load balancer? (yes/no) [yes]: " LB_INPUT
-    LB_INPUT=${LB_INPUT:-yes}
-    
-    read -p "Cluster Consul URL [http://192.168.100.51:8500]: " CONSUL_URL
-    CONSUL_URL=${CONSUL_URL:-http://192.168.100.51:8500}
-    
-    # Build command
-    CMD_FLAGS="--nodes ${NODE_COUNT}"
-    [ "$CLUSTER_INPUT" = "yes" ] && CMD_FLAGS="$CMD_FLAGS --cluster --cluster-consul ${CONSUL_URL}"
-    [ "$FULL_INPUT" = "yes" ] && CMD_FLAGS="$CMD_FLAGS --mode full"
-    [ "$LB_INPUT" = "yes" ] && CMD_FLAGS="$CMD_FLAGS --with-lb"
+    # Build command with production defaults
+    local CMD_FLAGS="--nodes ${NODE_COUNT} --cluster --cluster-consul ${CONSUL_URL} --mode full --with-lb"
     
     echo ""
-    print_info "Will configure with: ./chat-system.sh start $CMD_FLAGS"
+    print_info "Production configuration:"
+    echo "  • Chat nodes: ${NODE_COUNT}"
+    echo "  • Cluster mode: enabled"
+    echo "  • Full mode: enabled (own Redis/NATS)"
+    echo "  • Load balancer: enabled"
+    echo "  • Consul URL: ${CONSUL_URL}"
+    echo "  • Command: ./chat-system.sh start ${CMD_FLAGS}"
     echo ""
-    
-    read -p "Proceed? (yes/no) [yes]: " CONFIRM
-    CONFIRM=${CONFIRM:-yes}
-    [ "$CONFIRM" != "yes" ] && { print_info "Aborted"; exit 0; }
     
     # Create systemd service
     SERVICE_FILE="/etc/systemd/system/chat-system.service"
@@ -976,6 +974,7 @@ EOF
     echo "  • Log all actions to /var/log/chat-system-daemon.log"
     echo ""
     echo "Commands:"
+    echo "  Enable:  sudo systemctl enable chat-system"
     echo "  Start:   sudo systemctl start chat-system"
     echo "  Stop:    sudo systemctl stop chat-system"
     echo "  Status:  sudo systemctl status chat-system"
@@ -983,19 +982,20 @@ EOF
     echo "  Daemon:  sudo tail -f /var/log/chat-system-daemon.log"
     echo ""
     
-    read -p "Start now? (yes/no) [yes]: " START_NOW
-    START_NOW=${START_NOW:-yes}
+    # Auto-enable and start
+    print_info "Enabling service for autostart on boot..."
+    systemctl daemon-reload
+    systemctl enable chat-system
     
-    if [ "$START_NOW" = "yes" ]; then
-        systemctl daemon-reload
-        systemctl start chat-system
-        sleep 3
-        echo ""
-        print_info "Daemon started. Checking status..."
-        systemctl status chat-system --no-pager | head -20
-        echo ""
-        print_info "View daemon logs with: sudo tail -f /var/log/chat-system-daemon.log"
-    fi
+    print_info "Starting service now..."
+    systemctl start chat-system
+    sleep 3
+    echo ""
+    print_success "Service started and enabled!"
+    print_info "Checking status..."
+    systemctl status chat-system --no-pager | head -20
+    echo ""
+    print_info "View daemon logs with: sudo tail -f /var/log/chat-system-daemon.log"
 }
 
 # Command: metrics - Start metrics aggregation server
