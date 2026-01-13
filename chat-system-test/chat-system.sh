@@ -982,9 +982,10 @@ setup_autostart() {
     local FULL_INPUT="yes"
     local LB_INPUT="yes"
     
-    # Build Consul URL from detected IP (assumes Consul on port 8500)
+    # Use LOCAL Consul on this machine
     local CONSUL_URL="http://${HOST_IP}:8500"
-    print_success "Cluster Consul URL: ${CONSUL_URL}"
+    print_success "Using LOCAL Consul: ${CONSUL_URL}"
+    print_info "  (Each machine uses its own Consul agent for service discovery)"
     
     # Build command with production defaults
     local CMD_FLAGS="--nodes ${NODE_COUNT} --cluster --cluster-consul ${CONSUL_URL} --mode full --with-lb"
@@ -992,11 +993,15 @@ setup_autostart() {
     echo ""
     print_info "Production configuration:"
     echo "  • Chat nodes: ${NODE_COUNT}"
-    echo "  • Cluster mode: enabled"
-    echo "  • Full mode: enabled (own Redis/NATS)"
+    echo "  • Cluster mode: enabled (NATS clustering active)"
+    echo "  • Full mode: enabled (own Redis/NATS/Consul with clustering)"
     echo "  • Load balancer: enabled"
-    echo "  • Consul URL: ${CONSUL_URL}"
+    echo "  • Local Consul: ${CONSUL_URL}"
+    echo "  • NATS: Will auto-discover other NATS via local Consul"
     echo "  • Command: ./chat-system.sh start ${CMD_FLAGS}"
+    echo ""
+    echo "Note: Each machine uses its own Consul agent."
+    echo "      Make sure Consul agents are clustered together for service discovery."
     echo ""
     
     # Create systemd service
@@ -1040,11 +1045,16 @@ EOF
     print_success "Setup complete!"
     echo ""
     echo "The daemon will:"
-    echo "  • Start all services (Redis, NATS, chat nodes, load balancer)"
+    echo "  • Start all services (Redis, NATS with clustering, chat nodes, load balancer)"
     echo "  • Monitor health continuously (every 30 seconds)"
     echo "  • Automatically restart unhealthy services"
     echo "  • Recreate failed containers if restart doesn't work"
     echo "  • Log all actions to /var/log/chat-system-daemon.log"
+    echo ""
+    echo "NATS Clustering:"
+    echo "  • NATS will automatically discover other NATS instances via Consul"
+    echo "  • Forms a mesh cluster for message sharing across machines"
+    echo "  • Messages published on any machine reach all machines instantly"
     echo ""
     echo "Commands:"
     echo "  Enable:  sudo systemctl enable chat-system"
@@ -1060,15 +1070,30 @@ EOF
     systemctl daemon-reload
     systemctl enable chat-system
     
-    print_info "Starting service now..."
+    print_info "Starting service now in CLUSTER MODE..."
     systemctl start chat-system
-    sleep 3
+    sleep 5
     echo ""
     print_success "Service started and enabled!"
-    print_info "Checking status..."
+    
+    # Verify NATS clustering
+    print_info "Verifying NATS clustering..."
+    sleep 3
+    if command -v curl &> /dev/null; then
+        local nats_routes=$(curl -s http://localhost:8222/routez 2>/dev/null | jq -r '.num_routes' 2>/dev/null || echo "0")
+        if [ "$nats_routes" -gt 0 ]; then
+            print_success "✓ NATS clustering is ACTIVE! Connected to $nats_routes other node(s)"
+        else
+            print_info "NATS running (will cluster when other machines start)"
+        fi
+    fi
+    
+    echo ""
+    print_info "Checking system status..."
     systemctl status chat-system --no-pager | head -20
     echo ""
-    print_info "View daemon logs with: sudo tail -f /var/log/chat-system-daemon.log"
+    echo "Verify clustering: curl -s http://localhost:8222/routez | jq '.num_routes'"
+    print_info "View daemon logs: sudo tail -f /var/log/chat-system-daemon.log"
 }
 
 # Command: metrics - Start metrics aggregation server
@@ -1550,8 +1575,10 @@ run_daemon() {
             daemon_log "Heartbeat: Check #${check_count} - All services monitored"
         fi
         
-        daemon_monitor_service "redis" "6379"
-        daemon_monitor_service "nats" "4222"
+        # Redis and NATS don't have HTTP endpoints - only check if container is running
+        daemon_monitor_service "redis" ""
+        daemon_monitor_service "nats" ""
+        # Chat nodes have HTTP health endpoints
         daemon_monitor_service "chat-node-1" "3002"
         daemon_monitor_service "chat-node-2" "3003"
         daemon_monitor_service "chat-node-3" "3004"
@@ -2019,7 +2046,7 @@ TROUBLESHOOTING:
 PORTS:
     6379     Redis
     4222     NATS (client connections)
-    6222     NATS (cluster mesh - cross-machine communication)
+    6222     NATS ( curl -s http://localhost:8222/routez | jq '.num_routes'cluster mesh - cross-machine communication)
     8500     Consul
     3001     Load Balancer
     3002-4   Chat nodes
