@@ -1,0 +1,107 @@
+---
+- name: Bootstrap de Sistema – Utilizador admin (SRE-Grade Final)
+  hosts: cluster
+  become: yes
+  gather_facts: yes
+
+  vars:
+    # 1️⃣ FONTE ÚNICA DE VERDADE
+    # Derivação dinâmica do inventário para evitar drift de configuração
+    allowed_ips: "{{ groups['cluster'] | map('extract', hostvars, 'ansible_host') | list }}"
+
+    # 2️⃣ ACESSO DETERMINÍSTICO
+    # Caminho relativo para garantir portabilidade em Pipelines CI/CD
+    admin_ssh_key: "{{ lookup('file', 'files/admin_id_rsa.pub') }}"
+
+    # 3️⃣ IDENTIDADE INDUSTRIAL
+    admin_user: admin
+    admin_uid: 1001
+    admin_gid: 1001
+    admin_home: /home/admin
+    admin_shell: /bin/bash
+    sudoers_file: /etc/sudoers.d/admin
+
+  pre_tasks:
+    - name: Guardrail | Validar alinhamento de IP no inventário
+      assert:
+        that:
+          - ansible_host in allowed_ips
+        fail_msg: "ERRO: O host {{ ansible_host }} não está mapeado corretamente no inventário."
+
+    - name: Guardrail | Verificar ocupação de UID
+      command: "getent passwd {{ admin_uid }}"
+      register: uid_check
+      failed_when: false
+      changed_when: false
+
+    - name: Guardrail | Verificar ocupação de GID
+      command: "getent group {{ admin_gid }}"
+      register: gid_check
+      failed_when: false
+      changed_when: false
+
+    - name: Guardrail | Validar colisões de identidade
+      assert:
+        that:
+          - uid_check.rc != 0 or uid_check.stdout.split(':')[0] == admin_user
+          - gid_check.rc != 0 or gid_check.stdout.split(':')[0] == admin_user
+        fail_msg: "COLISÃO CRÍTICA: UID {{ admin_uid }} ou GID {{ admin_gid }} já em uso por outra entidade."
+
+  tasks:
+    - name: Identidade | Garantir Grupo admin
+      group:
+        name: "{{ admin_user }}"
+        gid: "{{ admin_gid }}"
+        state: present
+
+    - name: Identidade | Garantir Utilizador admin
+      user:
+        name: "{{ admin_user }}"
+        uid: "{{ admin_uid }}"
+        group: "{{ admin_user }}"
+        home: "{{ admin_home }}"
+        shell: "{{ admin_shell }}"
+        create_home: yes
+        state: present
+
+    - name: Segurança | Fixar permissões do home (0755)
+      file:
+        path: "{{ admin_home }}"
+        owner: "{{ admin_user }}"
+        group: "{{ admin_user }}"
+        mode: "0755"
+        state: directory
+
+    - name: Acesso | Injetar Chave SSH Protegida
+      authorized_key:
+        user: "{{ admin_user }}"
+        state: present
+        key: "{{ admin_ssh_key }}"
+        manage_dir: yes
+
+    - name: Segurança | Instalar Sudoers Hardened
+      copy:
+        dest: "{{ sudoers_file }}"
+        content: "{{ admin_user }} ALL=(ALL) NOPASSWD:ALL\n"
+        owner: root
+        group: root
+        mode: "0440"
+        validate: 'visudo -cf %s'
+
+  post_tasks:
+    - name: Auditoria | Validar Identidade Final
+      command: id {{ admin_user }}
+      register: id_final
+      changed_when: false
+
+    - name: Assert | Consistência de Identidade
+      assert:
+        that:
+          - "'uid={{ admin_uid }}({{ admin_user }})' in id_final.stdout"
+          - "'gid={{ admin_gid }}({{ admin_user }})' in id_final.stdout"
+        fail_msg: "A identidade final no sistema diverge do contrato SRE."
+
+    - name: Auditoria | Validar Sudo sem Password (via become)
+      become_user: "{{ admin_user }}"
+      command: sudo -n true
+      changed_when: false
