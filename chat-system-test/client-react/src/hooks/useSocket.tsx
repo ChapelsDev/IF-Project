@@ -5,6 +5,7 @@ export function useSocket() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState(false);
   const [nodeId, setNodeId] = useState("unknown");
+  const [nodePort, setNodePort] = useState<number>(3001);
   const hasRedirected = useRef(false);
 
   useEffect(() => {
@@ -35,6 +36,14 @@ export function useSocket() {
       
       console.log(`[Socket] 🔀 Redirecting to ${data.nodeId}: ${data.url}`);
       hasRedirected.current = true;
+      
+      // Extract port from redirect URL
+      const portMatch = data.url.match(/:(\d+)$/);
+      if (portMatch) {
+        const port = parseInt(portMatch[1]);
+        setNodePort(port);
+        console.log(`[Socket] Using port ${port} for downloads`);
+      }
       
       // Close load balancer connection
       sock.close();
@@ -85,6 +94,11 @@ export function useSocket() {
       // If no redirect happens (direct connection mode), set connected
       if (!hasRedirected.current) {
         setConnected(true);
+        // Extract port from initial connection
+        const portMatch = chatUrl.match(/:(\d+)$/);
+        if (portMatch) {
+          setNodePort(parseInt(portMatch[1]));
+        }
       }
     });
 
@@ -116,5 +130,5 @@ export function useSocket() {
     };
   }, []);
 
-  return { socket, connected, nodeId };
+  return { socket, connected, nodeId, nodePort };
 }

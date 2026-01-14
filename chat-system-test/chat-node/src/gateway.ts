@@ -35,11 +35,13 @@ export function startGateway() {
   const port = parseInt(process.env.PORT || (3000 + parseInt(process.env.NODE_ID || "1")).toString());
   
   const httpServer = createServer(async (req: any, res: any) => {
-    // Set CORS headers for all requests
+    // Set CORS and security headers for all requests
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
     
     // Handle preflight OPTIONS request
     if (req.method === 'OPTIONS') {
@@ -180,12 +182,18 @@ export function startGateway() {
       const fileBuffer = await downloadFromSeaweed(pathPart, filerIp);
       
       if (fileBuffer) {
+        const filename = pathPart.split('/').pop() || 'download';
         res.writeHead(200, { 
           "Content-Type": "application/octet-stream",
-          "Content-Disposition": `attachment; filename="${pathPart.split('/').pop()}"`,
+          "Content-Disposition": `attachment; filename="${filename}"`,
+          "Content-Transfer-Encoding": "binary",
+          "Content-Length": fileBuffer.length.toString(),
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "GET, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type"
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Expose-Headers": "Content-Disposition, Content-Length",
+          "X-Content-Type-Options": "nosniff",
+          "Cache-Control": "public, max-age=31536000"
         });
         res.end(fileBuffer);
       } else {
