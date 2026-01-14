@@ -1,6 +1,8 @@
 import { startChatCore } from "./chatcore";
 import { ClusterDiscovery } from "./cluster-discovery";
 import { startGateway } from "./gateway";
+import { getNatsHealth, ensureNatsConnection } from "./nats";
+import { getRedisHealth, ensureRedisConnection } from "./redis";
 
 const SERVICE_NAME = 'chat-service';
 const NODE_ID = process.env.NODE_ID || '1';
@@ -80,6 +82,33 @@ async function shutdown() {
     console.error('❌ Failed to initialize:', error);
     process.exit(1);
   }
+
+  // Periodic health check and auto-recovery (every 30 seconds)
+  setInterval(async () => {
+    const natsHealth = getNatsHealth();
+    const redisHealth = getRedisHealth();
+    
+    console.log(`[HEALTH] NATS: ${natsHealth.connected ? '✓' : '✗'} | Redis: ${redisHealth.connected ? '✓' : '✗'}`);
+    
+    // Auto-recovery if connections are unhealthy
+    if (!natsHealth.connected) {
+      console.warn("[HEALTH] NATS unhealthy, attempting recovery...");
+      try {
+        await ensureNatsConnection();
+      } catch (error) {
+        console.error("[HEALTH] NATS recovery failed:", error);
+      }
+    }
+    
+    if (!redisHealth.connected) {
+      console.warn("[HEALTH] Redis unhealthy, attempting recovery...");
+      try {
+        await ensureRedisConnection();
+      } catch (error) {
+        console.error("[HEALTH] Redis recovery failed:", error);
+      }
+    }
+  }, 30000);
 
   // Graceful shutdown handlers
   process.on('SIGTERM', shutdown);

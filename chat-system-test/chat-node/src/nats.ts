@@ -1,41 +1,138 @@
-import { connect, NatsConnection } from "nats";
+import { connect, NatsConnection, ConnectionOptions } from "nats";
 
 let nc: NatsConnection | null = null;
+let reconnectAttempts = 0;
+let connectionHealthy = true;
+let lastHealthCheck = Date.now();
+
+// Health monitoring interval (15 seconds)
+setInterval(() => {
+  if (nc && connectionHealthy) {
+    const timeSinceLastCheck = Date.now() - lastHealthCheck;
+    if (timeSinceLastCheck > 60000) { // 1 minute without activity
+      console.warn("[NATS] No activity detected, connection may be stale");
+      connectionHealthy = false;
+    }
+  }
+}, 15000);
 
 export async function initNats() {
-  if (!nc) {
+  if (!nc || !connectionHealthy) {
     // Support multiple NATS servers for HA (comma-separated)
     const natsUrl = process.env.NATS_URL || "nats://127.0.0.1:4222";
     const servers = natsUrl.split(",").map(url => url.trim());
     
     console.log("[NATS] Connecting to servers:", servers);
-    nc = await connect({ 
+    
+    const options: ConnectionOptions = {
       servers,
       maxReconnectAttempts: -1, // Infinite reconnects
-      reconnectTimeWait: 1000,   // 1 second between attempts
-    });
+      reconnectTimeWait: 2000,   // 2 seconds base wait
+      reconnectJitter: 500,      // Add jitter to avoid thundering herd
+      reconnectJitterTLS: 500,
+      pingInterval: 20000,       // 20 second ping interval
+      maxPingOut: 3,             // Max 3 missed pings
+      timeout: 10000,            // 10 second connection timeout
+      reconnect: true,
+      
+      // Enhanced reconnection callbacks
+      reconnectDelayHandler: () => {
+        reconnectAttempts++;
+        // Exponential backoff with cap at 30 seconds
+        const delay = Math.min(2000 * Math.pow(1.5, reconnectAttempts), 30000);
+        console.log(`[NATS] Reconnect attempt ${reconnectAttempts}, waiting ${delay}ms`);
+        return delay;
+      },
+    };
     
-    console.log("[NATS] Connected successfully");
-    
-    nc.closed().then((err) => {
-      if (err) {
-        console.error("[NATS] Connection closed with error:", err);
-      } else {
-        console.log("[NATS] Connection closed");
-      }
-    });
+    try {
+      nc = await connect(options);
+      reconnectAttempts = 0;
+      connectionHealthy = true;
+      lastHealthCheck = Date.now();
+      console.log("[NATS] Connected successfully");
+      
+      // Monitor connection events
+      (async () => {
+        for await (const status of nc!.status()) {
+          const now = Date.now();
+          lastHealthCheck = now;
+          
+          switch (status.type) {
+            case "disconnect":
+              console.warn("[NATS] Disconnected from server:", status.data);
+              connectionHealthy = false;
+              break;
+            case "reconnecting":
+              console.log("[NATS] Reconnecting to server...");
+              break;
+            case "reconnect":
+              console.log("[NATS] Reconnected to server:", status.data);
+              connectionHealthy = true;
+              reconnectAttempts = 0;
+              break;
+            case "error":
+              console.error("[NATS] Connection error:", status.data);
+              break;
+            case "pingTimer":
+              // Ping sent, connection is active
+              lastHealthCheck = now;
+              break;
+          }
+        }
+      })();
+      
+      nc.closed().then((err) => {
+        if (err) {
+          console.error("[NATS] Connection closed with error:", err);
+          connectionHealthy = false;
+          nc = null;
+        } else {
+          console.log("[NATS] Connection closed gracefully");
+        }
+      });
+    } catch (error) {
+      console.error("[NATS] Failed to connect:", error);
+      connectionHealthy = false;
+      nc = null;
+      throw error;
+    }
   }
   return nc;
 }
 
+async function retryOperation<T>(operation: () => Promise<T>, maxRetries = 3): Promise<T> {
+  let lastError;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      console.warn(`[NATS] Operation failed (attempt ${i + 1}/${maxRetries}):`, error);
+      if (i < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+        // Reset connection on retry
+        connectionHealthy = false;
+      }
+    }
+  }
+  throw lastError;
+}
+
 export async function publishMessage(roomId: string, msg: any) {
-  const nc = await initNats();
-  nc.publish(`chat.${roomId}.message`, JSON.stringify(msg));
+  await retryOperation(async () => {
+    const nc = await initNats();
+    nc.publish(`chat.${roomId}.message`, JSON.stringify(msg));
+    lastHealthCheck = Date.now();
+  });
 }
 
 export async function publishPresence(type: string, payload: any) {
-  const nc = await initNats();
-  nc.publish(`chat.presence.${type}`, JSON.stringify(payload));
+  await retryOperation(async () => {
+    const nc = await initNats();
+    nc.publish(`chat.presence.${type}`, JSON.stringify(payload));
+    lastHealthCheck = Date.now();
+  });
 }
 
 export async function subscribeToMessages(roomId: string, callback: (msg: any) => void) {
@@ -124,4 +221,24 @@ export async function subscribeToUsernameUnregistrations(callback: (data: any) =
       callback(data);
     }
   })();
+}
+
+// Health check function
+export function getNatsHealth() {
+  return {
+    connected: nc !== null && connectionHealthy,
+    reconnectAttempts,
+    lastHealthCheck,
+    timeSinceLastCheck: Date.now() - lastHealthCheck
+  };
+}
+
+// Force reconnection if needed
+export async function ensureNatsConnection() {
+  if (!nc || !connectionHealthy) {
+    console.log("[NATS] Forcing reconnection...");
+    nc = null;
+    return await initNats();
+  }
+  return nc;
 }

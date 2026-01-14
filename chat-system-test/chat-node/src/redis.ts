@@ -1,45 +1,152 @@
-import { createClient } from "redis";
+import { createClient, RedisClientType } from "redis";
 
 // Support both single Redis and multiple Redis instances (with failover)
 const redisUrl = process.env.REDIS_URL || "redis://127.0.0.1:6379";
 const hasMultipleInstances = redisUrl.includes(",");
+const urls = redisUrl.split(",").map(url => url.trim());
 
-let redis: any;
+let redis: RedisClientType;
+let currentUrlIndex = 0;
+let connectionHealthy = false;
+let reconnectAttempts = 0;
+let lastHealthCheck = Date.now();
 
-if (hasMultipleInstances) {
-  // Multiple Redis instances - use first one as primary, others as fallback
-  // Note: This is NOT Redis Cluster mode, just client-side failover
-  const urls = redisUrl.split(",").map(url => url.trim());
-  const primaryUrl = urls[0];
+// Health monitoring interval (15 seconds)
+setInterval(async () => {
+  if (redis && connectionHealthy) {
+    try {
+      await redis.ping();
+      lastHealthCheck = Date.now();
+    } catch (error) {
+      console.error("[REDIS] Health check failed:", error);
+      connectionHealthy = false;
+      await attemptReconnection();
+    }
+  }
+}, 15000);
+
+async function attemptReconnection() {
+  if (reconnectAttempts >= 5) {
+    console.error("[REDIS] Max reconnection attempts reached");
+    if (hasMultipleInstances && urls.length > 1) {
+      console.log("[REDIS] Attempting failover to next instance...");
+      currentUrlIndex = (currentUrlIndex + 1) % urls.length;
+      reconnectAttempts = 0;
+    }
+  }
   
-  console.log("[REDIS] Connecting to primary Redis:", primaryUrl);
-  console.log("[REDIS] Fallback instances available:", urls.slice(1).join(", "));
-  
-  // Connect to the first (primary) Redis instance
-  // In the future, we can implement failover logic if needed
-  redis = createClient({ url: primaryUrl });
-} else {
-  // Single Redis instance
-  console.log("[REDIS] Connecting to single instance:", redisUrl);
-  redis = createClient({ url: redisUrl });
+  try {
+    if (redis) {
+      await redis.disconnect().catch(() => {});
+    }
+    await initRedis();
+  } catch (error) {
+    console.error("[REDIS] Reconnection failed:", error);
+    reconnectAttempts++;
+    const delay = Math.min(2000 * Math.pow(1.5, reconnectAttempts), 30000);
+    setTimeout(() => attemptReconnection(), delay);
+  }
 }
 
-redis.connect().then(() => {
+async function initRedis() {
+  const targetUrl = hasMultipleInstances ? urls[currentUrlIndex] : redisUrl;
+  
+  console.log("[REDIS] Connecting to:", targetUrl);
+  if (hasMultipleInstances) {
+    console.log("[REDIS] Fallback instances available:", 
+      urls.filter((_, i) => i !== currentUrlIndex).join(", "));
+  }
+  
+  redis = createClient({ 
+    url: targetUrl,
+    socket: {
+      reconnectStrategy: (retries) => {
+        reconnectAttempts = retries;
+        if (retries > 10) {
+          console.error("[REDIS] Too many reconnection attempts");
+          return new Error("Max reconnection attempts reached");
+        }
+        // Exponential backoff with cap at 30 seconds
+        const delay = Math.min(1000 * Math.pow(1.5, retries), 30000);
+        console.log(`[REDIS] Reconnecting (attempt ${retries + 1}), waiting ${delay}ms`);
+        return delay;
+      },
+      connectTimeout: 10000,
+      keepAlive: 30000,
+    }
+  });
+  
+  // Error handlers
+  redis.on('error', (err) => {
+    console.error('[REDIS] Client error:', err);
+    connectionHealthy = false;
+  });
+  
+  redis.on('connect', () => {
+    console.log('[REDIS] Client connecting...');
+  });
+  
+  redis.on('ready', () => {
+    console.log('[REDIS] Client ready');
+    connectionHealthy = true;
+    reconnectAttempts = 0;
+    lastHealthCheck = Date.now();
+  });
+  
+  redis.on('reconnecting', () => {
+    console.log('[REDIS] Client reconnecting...');
+    connectionHealthy = false;
+  });
+  
+  redis.on('end', () => {
+    console.log('[REDIS] Client connection ended');
+    connectionHealthy = false;
+  });
+  
+  await redis.connect();
   console.log("[REDIS] Connected successfully");
-}).catch((err: any) => {
-  console.error("[REDIS] Connection failed:", err);
+  connectionHealthy = true;
+}
+
+// Initialize connection
+initRedis().catch((err) => {
+  console.error("[REDIS] Initial connection failed:", err);
+  attemptReconnection();
 });
 
+async function retryRedisOperation<T>(operation: () => Promise<T>, maxRetries = 3): Promise<T> {
+  let lastError;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      if (!connectionHealthy && i > 0) {
+        await attemptReconnection();
+      }
+      const result = await operation();
+      lastHealthCheck = Date.now();
+      return result;
+    } catch (error) {
+      lastError = error;
+      console.warn(`[REDIS] Operation failed (attempt ${i + 1}/${maxRetries}):`, error);
+      if (i < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+      }
+    }
+  }
+  throw lastError;
+}
+
 export async function appendMessage(roomId: string, user: string, text: string, userId?: string) {
-  const msg = { roomId, user, text, userId: userId || '', ts: Date.now().toString() };
-  console.log("[REDIS] Appending message to stream:", msg);
-  const id = await redis.xAdd(
-    `stream:${roomId}`,
-    "*",
-    msg
-  );
-  console.log(`[REDIS] Message appended with ID: ${id}`);
-  return id;
+  return retryRedisOperation(async () => {
+    const msg = { roomId, user, text, userId: userId || '', ts: Date.now().toString() };
+    console.log("[REDIS] Appending message to stream:", msg);
+    const id = await redis.xAdd(
+      `stream:${roomId}`,
+      "*",
+      msg
+    );
+    console.log(`[REDIS] Message appended with ID: ${id}`);
+    return id;
+  });
 }
 
 export async function getMessageHistory(roomId: string, count: number = 50) {
@@ -239,7 +346,30 @@ export async function readMessages(callback: (roomId: string, msg: any) => void)
       }
     } catch (error) {
       console.error("Error reading from Redis:", error);
+      connectionHealthy = false;
+      await attemptReconnection();
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
+}
+
+// Health check function
+export function getRedisHealth() {
+  return {
+    connected: connectionHealthy,
+    currentInstance: hasMultipleInstances ? urls[currentUrlIndex] : redisUrl,
+    reconnectAttempts,
+    lastHealthCheck,
+    timeSinceLastCheck: Date.now() - lastHealthCheck,
+    availableInstances: urls.length
+  };
+}
+
+// Force reconnection if needed
+export async function ensureRedisConnection() {
+  if (!connectionHealthy) {
+    console.log("[REDIS] Forcing reconnection...");
+    await attemptReconnection();
+  }
+  return redis;
 }

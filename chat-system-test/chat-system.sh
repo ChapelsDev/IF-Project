@@ -438,29 +438,74 @@ start_system() {
     if [ "$USE_LOCAL_CONSUL" = "true" ] && ([ "$DEPLOYMENT_MODE" = "standalone" ] || [ "$DEPLOYMENT_MODE" = "infrastructure" ]); then
         print_info "Starting local infrastructure services..."
         
-        # Redis - bind to all interfaces if not standalone
+        # Redis with persistence and resilience features
+        print_info "Starting Redis with persistence (AOF+RDB) and resilience..."
+        local redis_bind="--bind 0.0.0.0 --protected-mode no"
         if [ "$DEPLOYMENT_MODE" = "standalone" ]; then
-            sudo podman run -d --name redis --network host \
-                --restart=on-failure:5 \
-                --health-cmd="redis-cli -p ${REDIS_PORT} ping || exit 1" \
-                --health-interval=30s \
-                --health-timeout=5s \
-                --health-retries=3 \
-                docker.io/redis:7-alpine redis-server --port ${REDIS_PORT} \
-                > /dev/null 2>&1
-        else
-            sudo podman run -d --name redis --network host \
-                --restart=on-failure:5 \
-                --health-cmd="redis-cli -p ${REDIS_PORT} ping || exit 1" \
-                --health-interval=30s \
-                --health-timeout=5s \
-                --health-retries=3 \
-                docker.io/redis:7-alpine redis-server --port ${REDIS_PORT} --bind 0.0.0.0 --protected-mode no \
-                > /dev/null 2>&1
+            redis_bind=""
         fi
-        print_success "Redis started on port ${REDIS_PORT}"
         
-        # NATS with clustering
+        # Create Redis volume if it doesn't exist
+        if ! sudo podman volume exists redis-data 2>/dev/null; then
+            sudo podman volume create redis-data >/dev/null 2>&1
+            print_info "  Created persistent volume: redis-data"
+        fi
+        
+        sudo podman run -d --name redis --network host \
+            --restart=on-failure:5 \
+            --health-cmd="redis-cli -p ${REDIS_PORT} ping || exit 1" \
+            --health-interval=15s \
+            --health-timeout=3s \
+            --health-retries=3 \
+            --health-start-period=10s \
+            -v redis-data:/data \
+            docker.io/redis:7-alpine redis-server \
+            --port ${REDIS_PORT} \
+            --dir /data \
+            --dbfilename dump.rdb \
+            --appendfilename appendonly.aof \
+            $redis_bind \
+            --appendonly yes \
+            --appendfsync everysec \
+            --auto-aof-rewrite-percentage 100 \
+            --auto-aof-rewrite-min-size 64mb \
+            --aof-load-truncated yes \
+            --aof-use-rdb-preamble yes \
+            --save 900 1 \
+            --save 300 10 \
+            --save 60 10000 \
+            --stop-writes-on-bgsave-error no \
+            --rdbcompression yes \
+            --rdbchecksum yes \
+            --maxmemory-policy noeviction \
+            --tcp-keepalive 60 \
+            --timeout 300 \
+            --tcp-backlog 511 \
+            --replica-read-only no \
+            --repl-ping-replica-period 10 \
+            --repl-timeout 60 \
+            --repl-backlog-size 128mb \
+            --min-replicas-to-write 0 \
+            > /dev/null 2>&1
+        
+        # Wait for Redis to be ready
+        local retry=0
+        while [ $retry -lt 30 ]; do
+            if sudo podman exec redis redis-cli -p ${REDIS_PORT} ping 2>/dev/null | grep -q PONG; then
+                print_success "Redis started on port ${REDIS_PORT} with full message persistence"
+                print_info "  AOF: Enabled | RDB Snapshots: 60s/300s/900s | Volume: redis-data"
+                print_info "  Messages will survive complete system restarts"
+                break
+            fi
+            sleep 1
+            retry=$((retry + 1))
+        done
+        if [ $retry -eq 30 ]; then
+            print_error "Redis failed to become ready"
+            return 1
+        fi
+        
+        # NATS with clustering and resilience features
         print_info "Starting NATS with clustering..."
         local nats_routes=""
         if [ "$CLUSTER_MODE" = "true" ]; then
@@ -470,20 +515,39 @@ start_system() {
             fi
         fi
         
-        local nats_cmd="-p ${NATS_PORT} --http_port 8222 --cluster_name chat_cluster --cluster nats://0.0.0.0:6222"
+        local nats_cmd="-p ${NATS_PORT} -m 8222 --cluster_name chat_cluster --cluster nats://0.0.0.0:6222"
         if [ -n "$nats_routes" ]; then
             nats_cmd="${nats_cmd} --routes ${nats_routes}"
         fi
         
+        # Add connection retries for resilience
+        nats_cmd="${nats_cmd} --connect_retries 120"
+        
         sudo podman run -d --name nats --network host \
             --restart=on-failure:5 \
-            --health-cmd="nc -z localhost ${NATS_PORT} || exit 1" \
-            --health-interval=30s \
-            --health-timeout=5s \
+            --health-cmd="wget -q --spider http://localhost:8222/healthz || exit 1" \
+            --health-interval=15s \
+            --health-timeout=3s \
             --health-retries=3 \
+            --health-start-period=10s \
             docker.io/nats:2.10-alpine ${nats_cmd} \
             > /dev/null 2>&1
-        print_success "NATS started on port ${NATS_PORT} with clustering on port 6222"
+        
+        # Wait for NATS to be ready
+        local retry=0
+        while [ $retry -lt 30 ]; do
+            if curl -sf --max-time 3 http://localhost:8222/healthz >/dev/null 2>&1; then
+                print_success "NATS started on port ${NATS_PORT} with clustering (port 6222)"
+                print_info "  Cluster: Enabled | Auto-reconnection with 120 retries"
+                break
+            fi
+            sleep 1
+            retry=$((retry + 1))
+        done
+        if [ $retry -eq 30 ]; then
+            print_error "NATS failed to become ready"
+            return 1
+        fi
         
         # Consul (local) - bind to 127.0.0.1 to avoid multi-interface issues
         sudo podman run -d --name consul --network host \
@@ -501,38 +565,101 @@ start_system() {
     elif [ "$CLUSTER_MODE" = "true" ] && ([ "$DEPLOYMENT_MODE" = "infrastructure" ] || [ "$DEPLOYMENT_MODE" = "full" ]); then
         print_info "Starting infrastructure for cluster..."
         
-        # Start Redis and NATS for chat coordination
+        # Create Redis volume if it doesn't exist
+        if ! sudo podman volume exists redis-data 2>/dev/null; then
+            sudo podman volume create redis-data >/dev/null 2>&1
+            print_info "  Created persistent volume: redis-data"
+        fi
+        
+        # Start Redis with full persistence and resilience
+        print_info "Starting Redis with full message persistence..."
         sudo podman run -d --name redis --network host \
             --restart=on-failure:5 \
             --health-cmd="redis-cli -p ${REDIS_PORT} ping || exit 1" \
-            --health-interval=30s \
-            --health-timeout=5s \
+            --health-interval=15s \
+            --health-timeout=3s \
             --health-retries=3 \
-            docker.io/redis:7-alpine redis-server --port ${REDIS_PORT} --bind 0.0.0.0 --protected-mode no \
+            --health-start-period=10s \
+            -v redis-data:/data \
+            docker.io/redis:7-alpine redis-server \
+            --port ${REDIS_PORT} \
+            --bind 0.0.0.0 \
+            --protected-mode no \
+            --dir /data \
+            --dbfilename dump.rdb \
+            --appendfilename appendonly.aof \
+            --appendonly yes \
+            --appendfsync everysec \
+            --auto-aof-rewrite-percentage 100 \
+            --auto-aof-rewrite-min-size 64mb \
+            --aof-load-truncated yes \
+            --aof-use-rdb-preamble yes \
+            --save 900 1 \
+            --save 300 10 \
+            --save 60 10000 \
+            --stop-writes-on-bgsave-error no \
+            --rdbcompression yes \
+            --rdbchecksum yes \
+            --maxmemory-policy noeviction \
+            --tcp-keepalive 60 \
+            --timeout 300 \
+            --tcp-backlog 511 \
             > /dev/null 2>&1
-        print_success "Redis started on port ${REDIS_PORT}"
         
-        # NATS with clustering
+        # Wait for Redis to be ready
+        local retry=0
+        while [ $retry -lt 30 ]; do
+            if sudo podman exec redis redis-cli -p ${REDIS_PORT} ping 2>/dev/null | grep -q PONG; then
+                print_success "Redis started on port ${REDIS_PORT} with full persistence (AOF+RDB)"
+                print_info "  Volume: redis-data | Messages will survive restarts"
+                break
+            fi
+            sleep 1
+            retry=$((retry + 1))
+        done
+        if [ $retry -eq 30 ]; then
+            print_error "Redis failed to become ready"
+        fi
+        
+        # NATS with clustering and resilience
         print_info "Starting NATS with clustering..."
         local nats_routes=$(discover_nats_cluster_routes "${CLUSTER_CONSUL_URL}")
         if [ -n "$nats_routes" ]; then
             print_info "  Found NATS cluster routes: ${nats_routes}"
         fi
         
-        local nats_cmd="-p ${NATS_PORT} --http_port 8222 --cluster_name chat_cluster --cluster nats://0.0.0.0:6222"
+        local nats_cmd="-p ${NATS_PORT} -m 8222 --cluster_name chat_cluster --cluster nats://0.0.0.0:6222"
         if [ -n "$nats_routes" ]; then
             nats_cmd="${nats_cmd} --routes ${nats_routes}"
         fi
         
+        # Add connection retries for resilience
+        nats_cmd="${nats_cmd} --connect_retries 120"
+        
         sudo podman run -d --name nats --network host \
             --restart=on-failure:5 \
-            --health-cmd="nc -z localhost ${NATS_PORT} || exit 1" \
-            --health-interval=30s \
-            --health-timeout=5s \
+            --health-cmd="wget -q --spider http://localhost:8222/healthz || exit 1" \
+            --health-interval=15s \
+            --health-timeout=3s \
             --health-retries=3 \
+            --health-start-period=10s \
             docker.io/nats:2.10-alpine ${nats_cmd} \
             > /dev/null 2>&1
-        print_success "NATS started on port ${NATS_PORT} with clustering on port 6222"
+        
+        # Wait for NATS to be ready
+        local retry=0
+        while [ $retry -lt 30 ]; do
+            if curl -sf --max-time 3 http://localhost:8222/healthz >/dev/null 2>&1; then
+                print_success "NATS started on port ${NATS_PORT} with clustering (port 6222)"
+                print_info "  Cluster: Enabled | Routes: Auto-discovery | Retries: 120"
+                break
+            fi
+            sleep 1
+            retry=$((retry + 1))
+        done
+        if [ $retry -eq 30 ]; then
+            print_error "NATS failed to become ready"
+        fi
         
         # Set REDIS_HOST and NATS_HOST to local IP for chat nodes
         REDIS_HOST=$(get_host_ip)
@@ -1024,6 +1151,87 @@ clear_usernames() {
     fi
 }
 
+# Command: backup - Backup message history
+backup_messages() {
+    local backup_file="${1:-redis-backup-$(date +%Y%m%d-%H%M%S).tar}"
+    
+    print_info "Backing up message history..."
+    
+    if ! sudo podman volume exists redis-data 2>/dev/null; then
+        print_error "Redis volume 'redis-data' does not exist"
+        exit 1
+    fi
+    
+    # Create backup using volume export
+    if sudo podman volume export redis-data > "$backup_file" 2>/dev/null; then
+        local size=$(du -h "$backup_file" | cut -f1)
+        print_success "Backup created: $backup_file ($size)"
+        echo ""
+        echo "To restore this backup:"
+        echo "  ./chat-system.sh restore $backup_file"
+    else
+        print_error "Backup failed"
+        exit 1
+    fi
+}
+
+# Command: restore - Restore message history
+restore_messages() {
+    local backup_file="$1"
+    
+    if [ -z "$backup_file" ]; then
+        print_error "Usage: ./chat-system.sh restore <backup-file>"
+        exit 1
+    fi
+    
+    if [ ! -f "$backup_file" ]; then
+        print_error "Backup file not found: $backup_file"
+        exit 1
+    fi
+    
+    print_info "Restoring message history from: $backup_file"
+    echo ""
+    print_info "⚠  This will stop Redis and replace all current messages"
+    read -p "Continue? [y/N] " -n 1 -r
+    echo ""
+    
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        print_info "Restore cancelled"
+        exit 0
+    fi
+    
+    # Stop Redis if running
+    if sudo podman ps --format "{{.Names}}" | grep -q "^redis$"; then
+        print_info "Stopping Redis..."
+        sudo podman stop redis >/dev/null 2>&1
+        sudo podman rm -f redis >/dev/null 2>&1
+    fi
+    
+    # Remove old volume
+    if sudo podman volume exists redis-data 2>/dev/null; then
+        print_info "Removing old volume..."
+        sudo podman volume rm redis-data >/dev/null 2>&1
+    fi
+    
+    # Create new volume
+    print_info "Creating new volume..."
+    sudo podman volume create redis-data >/dev/null 2>&1
+    
+    # Import backup
+    print_info "Importing backup..."
+    if sudo podman volume import redis-data < "$backup_file" 2>/dev/null; then
+        print_success "Backup restored successfully"
+        echo ""
+        print_info "Restart the system to use restored messages:"
+        echo "  sudo systemctl restart chat-system"
+        echo "  OR"
+        echo "  ./chat-system.sh start"
+    else
+        print_error "Restore failed"
+        exit 1
+    fi
+}
+
 # Command: setup-autostart - Configure systemd for autostart and autorecovery
 setup_autostart() {
     print_header "======================================"
@@ -1397,9 +1605,11 @@ run_all() {
 run_daemon() {
     # Daemon configuration
     local LOG_FILE="/var/log/chat-system-daemon.log"
-    local CHECK_INTERVAL=30
-    local RESTART_COOLDOWN=60
+    local CHECK_INTERVAL=15
+    local RESTART_COOLDOWN=30
+    local MAX_RESTART_ATTEMPTS=5
     declare -A LAST_RESTART
+    declare -A RESTART_ATTEMPTS
     
     # Daemon logging functions
     daemon_log() {
@@ -1414,25 +1624,44 @@ run_daemon() {
         echo "[$(date +'%Y-%m-%d %H:%M:%S')] SUCCESS: $1" | tee -a "$LOG_FILE"
     }
     
-    # Check if enough time has passed since last restart
+    # Check if enough time has passed since last restart (with exponential backoff)
     daemon_can_restart() {
         local service=$1
         local now=$(date +%s)
         local last=${LAST_RESTART[$service]:-0}
+        local attempts=${RESTART_ATTEMPTS[$service]:-0}
         local elapsed=$((now - last))
         
-        if [ $elapsed -ge $RESTART_COOLDOWN ]; then
+        # Reset attempts after 5 minutes
+        if [ $elapsed -gt 300 ]; then
+            RESTART_ATTEMPTS[$service]=0
+            attempts=0
+        fi
+        
+        # Exponential backoff: cooldown * 2^attempts (capped at 10 minutes)
+        local backoff=$((RESTART_COOLDOWN * (2 ** attempts)))
+        if [ $backoff -gt 600 ]; then
+            backoff=600
+        fi
+        
+        if [ $elapsed -ge $backoff ]; then
             return 0
         else
-            daemon_log "Service $service in cooldown (${elapsed}s/${RESTART_COOLDOWN}s)"
+            daemon_log "Service $service in cooldown (${elapsed}s/${backoff}s, attempt ${attempts})"
             return 1
         fi
     }
     
-    # Record restart time
+    # Record restart time and increment attempts
     daemon_record_restart() {
         local service=$1
         LAST_RESTART[$service]=$(date +%s)
+        local attempts=${RESTART_ATTEMPTS[$service]:-0}
+        RESTART_ATTEMPTS[$service]=$((attempts + 1))
+        
+        if [ ${RESTART_ATTEMPTS[$service]} -ge $MAX_RESTART_ATTEMPTS ]; then
+            daemon_log_error "$service exceeded max restart attempts ($MAX_RESTART_ATTEMPTS), entering extended backoff"
+        fi
     }
     
     # Check if container exists and is running
@@ -1453,17 +1682,36 @@ run_daemon() {
         sudo podman inspect "$container" --format '{{.State.Status}}' 2>/dev/null || echo "missing"
     }
     
-    # Check container health
+    # Check container health (with detailed diagnostics)
     daemon_check_container_health() {
         local container=$1
         local health=$(sudo podman inspect "$container" --format '{{.State.Health.Status}}' 2>/dev/null)
         
         if [ -z "$health" ] || [ "$health" = "<no value>" ]; then
-            if daemon_check_container_running "$container"; then
-                echo "running"
-            else
-                echo "unhealthy"
-            fi
+            # No health check defined, do manual check
+            case "$container" in
+                redis)
+                    if sudo podman exec redis redis-cli ping 2>/dev/null | grep -q PONG; then
+                        echo "healthy"
+                    else
+                        echo "unhealthy"
+                    fi
+                    ;;
+                nats)
+                    if curl -sf --max-time 3 http://localhost:8222/healthz >/dev/null 2>&1; then
+                        echo "healthy"
+                    else
+                        echo "unhealthy"
+                    fi
+                    ;;
+                *)
+                    if daemon_check_container_running "$container"; then
+                        echo "running"
+                    else
+                        echo "unhealthy"
+                    fi
+                    ;;
+            esac
         else
             echo "$health"
         fi
@@ -1491,46 +1739,134 @@ run_daemon() {
         fi
     }
     
-    # Recreate Redis
+    # Recreate Redis (with persistence and resilience features)
     daemon_recreate_redis() {
-        daemon_log "Recreating Redis..."
+        daemon_log "Recreating Redis with full persistence..."
+        
+        # Stop and remove old container (volume persists!)
+        sudo podman stop redis 2>/dev/null || true
+        sudo podman rm -f redis 2>/dev/null || true
+        
+        # Ensure volume exists
+        if ! sudo podman volume exists redis-data 2>/dev/null; then
+            sudo podman volume create redis-data >/dev/null 2>&1
+            daemon_log "Created persistent volume: redis-data"
+        fi
+        
         sudo podman run -d --name redis --network host \
             --restart=on-failure:5 \
             --health-cmd="redis-cli ping || exit 1" \
-            --health-interval=30s \
-            --health-timeout=5s \
+            --health-interval=15s \
+            --health-timeout=3s \
             --health-retries=3 \
+            --health-start-period=10s \
+            -v redis-data:/data \
             redis:7-alpine \
-            redis-server --save 60 1 --loglevel warning \
+            redis-server \
+            --dir /data \
+            --dbfilename dump.rdb \
+            --appendfilename appendonly.aof \
+            --appendonly yes \
+            --appendfsync everysec \
+            --auto-aof-rewrite-percentage 100 \
+            --auto-aof-rewrite-min-size 64mb \
+            --aof-load-truncated yes \
+            --aof-use-rdb-preamble yes \
+            --save 900 1 \
+            --save 300 10 \
+            --save 60 10000 \
+            --stop-writes-on-bgsave-error no \
+            --rdbcompression yes \
+            --rdbchecksum yes \
+            --maxmemory-policy noeviction \
+            --tcp-keepalive 60 \
+            --timeout 300 \
+            --tcp-backlog 511 \
+            --replica-read-only no \
+            --repl-ping-replica-period 10 \
+            --repl-timeout 60 \
+            --repl-backlog-size 128mb \
+            --min-replicas-to-write 0 \
+            --protected-mode no \
+            --bind 0.0.0.0 \
+            --loglevel warning \
             >/dev/null 2>&1
         
         if [ $? -eq 0 ]; then
-            daemon_log_success "Redis recreated"
-            daemon_record_restart "redis"
-            return 0
+            # Wait for Redis to be ready
+            local retry=0
+            while [ $retry -lt 30 ]; do
+                if sudo podman exec redis redis-cli ping 2>/dev/null | grep -q PONG; then
+                    daemon_log_success "Redis recreated - all message history restored from persistent volume"
+                    daemon_record_restart "redis"
+                    return 0
+                fi
+                sleep 1
+                retry=$((retry + 1))
+            done
+            daemon_log_error "Redis container created but not responding"
+            return 1
         else
             daemon_log_error "Failed to recreate Redis"
             return 1
         fi
     }
     
-    # Recreate NATS
+    # Recreate NATS (with clustering and resilience features)
     daemon_recreate_nats() {
-        daemon_log "Recreating NATS..."
+        daemon_log "Recreating NATS with clustering..."
+        
+        # Stop and remove old container
+        sudo podman stop nats 2>/dev/null || true
+        sudo podman rm -f nats 2>/dev/null || true
+        
+        # Discover cluster routes if in cluster mode
+        local nats_cmd="-p ${NATS_PORT} -m 8222 --cluster_name chat_cluster --cluster nats://0.0.0.0:6222"
+        
+        if [ "$CLUSTER_MODE" = "true" ]; then
+            local nats_routes=$(discover_nats_cluster_routes "${CLUSTER_CONSUL_URL}" 2>/dev/null || echo "")
+            if [ -n "$nats_routes" ]; then
+                nats_cmd="${nats_cmd} --routes ${nats_routes}"
+                daemon_log "NATS will connect to cluster routes: ${nats_routes}"
+            fi
+        fi
+        
+        # Add connection retries for resilience
+        nats_cmd="${nats_cmd} --connect_retries 120"
+        
         sudo podman run -d --name nats --network host \
             --restart=on-failure:5 \
             --health-cmd="wget -q --spider http://localhost:8222/healthz || exit 1" \
-            --health-interval=30s \
-            --health-timeout=5s \
+            --health-interval=15s \
+            --health-timeout=3s \
             --health-retries=3 \
-            nats:2-alpine \
-            -js -m 8222 \
+            --health-start-period=10s \
+            nats:2-alpine ${nats_cmd} \
             >/dev/null 2>&1
         
         if [ $? -eq 0 ]; then
-            daemon_log_success "NATS recreated"
-            daemon_record_restart "nats"
-            return 0
+            # Wait for NATS to be ready
+            local retry=0
+            while [ $retry -lt 30 ]; do
+                if curl -sf --max-time 3 http://localhost:8222/healthz >/dev/null 2>&1; then
+                    daemon_log_success "NATS recreated with clustering and auto-reconnection"
+                    daemon_record_restart "nats"
+                    
+                    # Re-register with Consul if needed
+                    if [ "$CLUSTER_MODE" = "true" ]; then
+                        local host_ip=$(get_host_ip)
+                        local script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+                        if [ -f "${script_dir}/cluster_helper.py" ]; then
+                            python3 "${script_dir}/cluster_helper.py" register "nats-${host_ip//./-}" "nats-service" "$host_ip" "${NATS_PORT}" "${CLUSTER_CONSUL_URL}" >/dev/null 2>&1 || true
+                        fi
+                    fi
+                    return 0
+                fi
+                sleep 1
+                retry=$((retry + 1))
+            done
+            daemon_log_error "NATS container created but not responding"
+            return 1
         else
             daemon_log_error "Failed to recreate NATS"
             return 1
@@ -2054,6 +2390,8 @@ CORE COMMANDS:
     
 MANAGEMENT COMMANDS:
     setup-autostart     Configure systemd for autostart & autorecovery (requires sudo)
+    backup [file]       Backup all message history to file
+    restore <file>      Restore message history from backup file
     metrics [url] [port] Start metrics aggregation server
     logs <service>      View logs (redis|nats|consul|node-1|node-2|node-3|lb)
     cluster-test [url]  Test cluster connectivity
@@ -2082,6 +2420,13 @@ QUICK START EXAMPLES:
     ./chat-system.sh run --cluster --mode full --with-lb
 
     # Just start services (no monitoring)
+    ./chat-system.sh start --auto
+
+    # Backup message history
+    ./chat-system.sh backup my-backup.tar
+
+    # Restore message history
+    ./chat-system.sh restore my-backup.tar
     ./chat-system.sh start --auto
 
     # Setup autostart on boot
@@ -2181,10 +2526,20 @@ TROUBLESHOOTING:
 PORTS:
     6379     Redis
     4222     NATS (client connections)
-    6222     NATS ( curl -s http://localhost:8222/routez | jq '.num_routes'cluster mesh - cross-machine communication)
+    6222     NATS (cluster mesh - cross-machine communication)
     8500     Consul
     3001     Load Balancer
     3002-4   Chat nodes
+
+PERSISTENCE:
+    Redis Volume: redis-data (survives container deletion)
+    AOF: Enabled (append-only file, synced every second)
+    RDB: Snapshots at 60s, 300s, 900s intervals
+    Location:     /var/lib/containers/storage/volumes/redis-data
+    View volume:  sudo podman volume inspect redis-data
+    Backup data:  sudo podman volume export redis-data > redis-backup.tar
+    Restore data: sudo podman volume import redis-data < redis-backup.tar
+    All chat messages persist across complete system restarts
 
 For detailed documentation, see README.md and DISTRIBUTED_MESSAGING.md
 EOF
@@ -2235,6 +2590,12 @@ case "$COMMAND" in
         ;;
     clear-usernames)
         clear_usernames
+        ;;
+    backup)
+        backup_messages "$1"
+        ;;
+    restore)
+        restore_messages "$1"
         ;;
     setup-autostart)
         setup_autostart
