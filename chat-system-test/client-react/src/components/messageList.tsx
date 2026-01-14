@@ -29,6 +29,7 @@ export function MessageList({ socket, roomId, nodePort = 3001 }: MessageListProp
     const historyMessages: Message[] = [];
     const historyMessageIds = new Set<string>();
     let historyReceived = false;
+    let historyProcessed = false;
 
     // Listen for message history when joining a room
     const handleHistory = ({ roomId: historyRoomId, messages }: { roomId: string; messages: Message[] }) => {
@@ -58,6 +59,7 @@ export function MessageList({ socket, roomId, nodePort = 3001 }: MessageListProp
           );
           
           setMessages(uniqueMessages);
+          historyProcessed = true;
         }, 100);
       }
     };
@@ -89,14 +91,14 @@ export function MessageList({ socket, roomId, nodePort = 3001 }: MessageListProp
           ts: msg.ts
         };
         
-        // If we're still loading history, add to the accumulator (avoid duplicates)
-        if (!historyReceived || historyMessages.length > 0) {
+        // If we're still loading history and haven't processed it yet, add to the accumulator
+        if (historyReceived && !historyProcessed) {
           if (!historyMessageIds.has(fileMsg.id)) {
             historyMessages.push(fileMsg);
             historyMessageIds.add(fileMsg.id);
           }
         } else {
-          // New file message after history loaded
+          // New file message after history loaded OR no history yet - add immediately
           setMessages((prev) => {
             // Check if message already exists
             if (prev.some(m => m.id === fileMsg.id)) {
