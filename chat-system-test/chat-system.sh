@@ -1054,7 +1054,7 @@ setup_autostart() {
     local LB_INPUT="yes"
     
     # Use LOCAL Consul on this machine
-    local CONSUL_URL="${HOST_IP}:8500"
+    local CONSUL_URL="http://${HOST_IP}:8500"
     print_success "Using LOCAL Consul: ${CONSUL_URL}"
     print_info "  (Each machine uses its own Consul agent for service discovery)"
     
