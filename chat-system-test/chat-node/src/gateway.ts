@@ -1,5 +1,6 @@
 import { createServer } from "http";
 import { Server } from "socket.io";
+import Busboy from "busboy";
 import { natsCircuitBreaker, redisCircuitBreaker } from "./circuitBreaker";
 import { publishPresence, publishPrivateMessage, publishUsernameRegistration, publishUsernameUnregistration, subscribeToMessages, subscribeToPresence, subscribeToPrivateMessages, subscribeToUsernameRegistrations, subscribeToUsernameUnregistrations } from "./nats";
 import { connectionLimiter, messageLimiter, privateMessageLimiter } from "./rateLimit";
@@ -101,30 +102,53 @@ export function startGateway() {
       return;
     }
 
-    // File upload endpoint
-    if (req.url === "/upload" && req.method === "POST") {
-      let body = '';
-      req.on('data', (chunk: any) => {
-        body += chunk.toString();
+    // File upload endpoint - supports multipart/form-data
+    if (req.url?.startsWith("/upload") && req.method === "POST") {
+      // Parse query parameters for filerIp
+      const urlParts = req.url.split('?');
+      const queryParams = new URLSearchParams(urlParts[1] || '');
+      const filerIp = queryParams.get('filerIp') || process.env.FILESTORE_URL || 'http://localhost:8888';
+      
+      const busboy = Busboy({ headers: req.headers });
+      let fileBuffer: Buffer | null = null;
+      let fileName = '';
+      let username = 'anonymous';
+      
+      busboy.on('file', (fieldname: string, file: any, info: any) => {
+        const { filename } = info;
+        fileName = filename;
+        const chunks: Buffer[] = [];
+        
+        file.on('data', (chunk: Buffer) => {
+          chunks.push(chunk);
+        });
+        
+        file.on('end', () => {
+          fileBuffer = Buffer.concat(chunks);
+        });
       });
       
-      req.on('end', async () => {
+      busboy.on('field', (fieldname: string, value: string) => {
+        if (fieldname === 'username') {
+          username = value;
+        }
+      });
+      
+      busboy.on('finish', async () => {
         try {
-          const data = JSON.parse(body);
-          const { filename, data: base64Data, username } = data;
-          
-          if (!filename || !base64Data) {
+          if (!fileBuffer || !fileName) {
             res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "Missing filename or data" }));
+            res.end(JSON.stringify({ error: "Missing file or filename" }));
             return;
           }
 
-          // Upload to SeaweedFS
-          const result = await uploadToSeaweed(base64Data, filename, username || 'anonymous');
+          // Upload to SeaweedFS with custom filerIp
+          const result = await uploadToSeaweed(fileBuffer, fileName, username, filerIp);
           
           if (result.success) {
             res.writeHead(200, { 
-              "Content-Type": "application/json"
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Origin": "*"
             });
             res.end(JSON.stringify({ 
               success: true,
@@ -140,25 +164,48 @@ export function startGateway() {
           res.end(JSON.stringify({ error: error.message }));
         }
       });
+      
+      req.pipe(busboy);
       return;
     }
 
-    // File download endpoint (proxy to SeaweedFS)
+    // File download endpoint (proxy to SeaweedFS) - supports filerIp query param
     if (req.url?.startsWith("/download/") && req.method === "GET") {
-      const filePath = req.url.replace("/download", "");
+      // Parse URL and query parameters
+      const urlParts = req.url.split('?');
+      const pathPart = urlParts[0].replace("/download", "");
+      const queryParams = new URLSearchParams(urlParts[1] || '');
+      const filerIp = queryParams.get('filerIp') || process.env.FILESTORE_URL || 'http://localhost:8888';
       
-      const fileBuffer = await downloadFromSeaweed(filePath);
+      const fileBuffer = await downloadFromSeaweed(pathPart, filerIp);
       
       if (fileBuffer) {
         res.writeHead(200, { 
           "Content-Type": "application/octet-stream",
-          "Content-Disposition": `attachment; filename="${filePath.split('/').pop()}"`
+          "Content-Disposition": `attachment; filename="${pathPart.split('/').pop()}"`,
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type"
         });
         res.end(fileBuffer);
       } else {
-        res.writeHead(404, { "Content-Type": "application/json" });
+        res.writeHead(404, { 
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        });
         res.end(JSON.stringify({ error: "File not found" }));
       }
+      return;
+    }
+    
+    // Handle OPTIONS preflight for download endpoint
+    if (req.url?.startsWith("/download/") && req.method === "OPTIONS") {
+      res.writeHead(200, {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type"
+      });
+      res.end();
       return;
     }
 

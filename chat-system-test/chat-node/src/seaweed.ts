@@ -23,14 +23,18 @@ interface FileInfo {
  * @param buffer File buffer or base64 string
  * @param fileName Original file name
  * @param username Username of the uploader (for organizing files)
+ * @param filerUrl Optional custom filer URL (overrides default)
  * @returns Upload result with file URL
  */
 export async function uploadToSeaweed(
   buffer: Buffer | string,
   fileName: string,
-  username: string = 'anonymous'
+  username: string = 'anonymous',
+  filerUrl?: string
 ): Promise<UploadResult> {
   try {
+    const targetFiler = filerUrl || FILER_URL;
+    
     // Convert base64 to buffer if needed
     const fileBuffer = typeof buffer === 'string' 
       ? Buffer.from(buffer, 'base64') 
@@ -53,7 +57,7 @@ export async function uploadToSeaweed(
       contentType: getMimeType(fileName)
     });
 
-    const response = await axios.post(`${FILER_URL}${fullPath}`, form, {
+    const response = await axios.post(`${targetFiler}${fullPath}`, form, {
       headers: {
         ...form.getHeaders(),
       },
@@ -64,7 +68,7 @@ export async function uploadToSeaweed(
     if (response.status === 201 || response.status === 200) {
       return {
         success: true,
-        fileUrl: `${FILER_URL}${fullPath}`,
+        fileUrl: `${targetFiler}${fullPath}`,
         fileName: uniqueFileName
       };
     } else {
@@ -85,14 +89,17 @@ export async function uploadToSeaweed(
 /**
  * Download a file from SeaweedFS
  * @param filePath Full file path on SeaweedFS
+ * @param filerUrl Optional custom filer URL (overrides default)
  * @returns File buffer or null if failed
  */
-export async function downloadFromSeaweed(filePath: string): Promise<Buffer | null> {
+export async function downloadFromSeaweed(filePath: string, filerUrl?: string): Promise<Buffer | null> {
   try {
+    const targetFiler = filerUrl || FILER_URL;
+    
     // Ensure path starts with /
     const cleanPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
     
-    const response = await axios.get(`${FILER_URL}${cleanPath}`, {
+    const response = await axios.get(`${targetFiler}${cleanPath}`, {
       responseType: 'arraybuffer',
       timeout: 30000
     });

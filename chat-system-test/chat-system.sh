@@ -694,7 +694,7 @@ except:
                 -e CONSUL_URL="${CONSUL_ENV}" \
                 -e CLUSTER_MODE="${CLUSTER_MODE}" \
                 -e CLUSTER_CONSUL_URL="${CLUSTER_CONSUL_URL}" \
-                -e FILESTORE_URL="${FILESTORE_URL:-http://127.0.0.1:8888}" \
+                -e FILESTORE_URL="${FILESTORE_URL:-http://192.168.100.51:8888}" \
                 ${CHAT_IMAGE} \
                 > /dev/null 2>&1
             print_success "Chat Node ${i} started on port ${port}"
@@ -976,7 +976,7 @@ restart_nodes() {
             -e REDIS_URL=redis://localhost:${REDIS_PORT} \
             -e NATS_URL=nats://localhost:${NATS_PORT} \
             -e CONSUL_URL=http://localhost:${CONSUL_PORT} \
-            -e FILESTORE_URL="${FILESTORE_URL:-http://127.0.0.1:8888}" \
+            -e FILESTORE_URL="${FILESTORE_URL:-http://192.168.100.51:8888}" \
             ${CHAT_IMAGE} \
             > /dev/null 2>&1
         print_success "Chat Node ${i} restarted on port ${port}"
@@ -1054,7 +1054,7 @@ setup_autostart() {
     local LB_INPUT="yes"
     
     # Use LOCAL Consul on this machine
-    local CONSUL_URL="http://${HOST_IP}:8500"
+    local CONSUL_URL="${HOST_IP}:8500"
     print_success "Using LOCAL Consul: ${CONSUL_URL}"
     print_info "  (Each machine uses its own Consul agent for service discovery)"
     
@@ -1566,6 +1566,7 @@ run_daemon() {
             -e CONSUL_URL="${cluster_consul}" \
             -e CLUSTER_MODE="true" \
             -e CLUSTER_CONSUL_URL="${cluster_consul}" \
+            -e FILESTORE_URL="${FILESTORE_URL:-http://192.168.100.51:8888}" \
             localhost/chat-node:latest \
             >/dev/null 2>&1
         
