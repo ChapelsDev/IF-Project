@@ -7,7 +7,7 @@ import { UserList } from "../components/userList";
 import { useSocket } from "../hooks/useSocket";
 
 export function ChatPage() {
-  const { socket, connected, nodeId } = useSocket();
+  const { socket, connected, nodeId, nodePort } = useSocket();
   const [room, setRoom] = useState("general");
   const [username, setUsername] = useState("");
   const [usernameSet, setUsernameSet] = useState(false);
@@ -113,7 +113,7 @@ export function ChatPage() {
       </div>
       <div className="layout">
         <RoomList currentRoom={room} setRoom={setRoom} />
-        <ChatWindow socket={socket} roomId={room} />
+        <ChatWindow socket={socket} roomId={room} nodePort={nodePort} />
         <UserList 
           socket={socket} 
           roomId={room} 

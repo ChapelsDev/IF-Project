@@ -5,9 +5,10 @@ import { Message } from '../types';
 interface MessageListProps {
   socket: Socket;
   roomId: string;
+  nodePort?: number;
 }
 
-export function MessageList({ socket, roomId }: MessageListProps) {
+export function MessageList({ socket, roomId, nodePort = 3001 }: MessageListProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -69,9 +70,15 @@ export function MessageList({ socket, roomId }: MessageListProps) {
   return (
     <div className="message-list">
       {messages.map((m) => {
-        // Convert SeaweedFS URL to chat node proxy URL
+        // Build download URL using the connected node's port
+        // Extract host from VITE_CHAT_URL and replace port with nodePort
+        const chatUrl = import.meta.env.VITE_CHAT_URL || 'http://localhost:3001';
+        const hostMatch = chatUrl.match(/^(https?:\/\/[^:]+)/);
+        const host = hostMatch ? hostMatch[1] : 'http://localhost';
+        const downloadBaseUrl = `${host}:${nodePort}`;
+        
         const downloadUrl = m.fileUrl 
-          ? m.fileUrl.replace(/https?:\/\/[^/]+/, import.meta.env.VITE_CHAT_URL || 'http://localhost:3001').replace('/chat-files/', '/download/chat-files/')
+          ? m.fileUrl.replace(/https?:\/\/[^/]+/, downloadBaseUrl).replace('/chat-files/', '/download/chat-files/')
           : '';
         
         return (
