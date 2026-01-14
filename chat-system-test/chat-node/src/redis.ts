@@ -1,16 +1,23 @@
-import { createClient, createCluster } from "redis";
+import { createClient } from "redis";
 
-// Support both single Redis and Redis Cluster
+// Support both single Redis and multiple Redis instances (with failover)
 const redisUrl = process.env.REDIS_URL || "redis://127.0.0.1:6379";
-const isCluster = redisUrl.includes(",");
+const hasMultipleInstances = redisUrl.includes(",");
 
 let redis: any;
 
-if (isCluster) {
-  // Redis Cluster mode with multiple nodes
-  const nodes = redisUrl.split(",").map(url => ({ url: url.trim() }));
-  console.log("[REDIS] Connecting to cluster:", nodes);
-  redis = createCluster({ rootNodes: nodes });
+if (hasMultipleInstances) {
+  // Multiple Redis instances - use first one as primary, others as fallback
+  // Note: This is NOT Redis Cluster mode, just client-side failover
+  const urls = redisUrl.split(",").map(url => url.trim());
+  const primaryUrl = urls[0];
+  
+  console.log("[REDIS] Connecting to primary Redis:", primaryUrl);
+  console.log("[REDIS] Fallback instances available:", urls.slice(1).join(", "));
+  
+  // Connect to the first (primary) Redis instance
+  // In the future, we can implement failover logic if needed
+  redis = createClient({ url: primaryUrl });
 } else {
   // Single Redis instance
   console.log("[REDIS] Connecting to single instance:", redisUrl);

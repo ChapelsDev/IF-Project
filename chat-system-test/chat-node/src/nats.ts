@@ -84,3 +84,44 @@ export async function subscribeToPrivateMessages(username: string, callback: (ms
     }
   })();
 }
+
+// Username state synchronization
+export async function publishUsernameRegistration(username: string, userId: string) {
+  const nc = await initNats();
+  nc.publish(`chat.username.register`, JSON.stringify({ username, userId }));
+  console.log(`[NATS] Published username registration: ${username}`);
+}
+
+export async function publishUsernameUnregistration(username: string) {
+  const nc = await initNats();
+  nc.publish(`chat.username.unregister`, JSON.stringify({ username }));
+  console.log(`[NATS] Published username unregistration: ${username}`);
+}
+
+export async function subscribeToUsernameRegistrations(callback: (data: any) => void) {
+  const nc = await initNats();
+  const sub = nc.subscribe(`chat.username.register`);
+  
+  console.log(`[NATS] Subscribed to username registrations`);
+  
+  (async () => {
+    for await (const m of sub) {
+      const data = JSON.parse(new TextDecoder().decode(m.data));
+      callback(data);
+    }
+  })();
+}
+
+export async function subscribeToUsernameUnregistrations(callback: (data: any) => void) {
+  const nc = await initNats();
+  const sub = nc.subscribe(`chat.username.unregister`);
+  
+  console.log(`[NATS] Subscribed to username unregistrations`);
+  
+  (async () => {
+    for await (const m of sub) {
+      const data = JSON.parse(new TextDecoder().decode(m.data));
+      callback(data);
+    }
+  })();
+}

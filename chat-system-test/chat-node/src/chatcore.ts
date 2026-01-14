@@ -1,20 +1,13 @@
-import { publishMessage } from "./nats";
-import { readMessages } from "./redis";
 
 export function startChatCore() {
   console.log("Chat-Core running...");
 
-  // Only node 1 reads from Redis to avoid duplicate processing
-  if (process.env.NODE_ID === "1") {
-    console.log("This node will read from Redis streams");
-    // Start reading messages in background (don't await)
-    readMessages((roomId: string, msg: any) => {
-      console.log(`[CHATCORE] Callback triggered for room ${roomId}, publishing to NATS:`, msg);
-      publishMessage(roomId, msg);
-    }).catch(error => {
-      console.error("[CHATCORE] Fatal error in readMessages:", error);
-    });
-  } else {
-    console.log("This node will only listen to NATS broadcasts");
-  }
+  // ALL nodes now publish messages to NATS immediately when sent
+  // Redis is only used for persistent storage (history)
+  // No need for Node 1 to read from Redis streams anymore
+  console.log("Messages are published to NATS directly by sending nodes");
+  console.log("Redis is used only for persistent message history");
+  
+  // Note: ALL nodes can read message history directly from Redis when users join
+  // This is done in gateway.ts when handling the 'join' event
 }

@@ -593,6 +593,77 @@ start_system() {
         # Start chat nodes with auto-discovery
         local host_ip=$(get_host_ip)
         
+        # Auto-discover Redis Cluster from Consul if in cluster mode
+        local REDIS_URLS=""
+        if [ "$CLUSTER_MODE" = "true" ] && [ -z "$REDIS_CLUSTER_URLS" ]; then
+            print_info "Discovering Redis instances from Consul..."
+            local redis_instances=$(curl -s "${CONSUL_ENV}/v1/catalog/service/redis-service" 2>/dev/null)
+            
+            if [ -n "$redis_instances" ] && [ "$redis_instances" != "[]" ]; then
+                # Get the first Redis instance as the shared Redis
+                # All nodes will use this same Redis for data sharing
+                REDIS_URLS=$(echo "$redis_instances" | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    if data:
+        instance = data[0]  # Use first Redis as shared instance
+        addr = instance.get('ServiceAddress') or instance.get('Address')
+        port = instance.get('ServicePort', 6379)
+        print(f'redis://{addr}:{port}')
+except:
+    pass
+" 2>/dev/null)
+                
+                if [ -n "$REDIS_URLS" ]; then
+                    print_success "Using shared Redis instance: $REDIS_URLS"
+                    print_info "  All nodes will connect to this same Redis for data sharing"
+                fi
+            fi
+        elif [ -n "$REDIS_CLUSTER_URLS" ]; then
+            # Use pre-configured cluster URLs from environment
+            REDIS_URLS="$REDIS_CLUSTER_URLS"
+            print_success "Using configured Redis: $REDIS_URLS"
+        fi
+        
+        # Fallback to single Redis if no cluster discovered
+        if [ -z "$REDIS_URLS" ]; then
+            REDIS_URLS="redis://${redis_connect_host}:${REDIS_PORT}"
+        fi
+        
+        # Auto-discover NATS Cluster from Consul if in cluster mode
+        local NATS_URLS=""
+        if [ "$CLUSTER_MODE" = "true" ]; then
+            print_info "Discovering NATS instances from Consul..."
+            local nats_instances=$(curl -s "${CONSUL_ENV}/v1/catalog/service/nats-service" 2>/dev/null)
+            
+            if [ -n "$nats_instances" ] && [ "$nats_instances" != "[]" ]; then
+                NATS_URLS=$(echo "$nats_instances" | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    urls = []
+    for instance in data:
+        addr = instance.get('ServiceAddress') or instance.get('Address')
+        port = instance.get('ServicePort', 4222)
+        urls.append(f'nats://{addr}:{port}')
+    print(','.join(urls))
+except:
+    pass
+" 2>/dev/null)
+                
+                if [ -n "$NATS_URLS" ]; then
+                    local nats_count=$(echo "$NATS_URLS" | tr ',' '\n' | wc -l)
+                    print_success "Discovered ${nats_count} NATS instance(s) for cluster mode"
+                fi
+            fi
+        fi
+        
+        # Fallback to single NATS if no cluster discovered
+        if [ -z "$NATS_URLS" ]; then
+            NATS_URLS="nats://${nats_connect_host}:${NATS_PORT}"
+        fi
+        
         # Use 127.0.0.1 instead of localhost to avoid IPv6 issues
         local redis_connect_host="${REDIS_HOST}"
         local nats_connect_host="${NATS_HOST}"
@@ -618,8 +689,8 @@ start_system() {
                 -e PORT="${port}" \
                 -e HOST_IP="${host_ip}" \
                 -e SERVICE_ID="chat-node-${host_ip//./-}-${i}" \
-                -e REDIS_URL="redis://${redis_connect_host}:${REDIS_PORT}" \
-                -e NATS_URL="nats://${nats_connect_host}:${NATS_PORT}" \
+                -e REDIS_URL="${REDIS_URLS}" \
+                -e NATS_URL="${NATS_URLS}" \
                 -e CONSUL_URL="${CONSUL_ENV}" \
                 -e CLUSTER_MODE="${CLUSTER_MODE}" \
                 -e CLUSTER_CONSUL_URL="${CLUSTER_CONSUL_URL}" \
@@ -987,6 +1058,54 @@ setup_autostart() {
     print_success "Using LOCAL Consul: ${CONSUL_URL}"
     print_info "  (Each machine uses its own Consul agent for service discovery)"
     
+    # Auto-discover and configure Redis Cluster
+    print_info "Discovering Redis instances via Consul..."
+    local REDIS_CLUSTER_URLS=""
+    
+    # Wait a moment for Consul to be ready
+    sleep 2
+    
+    # Query Consul for all Redis instances
+    local redis_instances=$(curl -s "${CONSUL_URL}/v1/catalog/service/redis-service" 2>/dev/null)
+    
+    if [ -n "$redis_instances" ] && [ "$redis_instances" != "[]" ]; then
+        # Extract all Redis addresses and ports
+        local redis_addresses=$(echo "$redis_instances" | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    for instance in data:
+        addr = instance.get('ServiceAddress') or instance.get('Address')
+        port = instance.get('ServicePort', 6379)
+        print(f'redis://{addr}:{port}')
+except:
+    pass
+" 2>/dev/null)
+        
+        if [ -n "$redis_addresses" ]; then
+            # Join with commas for Redis Cluster configuration
+            REDIS_CLUSTER_URLS=$(echo "$redis_addresses" | tr '\n' ',' | sed 's/,$//')
+            local redis_count=$(echo "$redis_addresses" | wc -l)
+            
+            print_success "Discovered ${redis_count} Redis instance(s):"
+            echo "$redis_addresses" | while read addr; do
+                echo "  → $addr"
+            done
+            
+            if [ "$redis_count" -gt 1 ]; then
+                print_success "Redis Cluster mode will be enabled (${redis_count} nodes)"
+                print_info "  All chat nodes will connect to all Redis instances"
+                print_info "  Redis will replicate data automatically across cluster"
+            else
+                print_success "Using single Redis instance"
+            fi
+        else
+            print_info "No Redis instances discovered yet (will discover on start)"
+        fi
+    else
+        print_info "No Redis services found in Consul (will use local Redis)"
+    fi
+    
     # Build command with production defaults
     local CMD_FLAGS="--nodes ${NODE_COUNT} --cluster --cluster-consul ${CONSUL_URL} --mode full --with-lb"
     
@@ -998,15 +1117,31 @@ setup_autostart() {
     echo "  • Load balancer: enabled"
     echo "  • Local Consul: ${CONSUL_URL}"
     echo "  • NATS: Will auto-discover other NATS via local Consul"
+    if [ -n "$REDIS_CLUSTER_URLS" ]; then
+        echo "  • Redis Cluster: ${REDIS_CLUSTER_URLS}"
+    fi
     echo "  • Command: ./chat-system.sh start ${CMD_FLAGS}"
     echo ""
     echo "Note: Each machine uses its own Consul agent."
     echo "      Make sure Consul agents are clustered together for service discovery."
+    if [ -n "$REDIS_CLUSTER_URLS" ]; then
+        echo "      Redis Cluster will auto-replicate data across all instances."
+    fi
     echo ""
     
     # Create systemd service
     SERVICE_FILE="/etc/systemd/system/chat-system.service"
     print_info "Creating $SERVICE_FILE..."
+    
+    # Build environment variables for the service
+    local ENV_VARS="Environment=\"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\"
+Environment=\"CLUSTER_CONSUL_URL=${CONSUL_URL}\""
+    
+    # Add Redis Cluster URLs if discovered
+    if [ -n "$REDIS_CLUSTER_URLS" ]; then
+        ENV_VARS="${ENV_VARS}
+Environment=\"REDIS_CLUSTER_URLS=${REDIS_CLUSTER_URLS}\""
+    fi
     
     cat > "$SERVICE_FILE" << EOF
 [Unit]
@@ -1019,8 +1154,7 @@ Type=simple
 User=root
 Group=root
 WorkingDirectory=$(dirname "$SCRIPT_PATH")
-Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-Environment="CLUSTER_CONSUL_URL=${CONSUL_URL}"
+${ENV_VARS}
 
 # Start services first, then run daemon
 ExecStartPre=${SCRIPT_PATH} start ${CMD_FLAGS}

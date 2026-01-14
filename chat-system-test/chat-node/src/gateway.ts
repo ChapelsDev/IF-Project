@@ -1,12 +1,12 @@
 import { createServer } from "http";
 import { Server } from "socket.io";
 import { natsCircuitBreaker, redisCircuitBreaker } from "./circuitBreaker";
-import { publishPresence, publishPrivateMessage, subscribeToMessages, subscribeToPresence, subscribeToPrivateMessages } from "./nats";
+import { publishPresence, publishPrivateMessage, publishUsernameRegistration, publishUsernameUnregistration, subscribeToMessages, subscribeToPresence, subscribeToPrivateMessages, subscribeToUsernameRegistrations, subscribeToUsernameUnregistrations } from "./nats";
 import { connectionLimiter, messageLimiter, privateMessageLimiter } from "./rateLimit";
 import { addUserToRoom, appendMessage, getMessageHistory, getPrivateMessageHistory, getRoomUsers, isUsernameAvailable, registerUsername, removeUserFromAllRooms, removeUserFromRoom, sendPrivateMessage } from "./redis";
 import { sanitizeUsername, validateMessagePayload, validatePrivateMessagePayload } from "./sanitizer";
+import { checkSeaweedHealth, downloadFromSeaweed, uploadToSeaweed } from "./seaweed";
 import { generateToken, TokenPayload, validateSocketAuth } from "./tokenValidation";
-import { uploadToSeaweed, downloadFromSeaweed, checkSeaweedHealth } from "./seaweed";
 
 // Extend Socket type to include custom properties
 interface ExtendedSocket {
@@ -250,6 +250,12 @@ export function startGateway() {
         
         console.log(`[GATEWAY] User ${socket.id} set username: ${sanitized}`);
         
+        // Broadcast username registration to all nodes via NATS
+        await natsCircuitBreaker.executeWithFallback(
+          () => publishUsernameRegistration(sanitized, socket.id),
+          () => Promise.resolve()
+        );
+        
         // Generate JWT token for the user (optional, for future auth)
         const token = generateToken(socket.id, sanitized);
         socket.emit("usernameAccepted", { username: sanitized, token });
@@ -302,6 +308,18 @@ export function startGateway() {
         // Send the message back to the sender immediately (acknowledgment)
         // This prevents the echo when the message comes back through NATS
         socket.emit("message", messageObj);
+        
+        // Publish to NATS so other nodes receive it immediately
+        await natsCircuitBreaker.executeWithFallback(
+          async () => {
+            const { publishMessage } = await import("./nats");
+            await publishMessage(roomId, messageObj);
+          },
+          () => {
+            console.log(`[GATEWAY] NATS unavailable, message not broadcast to other nodes`);
+            return Promise.resolve();
+          }
+        );
         
         console.log(`[GATEWAY] Message processed successfully and acknowledged to sender`);
         
@@ -549,8 +567,16 @@ export function startGateway() {
       activeConnections.delete(socket.id);
       
       if (socket.username) {
+        const disconnectedUsername = socket.username;
+        
         // Remove username mapping
         usernameToSocketId.delete(socket.username);
+        
+        // Broadcast username unregistration to all nodes
+        await natsCircuitBreaker.executeWithFallback(
+          () => publishUsernameUnregistration(disconnectedUsername),
+          () => Promise.resolve()
+        );
         
         // Clean up room presence with circuit breaker
         await redisCircuitBreaker.executeWithFallback(
@@ -646,6 +672,23 @@ export function startGateway() {
     } else {
       console.log(`[GATEWAY] User ${msg.to} not connected to this node`);
     }
+  });
+
+  // Subscribe to username registrations from other nodes
+  console.log("[GATEWAY] Setting up username synchronization subscriptions...");
+  subscribeToUsernameRegistrations((data: any) => {
+    console.log(`[GATEWAY] Username registered on another node: ${data.username} (${data.userId})`);
+    // Don't override if this user is connected to this node
+    if (!usernameToSocketId.has(data.username)) {
+      // This is just for awareness - the actual socket connection is on another node
+      console.log(`[GATEWAY] Username ${data.username} tracked (remote node)`);
+    }
+  });
+
+  subscribeToUsernameUnregistrations((data: any) => {
+    console.log(`[GATEWAY] Username unregistered on another node: ${data.username}`);
+    // Clean up local mapping if it exists (shouldn't normally, but just in case)
+    usernameToSocketId.delete(data.username);
   });
 
   httpServer.listen(port, () => {
