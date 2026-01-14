@@ -1,0 +1,68 @@
+---
+- name: "SRE | Refatoração e Migração de Metadados para Consul KV"
+  hosts: cluster
+  become: true
+  vars:
+    admin_user: "admin"
+    admin_group: "admin"
+    master_nodes: "192.168.100.51:9333,192.168.100.52:9333,192.168.100.53:9333"
+    backup_path: "/tmp/metadata.bak"
+
+  tasks:
+    # 1. SALVAGUARDA (BACKUP) - Executado apenas num nó Filer para exportar a árvore
+    - name: "Migration | Criar backup dos metadados atuais (LevelDB2)"
+      when: inventory_hostname == 'node51'
+      shell: "/usr/local/bin/weed filer.backup -output {{ backup_path }}"
+      args:
+        creates: "{{ backup_path }}"
+
+    # 2. CONFIGURAÇÃO
+    - name: "Config | Criar pasta de configurações"
+      file:
+        path: "/etc/seaweedfs"
+        state: directory
+        owner: "{{ admin_user }}"
+        group: "{{ admin_group }}"
+        mode: '0755'
+
+    - name: "Config | Injetar filer.toml (Consul Store)"
+      copy:
+        dest: "/etc/seaweedfs/filer.toml"
+        owner: "{{ admin_user }}"
+        group: "{{ admin_group }}"
+        mode: '0644'
+        content: |
+          [leveldb2]
+          enabled = false
+
+          [consul]
+          enabled = true
+          address = "127.0.0.1:8500"
+          path = "/seaweedfs/filer"
+
+    # 3. ATUALIZAÇÃO DO BINÁRIO NO SYSTEMD
+    - name: "Systemd | Atualizar ExecStart para usar o filer.toml"
+      lineinfile:
+        path: "/etc/systemd/system/seaweed_filer.service"
+        regexp: '^(ExecStart=.*weed filer.*)$'
+        line: 'ExecStart=/usr/local/bin/weed filer -master={{ master_nodes }} -ip={{ ansible_host }} -port=8888 -config=/etc/seaweedfs/filer.toml'
+        backrefs: yes
+
+    # 4. TRANSIÇÃO DE ESTADO
+    - name: "Systemd | Restart Filers com nova configuração"
+      when: inventory_hostname in ['node51', 'node52', 'node53']
+      systemd:
+        name: seaweed_filer
+        state: restarted
+        daemon_reload: yes
+
+    # 5. RESTAURO (IMPORTAÇÃO PARA O CONSUL)
+    - name: "Migration | Restaurar backup para a nova store (Consul KV)"
+      when: inventory_hostname == 'node51'
+      shell: "/usr/local/bin/weed filer.restore -config=/etc/seaweedfs/filer.toml {{ backup_path }}"
+      register: restore_result
+
+    - name: "Audit | Resultado do Restore"
+      debug:
+        var: restore_result.stdout_lines
+      when: inventory_hostname == 'node51'
