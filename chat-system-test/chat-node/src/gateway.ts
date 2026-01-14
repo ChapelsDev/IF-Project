@@ -364,7 +364,10 @@ export function startGateway() {
         // This prevents the echo when the message comes back through NATS
         socket.emit("message", messageObj);
         
-        // Publish to NATS so other nodes receive it immediately
+        // Broadcast to other users in the same room on this node (not the sender)
+        socket.to(roomId).emit("message", messageObj);
+        
+        // Publish to NATS so other nodes receive it
         await natsCircuitBreaker.executeWithFallback(
           async () => {
             const { publishMessage } = await import("./nats");
@@ -410,32 +413,59 @@ export function startGateway() {
       const history = await getMessageHistory(roomId, 50);
       console.log(`Sending ${history.length} messages to user ${socket.id} for room ${roomId}`);
       
-      // Parse history to separate regular messages from file messages
-      const regularMessages = [];
-      const fileMessages = [];
+      // Parse and send messages in chronological order
+      const allMessages = [];
       
       for (const msg of history) {
         try {
           // Check if text field is a JSON string (file message)
           const parsed = JSON.parse(msg.text);
           if (parsed.type === 'file') {
-            fileMessages.push({
+            // Add file message with timestamp for proper ordering
+            allMessages.push({
+              type: 'file',
               id: msg.id,
-              ...parsed
+              timestamp: msg.ts || parsed.ts,
+              data: {
+                id: msg.id,
+                ...parsed
+              }
             });
           } else {
-            regularMessages.push(msg);
+            // Regular JSON message
+            allMessages.push({
+              type: 'regular',
+              id: msg.id,
+              timestamp: msg.ts,
+              data: msg
+            });
           }
         } catch (e) {
-          // Not JSON, it's a regular message
-          regularMessages.push(msg);
+          // Not JSON, it's a regular text message
+          allMessages.push({
+            type: 'regular',
+            id: msg.id,
+            timestamp: msg.ts,
+            data: msg
+          });
         }
       }
+      
+      // Sort by timestamp to ensure chronological order (oldest first)
+      allMessages.sort((a, b) => {
+        const tsA = parseInt(a.timestamp) || 0;
+        const tsB = parseInt(b.timestamp) || 0;
+        return tsA - tsB;
+      });
+      
+      // Separate regular messages and file messages while maintaining order
+      const regularMessages = allMessages.filter(m => m.type === 'regular').map(m => m.data);
+      const fileMessages = allMessages.filter(m => m.type === 'file').map(m => m.data);
       
       // Send regular messages as history
       socket.emit("history", { roomId, messages: regularMessages });
       
-      // Send file messages separately
+      // Send file messages in chronological order
       for (const fileMsg of fileMessages) {
         socket.emit("fileMessage", fileMsg);
       }
@@ -508,8 +538,11 @@ export function startGateway() {
             fileMessage.id = msgId;
             fileMessage.userId = socket.id;
             
-            // Broadcast to all users in the room on this node
-            io.to(roomId).emit("fileMessage", fileMessage);
+            // Send to sender for acknowledgment
+            socket.emit("fileMessage", fileMessage);
+            
+            // Broadcast to other users in the room on this node (not the sender)
+            socket.to(roomId).emit("fileMessage", fileMessage);
             
             // Publish to NATS so other nodes receive it
             await natsCircuitBreaker.executeWithFallback(
@@ -673,9 +706,14 @@ export function startGateway() {
         const parsed = JSON.parse(msg.text);
         if (parsed.type === 'file') {
           isFileMessage = true;
-          // Emit as fileMessage instead
+          // Emit as fileMessage - only to clients on OTHER nodes (not the sender's node)
+          // The sender's node already broadcast locally
           if (msg.userId) {
-            io.to(room).except(msg.userId).emit("fileMessage", { id: msg.id, ...parsed });
+            // Skip broadcasting on the node where the message originated
+            // Check if the userId (socket.id) exists in this node's active connections
+            if (!activeConnections.has(msg.userId)) {
+              io.to(room).emit("fileMessage", { id: msg.id, ...parsed });
+            }
           } else {
             io.to(room).emit("fileMessage", { id: msg.id, ...parsed });
           }
@@ -686,11 +724,16 @@ export function startGateway() {
       
       // Only emit regular message if it's not a file message
       if (!isFileMessage) {
-        // Broadcast to all clients in the room EXCEPT the original sender
-        // This prevents the echo effect where the sender receives their own message twice
+        // Broadcast to all clients in the room on OTHER nodes
+        // The sender's node already broadcast locally
         if (msg.userId) {
-          console.log(`[GATEWAY] Broadcasting to room ${room} except sender ${msg.userId}`);
-          io.to(room).except(msg.userId).emit("message", msg);
+          // Skip broadcasting on the node where the message originated
+          if (!activeConnections.has(msg.userId)) {
+            console.log(`[GATEWAY] Broadcasting to room ${room} (from other node)`);
+            io.to(room).emit("message", msg);
+          } else {
+            console.log(`[GATEWAY] Skipping NATS broadcast on sender's node for ${msg.userId}`);
+          }
         } else {
           // If no userId (older messages from history), broadcast to all
           io.to(room).emit("message", msg);
