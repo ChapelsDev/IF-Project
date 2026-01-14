@@ -1,0 +1,25 @@
+####################################################################
+# CONFIGURAÇÃO DE METADADOS SEAWEEDFS - CONSUL KV
+####################################################################
+
+[general]
+# Configurações gerais do Filer (podem ficar em branco para defaults)
+
+[leveldb2]
+# Desativar o armazenamento local para forçar o uso da store distribuída
+enabled = false
+
+[consul]
+# Ativar a sincronização via Consul
+enabled = true
+
+# Endereço do agente local (o playbook do teu colega já garante o Consul em cada nó)
+address = "127.0.0.1:8500"
+
+# Caminho dentro do Consul onde os metadados serão guardados. 
+# Todos os 3 Filers devem usar o mesmo 'path' para verem os mesmos ficheiros.
+path = "/seaweedfs/filer"
+
+# Configurações de performance (Opcional - SRE tuned)
+# datacenter = "dc1"
+# token = "" # Usar se o Consul tiver ACLs ativadas
